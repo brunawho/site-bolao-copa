@@ -15,6 +15,7 @@ export default function Palpites() {
   const [pname, setPname]         = useState('');
   const [saving, setSaving]       = useState(false);
   const [toast, setToast]         = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const id   = localStorage.getItem('participant_id');
@@ -42,7 +43,19 @@ export default function Palpites() {
     setDraft(d => ({ ...d, [mid]: { ...(d[mid] || { a: '', b: '', pen: '' }), pen: val } }));
   }
 
-  async function salvar() {
+  // Conta quantos palpites novos estão prontos para salvar
+  const palpitesParaSalvar = Object.entries(draft)
+    .filter(([mid, v]) => !myGuesses[mid] && v.a !== '' && v.b !== '').length;
+
+  function abrirConfirmacao() {
+    if (palpitesParaSalvar === 0) {
+      showToast('Nenhum palpite novo');
+      return;
+    }
+    setConfirmOpen(true);
+  }
+
+  async function confirmarSalvar() {
     if (!pid) return;
     const toInsert = Object.entries(draft)
       .filter(([mid, v]) => !myGuesses[mid] && v.a !== '' && v.b !== '')
@@ -57,10 +70,11 @@ export default function Palpites() {
         };
       });
 
-    if (!toInsert.length) { showToast('Nenhum palpite novo'); return; }
     setSaving(true);
     const { error } = await supabase.from('guesses').insert(toInsert);
     setSaving(false);
+    setConfirmOpen(false);
+
     if (error) { alert('Erro: ' + error.message); return; }
     showToast(`${toInsert.length} palpite(s) salvo(s)! ✅`);
     setDraft({});
@@ -94,17 +108,58 @@ export default function Palpites() {
     <main className="app">
       {toast && <div className="toast">{toast}</div>}
 
+      {/* MODAL DE CONFIRMAÇÃO */}
+      {confirmOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 200, padding: 20
+        }} onClick={() => !saving && setConfirmOpen(false)}>
+          <div style={{
+            background: 'var(--card)', border: '2px solid var(--gold)',
+            borderRadius: 18, padding: 24, maxWidth: 400, width: '100%'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>⚠️</div>
+            <h2 style={{ fontSize: 22, textAlign: 'center', marginBottom: 12, color: 'var(--gold)' }}>
+              Confirmar palpites?
+            </h2>
+            <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 8, textAlign: 'center' }}>
+              Você vai salvar <strong style={{ color: 'var(--gold)' }}>{palpitesParaSalvar} palpite(s)</strong>.
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, textAlign: 'center', marginBottom: 20 }}>
+              Depois de salvar, <strong style={{ color: 'var(--danger)' }}>não dá pra editar</strong>.
+              Revisa bem antes de confirmar.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-ghost" disabled={saving}
+                onClick={() => setConfirmOpen(false)}
+                style={{ flex: 1 }}>
+                Cancelar
+              </button>
+              <button className="btn" disabled={saving}
+                onClick={confirmarSalvar} style={{ flex: 1 }}>
+                {saving ? 'Salvando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <h1 className="brand" style={{ fontSize: 28 }}>Palpites</h1>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ color: 'var(--muted)', fontSize: 13 }}>Oi, {pname}</span>
-          <a href="/faq" style={{ fontSize: 18, textDecoration: 'none' }} title="Regras">❓</a>
-        </div>
+        <span style={{ color: 'var(--muted)', fontSize: 13 }}>Oi, {pname}</span>
       </div>
 
-      <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 20 }}>
-        ⚠️ Palpite enviado <strong style={{ color: 'var(--gold)' }}>não pode ser editado</strong>. Revise antes de salvar.
-      </p>
+      {/* AVISO IMPORTANTE NO TOPO */}
+      <div style={{
+        background: 'rgba(227,93,93,0.10)',
+        border: '1px solid var(--danger)',
+        borderRadius: 12, padding: '12px 14px', marginBottom: 20,
+        fontSize: 13, lineHeight: 1.5
+      }}>
+        🚫 <strong>Atenção:</strong> palpite enviado <strong style={{ color: 'var(--danger)' }}>não pode ser editado</strong>.
+        Cada jogo só aceita 1 palpite por pessoa. Revise antes de salvar.
+      </div>
 
       {matches.length === 0 && <div className="empty">Nenhum jogo cadastrado ainda.</div>}
 
@@ -146,7 +201,6 @@ export default function Palpites() {
                     <div className="team team-b">{m.team_b}</div>
                   </div>
 
-                  {/* Campo pênaltis: só mata-mata E quando placar está empatado */}
                   {m.is_knockout && isDraw && (
                     <div style={{ marginTop: 12, textAlign: 'center' }}>
                       <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -177,7 +231,7 @@ export default function Palpites() {
 
                   <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {saved
-                      ? <span className="locked-badge">✅ Palpite enviado</span>
+                      ? <span className="locked-badge">🔒 Palpite enviado</span>
                       : <span style={{ fontSize: 11, color: 'var(--muted)' }}></span>}
                     {pts !== null && (
                       <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>
@@ -193,8 +247,8 @@ export default function Palpites() {
       })}
 
       {matches.length > 0 && (
-        <button className="btn" onClick={salvar} disabled={saving} style={{ marginTop: 8 }}>
-          {saving ? 'Salvando...' : 'Salvar palpites'}
+        <button className="btn" onClick={abrirConfirmacao} style={{ marginTop: 8 }}>
+          Salvar palpites {palpitesParaSalvar > 0 && `(${palpitesParaSalvar})`}
         </button>
       )}
 

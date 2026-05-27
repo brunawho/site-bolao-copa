@@ -49,14 +49,20 @@ export default function FAQ() {
       <h1 className="brand" style={{ fontSize: 28, marginBottom: 4 }}>Regras</h1>
       <p className="subtitle" style={{ marginBottom: 24 }}>Como funciona a pontuação do bolão.</p>
 
-      {/* Aviso importante */}
+      {/* AVISO PRINCIPAL — PALPITE ÚNICO */}
       <div style={{
-        background: 'rgba(212,167,44,0.12)', border: '1px solid var(--gold)',
-        borderRadius: 14, padding: 16, marginBottom: 24
+        background: 'rgba(227,93,93,0.12)',
+        border: '2px solid var(--danger)',
+        borderRadius: 16, padding: 20, marginBottom: 24
       }}>
-        <p style={{ fontSize: 13, lineHeight: 1.6 }}>
-          ⚠️ <strong>Palpite enviado não pode ser editado.</strong><br />
-          Revise bem antes de salvar. Cada jogo só aceita um único palpite por pessoa.
+        <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 8 }}>🚫</div>
+        <h2 style={{ fontSize: 18, textAlign: 'center', color: 'var(--danger)', marginBottom: 10 }}>
+          Palpite único e definitivo
+        </h2>
+        <p style={{ fontSize: 14, lineHeight: 1.7, textAlign: 'center' }}>
+          Cada jogo aceita <strong>apenas 1 palpite por pessoa</strong>.<br/>
+          <strong style={{ color: 'var(--danger)' }}>Não é possível editar</strong> depois de salvar.<br/>
+          Revise bem antes de confirmar.
         </p>
       </div>
 
@@ -102,14 +108,14 @@ export default function FAQ() {
         </p>
       </div>
 
-      {/* Como palpitar */}
+      {/* Como funciona */}
       <div className="card" style={{ marginBottom: 80 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>📱 Como funciona</h2>
         <ul style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 2, paddingLeft: 16 }}>
           <li>Digite seu nome na tela inicial para entrar no bolão</li>
           <li>Preencha o placar que você acha que vai acontecer</li>
-          <li>Clique em <strong style={{ color: 'var(--text)' }}>Salvar palpites</strong></li>
-          <li>Palpites não podem ser editados após o envio</li>
+          <li>Clique em <strong style={{ color: 'var(--text)' }}>Salvar palpites</strong> e confirme</li>
+          <li style={{ color: 'var(--danger)' }}><strong>Palpites não podem ser editados após o envio</strong></li>
           <li>Os pontos são calculados automaticamente após cada jogo</li>
           <li>No mata-mata, se você chutar empate, escolha quem avança nos pênaltis</li>
         </ul>
