@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/update-scores?token=bolao2026xpto",
-      "schedule": "0 8 * * *"
+      "schedule": "45 2 * * *"
     }
   ]
 }
