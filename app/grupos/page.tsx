@@ -6,13 +6,13 @@ import { supabase, type Group } from '@/lib/supabase';
 
 export default function Grupos() {
   const router = useRouter();
-  const [groups, setGroups]   = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [groups, setGroups]     = useState<Group[]>([]);
+  const [loading, setLoading]   = useState(true);
   const [userName, setUserName] = useState('');
   const [showJoin, setShowJoin] = useState(false);
-  const [code, setCode]       = useState('');
-  const [joining, setJoining] = useState(false);
-  const [err, setErr]         = useState('');
+  const [code, setCode]         = useState('');
+  const [joining, setJoining]   = useState(false);
+  const [err, setErr]           = useState('');
 
   useEffect(() => { load(); }, []);
 
@@ -20,19 +20,29 @@ export default function Grupos() {
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) { router.push('/login'); return; }
 
-    // pega nome
+    const userId = session.session.user.id;
+
+    // pega nome do profile
     const { data: profile } = await supabase
-      .from('profiles').select('name').eq('id', session.session.user.id).maybeSingle();
+      .from('profiles').select('name').eq('id', userId).maybeSingle();
     setUserName(profile?.name || '');
 
-    // pega grupos
+    // pega memberships
     const { data: members } = await supabase
       .from('group_members')
-      .select('group_id, groups(id, name, invite_code, created_at)')
-      .eq('user_id', session.session.user.id);
+      .select('group_id')
+      .eq('user_id', userId);
 
-    const gs = (members || []).map((m: any) => m.groups).filter(Boolean);
-    setGroups(gs);
+    if (!members?.length) { setGroups([]); setLoading(false); return; }
+
+    // pega detalhes dos grupos
+    const groupIds = members.map((m: any) => m.group_id);
+    const { data: gs } = await supabase
+      .from('groups')
+      .select('id, name, invite_code, created_at')
+      .in('id', groupIds);
+
+    setGroups(gs || []);
     setLoading(false);
   }
 
@@ -41,7 +51,8 @@ export default function Grupos() {
     const clean = code.trim().toUpperCase();
 
     const { data: g } = await supabase
-      .from('groups').select('id').eq('invite_code', clean).maybeSingle();
+      .from('groups').select('id, name').eq('invite_code', clean).maybeSingle();
+
     if (!g) { setErr('Código inválido'); setJoining(false); return; }
 
     const { data: session } = await supabase.auth.getSession();
@@ -51,7 +62,7 @@ export default function Grupos() {
       .from('group_members').insert({ group_id: g.id, user_id: userId });
 
     if (error && !error.message.includes('duplicate')) {
-      setErr(error.message); setJoining(false); return;
+      setErr('Erro ao entrar: ' + error.message); setJoining(false); return;
     }
 
     setJoining(false); setShowJoin(false); setCode('');
@@ -75,9 +86,7 @@ export default function Grupos() {
           background: 'transparent', border: '1px solid var(--line)',
           color: 'var(--muted)', padding: '6px 12px', borderRadius: 8,
           fontSize: 12, cursor: 'pointer'
-        }}>
-          Sair
-        </button>
+        }}>Sair</button>
       </div>
 
       <p className="subtitle" style={{ marginBottom: 24 }}>Oi, {userName}! Escolha um grupo:</p>
@@ -90,10 +99,7 @@ export default function Grupos() {
       ) : (
         groups.map(g => (
           <Link key={g.id} href={`/grupo/${g.id}/palpites`} className="card"
-            style={{
-              display: 'block', textDecoration: 'none', color: 'inherit',
-              cursor: 'pointer', marginBottom: 12
-            }}>
+            style={{ display: 'block', textDecoration: 'none', color: 'inherit', cursor: 'pointer', marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{g.name}</h3>
