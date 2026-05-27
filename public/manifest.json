@@ -1,0 +1,9 @@
+{
+  "name": "Bolão da Copa",
+  "short_name": "Bolão",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1f17",
+  "theme_color": "#0a1f17",
+  "icons": []
+}
