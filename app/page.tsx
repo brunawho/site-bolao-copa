@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 export default function Home() {
@@ -18,7 +19,6 @@ export default function Home() {
     if (!clean) return;
     setLoading(true);
 
-    // procura participante
     const { data: existing } = await supabase
       .from('participants')
       .select('id, name')
@@ -70,9 +70,13 @@ export default function Home() {
         </button>
       </div>
 
-      <p style={{ marginTop: 32, fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>
-        3 pts placar exato · 1 pt vencedor · 0 pt erro
-      </p>
+      <Link href="/faq" style={{
+        display: 'block', textAlign: 'center', marginTop: 32,
+        fontSize: 13, color: 'var(--gold)', textDecoration: 'none',
+        padding: '12px', border: '1px solid var(--line)', borderRadius: 12
+      }}>
+        📖 Ver regras do bolão
+      </Link>
     </main>
   );
 }
