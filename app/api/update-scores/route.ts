@@ -31,7 +31,6 @@ export async function GET(req: Request) {
     const json = await res.json();
     const apiMatches = json.matches ?? [];
 
-    // Modo debug: retorna os nomes como a API os chama
     if (debug) {
       return NextResponse.json({
         total: apiMatches.length,
@@ -96,32 +95,94 @@ function nameMatch(dbName: string, apiName: string): boolean {
   const normalize = (s: string) =>
     s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
 
-  const db = normalize(dbName);
+  const db  = normalize(dbName);
   const api = normalize(apiName);
   if (db === api) return true;
+
+  // Partial match — se um contém os 5 primeiros chars do outro
   if (db.length > 4 && api.includes(db.slice(0, 5))) return true;
   if (api.length > 4 && db.includes(api.slice(0, 5))) return true;
 
   const aliases: Record<string, string[]> = {
-    'brasil':         ['brazil'],
-    'alemanha':       ['germany'],
-    'franca':         ['france'],
-    'espanha':        ['spain'],
-    'holanda':        ['netherlands'],
-    'suica':          ['switzerland'],
-    'belgica':        ['belgium'],
-    'coreiadosul':    ['southkorea'],
-    'reptcheca':      ['czechia'],
-    'africadosul':    ['southafrica'],
-    'arabiasaudita':  ['saudiarabia'],
-    'novazelandia':   ['newzealand'],
-    'costadomarfim':  ['ivorycoast', 'cotedivoire'],
-    'rdcongo':        ['drcongo'],
+    // Seleções Copa do Mundo
+    'brasil':              ['brazil', 'cbf'],
+    'alemanha':            ['germany'],
+    'franca':              ['france'],
+    'espanha':             ['spain'],
+    'holanda':             ['netherlands'],
+    'suica':               ['switzerland'],
+    'belgica':             ['belgium'],
+    'coreiadosul':         ['southkorea', 'korearep'],
+    'reptcheca':           ['czechia', 'czechrepublic'],
+    'africadosul':         ['southafrica'],
+    'arabiasaudita':       ['saudiarabia'],
+    'novazelandia':        ['newzealand'],
+    'costadomarfim':       ['ivorycoast', 'cotedivoire'],
+    'rdcongo':             ['drcongo'],
+    'bosniaherz':          ['bosniaandherzegovina'],
+
+    // Times brasileiros (nome curto → nome completo da API)
+    'flamengo':            ['crflamengo', 'clubederegatasflamengo'],
+    'fluminense':          ['fluminensefootballclub', 'fluminensefc'],
+    'palmeiras':           ['sociedadeesportivapalmeiras', 'seapalmeiras'],
+    'corinthians':         ['sportclubecorinthianspaulista', 'sccorinthians'],
+    'saopaulofc':          ['saopaulofutebolclube', 'saopaulofc'],
+    'saopaulofc':          ['saopaulofutebolclube'],
+    'atleticomineiro':     ['clubeatleticomg', 'atleticomg', 'atleticomgfc'],
+    'inter':               ['sportclubinternacional', 'internacional'],
+    'gremio':              ['gremio', 'gremiofoot'],
+    'santos':              ['santosfc', 'santsfutebolclube'],
+    'botafogo':            ['botafogoderj', 'botafogofr'],
+    'vasco':               ['crvasco', 'vascodagama'],
+    'cruzeiro':            ['cruzeiroec'],
+    'bahia':               ['ecbahia', 'esporteclubebahia'],
+    'fortaleza':           ['fortalezaec'],
+    'athleticopr':         ['clubeatleticoparanaense', 'athletico'],
+
+    // Times sul-americanos comuns na Libertadores
+    'nacional':            ['clubnacionaldefootball', 'nacionaluy'],
+    'penharol':            ['clubatleticope', 'penaroluy'],
+    'riverplate':          ['clubatleticoriverplate', 'riverplatearg'],
+    'bocajuniors':         ['clubatleticobocajuniors'],
+    'racing':              ['racingclubarg'],
+    'independiente':       ['clubatleticoindependiente', 'independientemedellin', 'cdindependientemedellin'],
+    'sanlorenzo':          ['casanlorenzoalmagro'],
+    'huracan':             ['clubatleticohuracan'],
+    'lanus':               ['clubatleticolanusarg'],
+    'talleres':            ['tallerescordoba'],
+    'estudianteslp':       ['estudiantesdelajplata', 'estudianteslaplata'],
+    'velez':               ['velezssfield'],
+    'tigre':               ['clubatleticotigre'],
+    'colocolo':            ['clubsocialydeportivocolocolo'],
+    'universidaddechile':  ['clubuniversidaddechile'],
+    'universidadcatolica': ['clubdeportivouniversidadcatolica'],
+    'coquimbo':            ['cdcoquimbounido'],
+    'huracanarg':          ['clubatleticohuracan'],
+    'bolivar':             ['clubbolicar', 'clubbolivar'],
+    'strongest':           ['thestrongest'],
+    'wilstermann':         ['clubdeportivowilstermann'],
+    'always ready':        ['clubalwaysready'],
+    'oriente petrolero':   ['cluborientepetrolerobogota'],
+    'universitario':       ['clubuniversitariodedeportes'],
+    'alianza lima':        ['clubalianzalima'],
+    'sporting cristal':    ['clubsportingcristal'],
+    'melgar':              ['fnmelgar'],
+    'tolima':              ['cdtolima'],
+    'medellin':            ['deportivomedellin', 'independientemedellin'],
+    'millonarios':         ['millonariosfc'],
+    'america cali':        ['americadecali'],
+    'junior':              ['atleticojuniorbarranquilla'],
+    'cusco':               ['cuscofc'],
+    'peñarol':             ['clubnacionaldefootball', 'penarol'],
+    'santa fe':            ['cdcoquimbounido', 'santafe'],
   };
 
+  const normalize2 = normalize;
   for (const [key, vals] of Object.entries(aliases)) {
-    if ((db.includes(key) || key.includes(db)) && vals.some(v => api.includes(normalize(v)))) return true;
-    if ((api.includes(key) || key.includes(api)) && vals.some(v => db.includes(normalize(v)))) return true;
+    const k = normalize2(key);
+    if ((db.includes(k) || k.includes(db)) && vals.some(v => api.includes(normalize2(v)))) return true;
+    if ((api.includes(k) || k.includes(api)) && vals.some(v => db.includes(normalize2(v)))) return true;
   }
+
   return false;
 }
