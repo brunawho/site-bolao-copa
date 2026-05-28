@@ -5,18 +5,34 @@ import { supabase, type Match, type Guess, calcPoints } from '@/lib/supabase';
 
 type Draft = Record<string, { a: string; b: string; pen: 'A' | 'B' | '' }>;
 
-function fmtDay(iso: string) {
-  return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', {
+// Converte data UTC pra string YYYY-MM-DD no horário de Brasília
+function toBrazilDay(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).split('/').reverse().join('-'); // dd/mm/yyyy → yyyy-mm-dd
+}
+
+function todayBrazil() {
+  return new Date().toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).split('/').reverse().join('-');
+}
+
+function fmtDay(dateYMD: string) {
+  const [y, m, d] = dateYMD.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
     weekday: 'long', day: '2-digit', month: 'long'
   });
 }
 
 function isToday(dateStr: string) {
-  return dateStr === new Date().toISOString().slice(0, 10);
+  return dateStr === todayBrazil();
 }
 
 function isPast(dateStr: string) {
-  return dateStr < new Date().toISOString().slice(0, 10);
+  return dateStr < todayBrazil();
 }
 
 function jogoComecou(matchDate: string) {
@@ -55,7 +71,7 @@ export default function PalpitesGrupo() {
     const map: Record<string, Guess> = {};
     (gs || []).forEach(g => { map[g.match_id] = g; });
     setMyGuesses(map);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayBrazil();
     setExpandedDays({ [today]: true });
   }
 
@@ -119,7 +135,7 @@ export default function PalpitesGrupo() {
 
   const byDay: Record<string, Match[]> = {};
   matches.forEach(m => {
-    const day = new Date(m.match_date).toISOString().slice(0, 10);
+    const day = toBrazilDay(m.match_date);
     if (!byDay[day]) byDay[day] = [];
     byDay[day].push(m);
   });
