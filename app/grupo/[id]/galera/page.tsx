@@ -5,6 +5,31 @@ import { supabase, type Match, type Guess } from '@/lib/supabase';
 
 type Member = { id: string; user_id: string; name: string };
 
+function toBrazilDay(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).split('/').reverse().join('-');
+}
+
+function todayBrazil() {
+  return new Date().toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).split('/').reverse().join('-');
+}
+
+function fmtDay(dateYMD: string) {
+  const [y, m, d] = dateYMD.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('pt-BR', {
+    weekday: 'long', day: '2-digit', month: 'long'
+  });
+}
+
+function jogoComecou(matchDate: string) {
+  return new Date(matchDate) <= new Date();
+}
+
 export default function GaleraGrupo() {
   const params = useParams();
   const groupId = String(params.id);
@@ -15,48 +40,47 @@ export default function GaleraGrupo() {
   const [inviteCode, setInviteCode] = useState('');
   const [copied, setCopied]         = useState(false);
   const [myUserId, setMyUserId]     = useState<string | null>(null);
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
       setMyUserId(session.session?.user.id || null);
 
-      // código do grupo
       const { data: g } = await supabase
         .from('groups').select('invite_code').eq('id', groupId).maybeSingle();
       setInviteCode(g?.invite_code || '');
 
-      // membros — busca todos sem filtrar por user
       const { data: ms } = await supabase
-        .from('group_members')
-        .select('id, user_id')
-        .eq('group_id', groupId);
+        .from('group_members').select('id, user_id').eq('group_id', groupId);
 
       if (ms?.length) {
-        // busca todos os profiles de uma vez
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, name');
-
+        const { data: profiles } = await supabase.from('profiles').select('id, name');
         const list: Member[] = (ms || []).map((m: any) => ({
           id: m.id,
           user_id: m.user_id,
           name: profiles?.find((p: any) => p.id === m.user_id)?.name || 'Sem nome'
         })).sort((a, b) => a.name.localeCompare(b.name));
-
         setMembers(list);
       }
 
-      // jogos
       const { data: mt } = await supabase.from('matches').select('*').order('match_date');
       setMatches(mt || []);
+
+      // Expande hoje por padrão
+      setExpandedDays({ [todayBrazil()]: true });
     })();
   }, [groupId]);
 
   async function open(m: Member) {
     setSelected(m);
+    setExpandedDays({ [todayBrazil()]: true });
     const { data } = await supabase.from('guesses').select('*').eq('group_member_id', m.id);
     setGuesses(data || []);
+  }
+
+  function toggleDay(day: string) {
+    setExpandedDays(d => ({ ...d, [day]: !d[day] }));
   }
 
   async function copyInvite() {
@@ -66,21 +90,22 @@ export default function GaleraGrupo() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function jogoComecou(matchDate: string) {
-    return new Date(matchDate) <= new Date();
+  // Agrupa por dia no timezone Brasil
+  function groupByDay(ms: Match[]) {
+    const byDay: Record<string, Match[]> = {};
+    ms.forEach(m => {
+      const day = toBrazilDay(m.match_date);
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(m);
+    });
+    return byDay;
   }
 
   if (selected) {
     const byMatch: Record<string, Guess> = {};
     guesses.forEach(g => { byMatch[g.match_id] = g; });
     const isMe = selected.user_id === myUserId;
-
-    const byDay: Record<string, Match[]> = {};
-    matches.forEach(m => {
-      const day = new Date(m.match_date).toISOString().slice(0, 10);
-      if (!byDay[day]) byDay[day] = [];
-      byDay[day].push(m);
-    });
+    const byDay = groupByDay(matches);
     const days = Object.keys(byDay).sort();
 
     return (
@@ -88,6 +113,7 @@ export default function GaleraGrupo() {
         <button className="btn-ghost btn"
           style={{ width: 'auto', padding: '8px 16px', fontSize: 13, marginBottom: 16, marginTop: 20 }}
           onClick={() => setSelected(null)}>← Voltar</button>
+
         <h1 className="brand" style={{ fontSize: 28, marginBottom: 4 }}>{selected.name}</h1>
         {!isMe && (
           <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
@@ -95,73 +121,115 @@ export default function GaleraGrupo() {
           </p>
         )}
 
-        {days.map(day => (
-          <div key={day}>
-            <div style={{ margin: '20px 0 10px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-              <span style={{ fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                {new Date(day + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}
-              </span>
-              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-            </div>
+        {matches.length === 0 && <div className="empty">Sem jogos.</div>}
 
-            {byDay[day].map(m => {
-              const g = byMatch[m.id];
-              const started = jogoComecou(m.match_date);
-              // Se não é o próprio usuário E jogo não começou → oculta
-              const oculto = !isMe && !started;
+        {days.map(day => {
+          const expanded = !!expandedDays[day];
+          const dayMatches = byDay[day];
+          const palpitados = dayMatches.filter(m => byMatch[m.id]).length;
+          const isToday = day === todayBrazil();
 
-              return (
-                <div key={m.id} className="card">
-                  <div className="match-meta">
-                    <span style={{ fontSize: 11 }}>{m.phase}</span>
-                    <span style={{ fontSize: 12 }}>
-                      {new Date(m.match_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                  <div className="match">
-                    <div className="team team-a">{m.team_a}</div>
-                    <div className="score-row">
-                      {oculto ? (
-                        <div style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          gap: 8, padding: '8px 16px',
-                          background: 'var(--bg-soft)', borderRadius: 12,
-                          border: '1px solid var(--line)'
-                        }}>
-                          <span style={{ fontSize: 18 }}>🔒</span>
-                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>Jogo não iniciou</span>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="score-input" style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            opacity: g ? 1 : 0.3
-                          }}>
-                            {g ? g.guess_a : '–'}
-                          </div>
-                          <span className="vs">x</span>
-                          <div className="score-input" style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            opacity: g ? 1 : 0.3
-                          }}>
-                            {g ? g.guess_b : '–'}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="team team-b">{m.team_b}</div>
-                  </div>
-                  {!oculto && !g && (
-                    <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted)', marginTop: 8 }}>
-                      Sem palpite
-                    </p>
-                  )}
+          return (
+            <div key={day} style={{ marginBottom: 8 }}>
+              <button onClick={() => toggleDay(day)} style={{
+                width: '100%',
+                background: expanded ? 'var(--card)' : 'var(--bg-soft)',
+                border: `1px solid ${isToday ? 'var(--gold)' : 'var(--line)'}`,
+                borderRadius: expanded ? '14px 14px 0 0' : 14,
+                padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {isToday && <span style={{
+                    background: 'var(--gold)', color: '#1a1a1a',
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                    borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.08em'
+                  }}>Hoje</span>}
+                  <span style={{
+                    fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
+                    letterSpacing: '0.08em', color: isToday ? 'var(--gold)' : 'var(--text)'
+                  }}>
+                    {fmtDay(day)}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{palpitados}/{dayMatches.length} ✓</span>
+                  <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
+                </div>
+              </button>
+
+              {expanded && (
+                <div style={{
+                  border: `1px solid ${isToday ? 'var(--gold)' : 'var(--line)'}`,
+                  borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden'
+                }}>
+                  {dayMatches.map((m, i) => {
+                    const g = byMatch[m.id];
+                    const started = jogoComecou(m.match_date);
+                    const oculto = !isMe && !started;
+
+                    return (
+                      <div key={m.id} style={{
+                        padding: 16,
+                        borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                        background: 'var(--card)'
+                      }}>
+                        <div className="match-meta" style={{ marginBottom: 8 }}>
+                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>{m.phase}</span>
+                          <span style={{ fontSize: 12 }}>
+                            {new Date(m.match_date).toLocaleTimeString('pt-BR', {
+                              timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+
+                        <div className="match">
+                          <div className="team team-a">{m.team_a}</div>
+                          <div className="score-row">
+                            {oculto ? (
+                              <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                gap: 8, padding: '8px 12px',
+                                background: 'var(--bg-soft)', borderRadius: 12,
+                                border: '1px solid var(--line)'
+                              }}>
+                                <span style={{ fontSize: 16 }}>🔒</span>
+                                <span style={{ fontSize: 10, color: 'var(--muted)' }}>Aguardando</span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="score-input" style={{
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  opacity: g ? 1 : 0.3
+                                }}>
+                                  {g ? g.guess_a : '–'}
+                                </div>
+                                <span className="vs">x</span>
+                                <div className="score-input" style={{
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  opacity: g ? 1 : 0.3
+                                }}>
+                                  {g ? g.guess_b : '–'}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                          <div className="team team-b">{m.team_b}</div>
+                        </div>
+
+                        {!oculto && !g && (
+                          <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted)', marginTop: 8 }}>
+                            Sem palpite
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
         <div style={{ height: 100 }} />
       </main>
     );
