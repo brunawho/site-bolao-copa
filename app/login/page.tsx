@@ -3,14 +3,17 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
+type Mode = 'login' | 'signup' | 'reset';
+
 export default function Login() {
   const router = useRouter();
-  const [mode, setMode]         = useState<'login' | 'signup'>('login');
+  const [mode, setMode]         = useState<Mode>('login');
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [name, setName]         = useState('');
   const [loading, setLoading]   = useState(false);
   const [err, setErr]           = useState('');
+  const [success, setSuccess]   = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -20,7 +23,17 @@ export default function Login() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setErr(''); setLoading(true);
+    setErr(''); setSuccess(''); setLoading(true);
+
+    if (mode === 'reset') {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`
+      });
+      setLoading(false);
+      if (error) { setErr(error.message); return; }
+      setSuccess('Email enviado! Verifique sua caixa de entrada.');
+      return;
+    }
 
     if (mode === 'signup') {
       const { error } = await supabase.auth.signUp({
@@ -28,7 +41,6 @@ export default function Login() {
         options: { data: { name: name.trim() } }
       });
       if (error) { setErr(error.message); setLoading(false); return; }
-      // Login automático depois do signup
       const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
       if (loginErr) { setErr(loginErr.message); setLoading(false); return; }
     } else {
@@ -36,7 +48,14 @@ export default function Login() {
       if (error) { setErr('Email ou senha incorretos'); setLoading(false); return; }
     }
 
-    router.push('/grupos');
+    // Verifica se tem convite pendente
+    const pending = localStorage.getItem('pending_invite');
+    if (pending) {
+      localStorage.removeItem('pending_invite');
+      router.push(`/convite/${pending}`);
+    } else {
+      router.push('/grupos');
+    }
   }
 
   return (
@@ -44,7 +63,9 @@ export default function Login() {
       <div style={{ marginTop: 60 }}>
         <h1 className="brand">Bolão<br /><span>da Copa</span></h1>
         <p className="subtitle">
-          {mode === 'login' ? 'Faça login pra entrar nos seus bolões.' : 'Crie sua conta e comece a palpitar.'}
+          {mode === 'login' && 'Faça login pra entrar nos seus bolões.'}
+          {mode === 'signup' && 'Crie sua conta e comece a palpitar.'}
+          {mode === 'reset' && 'Digite seu email pra redefinir a senha.'}
         </p>
       </div>
 
@@ -54,12 +75,16 @@ export default function Login() {
             value={name} onChange={e => setName(e.target.value)}
             required maxLength={30} style={{ marginBottom: 10 }} />
         )}
+
         <input className="input" type="email" placeholder="Email"
           value={email} onChange={e => setEmail(e.target.value)}
           required style={{ marginBottom: 10 }} />
-        <input className="input" type="password" placeholder="Senha (mín. 6 caracteres)"
-          value={password} onChange={e => setPassword(e.target.value)}
-          required minLength={6} style={{ marginBottom: 10 }} />
+
+        {mode !== 'reset' && (
+          <input className="input" type="password" placeholder="Senha (mín. 6 caracteres)"
+            value={password} onChange={e => setPassword(e.target.value)}
+            required minLength={6} style={{ marginBottom: 10 }} />
+        )}
 
         {err && (
           <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 10, textAlign: 'center' }}>
@@ -67,19 +92,48 @@ export default function Login() {
           </p>
         )}
 
+        {success && (
+          <p style={{ color: 'var(--green)', fontSize: 13, marginBottom: 10, textAlign: 'center' }}>
+            ✅ {success}
+          </p>
+        )}
+
         <button className="btn" type="submit" disabled={loading}>
-          {loading ? 'Aguarde...' : (mode === 'login' ? 'Entrar' : 'Criar conta')}
+          {loading ? 'Aguarde...' : (
+            mode === 'login' ? 'Entrar' :
+            mode === 'signup' ? 'Criar conta' :
+            'Enviar email de redefinição'
+          )}
         </button>
       </form>
 
-      <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setErr(''); }}
-        style={{
-          marginTop: 16, width: '100%', padding: 12,
-          background: 'transparent', border: 'none',
-          color: 'var(--gold)', fontSize: 13, cursor: 'pointer'
-        }}>
-        {mode === 'login' ? 'Não tem conta? Criar uma' : 'Já tem conta? Fazer login'}
-      </button>
+      {/* Links de navegação */}
+      <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+        {mode === 'login' && (
+          <>
+            <button onClick={() => { setMode('signup'); setErr(''); setSuccess(''); }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--gold)', fontSize: 13, cursor: 'pointer' }}>
+              Não tem conta? Criar uma
+            </button>
+            <button onClick={() => { setMode('reset'); setErr(''); setSuccess(''); }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 12, cursor: 'pointer' }}>
+              Esqueci minha senha
+            </button>
+          </>
+        )}
+        {mode === 'signup' && (
+          <button onClick={() => { setMode('login'); setErr(''); setSuccess(''); }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--gold)', fontSize: 13, cursor: 'pointer' }}>
+            Já tem conta? Fazer login
+          </button>
+        )}
+        {mode === 'reset' && (
+          <button onClick={() => { setMode('login'); setErr(''); setSuccess(''); }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--gold)', fontSize: 13, cursor: 'pointer' }}>
+            ← Voltar ao login
+          </button>
+        )}
+      </div>
     </main>
   );
 }
