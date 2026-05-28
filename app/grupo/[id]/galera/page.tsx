@@ -8,30 +8,41 @@ type Member = { id: string; user_id: string; name: string };
 export default function GaleraGrupo() {
   const params = useParams();
   const groupId = String(params.id);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [selected, setSelected] = useState<Member | null>(null);
-  const [guesses, setGuesses] = useState<Guess[]>([]);
+  const [members, setMembers]     = useState<Member[]>([]);
+  const [matches, setMatches]     = useState<Match[]>([]);
+  const [selected, setSelected]   = useState<Member | null>(null);
+  const [guesses, setGuesses]     = useState<Guess[]>([]);
   const [inviteCode, setInviteCode] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]       = useState(false);
 
   useEffect(() => {
     (async () => {
-      // grupo + código
+      // código do grupo
       const { data: g } = await supabase
         .from('groups').select('invite_code').eq('id', groupId).maybeSingle();
       setInviteCode(g?.invite_code || '');
 
-      // membros
+      // membros — duas queries separadas
       const { data: ms } = await supabase
         .from('group_members')
-        .select('id, user_id, profiles(name)')
+        .select('id, user_id')
         .eq('group_id', groupId);
 
-      const list: Member[] = (ms || []).map((m: any) => ({
-        id: m.id, user_id: m.user_id, name: m.profiles?.name || 'Sem nome'
-      })).sort((a, b) => a.name.localeCompare(b.name));
-      setMembers(list);
+      if (ms?.length) {
+        const userIds = ms.map((m: any) => m.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', userIds);
+
+        const list: Member[] = ms.map((m: any) => ({
+          id: m.id,
+          user_id: m.user_id,
+          name: profiles?.find((p: any) => p.id === m.user_id)?.name || 'Sem nome'
+        })).sort((a, b) => a.name.localeCompare(b.name));
+
+        setMembers(list);
+      }
 
       // jogos
       const { data: mt } = await supabase.from('matches').select('*').order('match_date');
@@ -52,9 +63,24 @@ export default function GaleraGrupo() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+  }
+
   if (selected) {
     const byMatch: Record<string, Guess> = {};
     guesses.forEach(g => { byMatch[g.match_id] = g; });
+
+    // Agrupa por dia
+    const byDay: Record<string, Match[]> = {};
+    matches.forEach(m => {
+      const day = new Date(m.match_date).toISOString().slice(0, 10);
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(m);
+    });
+    const days = Object.keys(byDay).sort();
 
     return (
       <main className="app">
@@ -65,30 +91,56 @@ export default function GaleraGrupo() {
 
         {matches.length === 0 && <div className="empty">Sem jogos.</div>}
 
-        {matches.map(m => {
-          const g = byMatch[m.id];
-          return (
-            <div key={m.id} className="card">
-              <div className="match-meta">
-                <span>{m.phase}</span>
-                <span>{g ? 'Palpitou' : 'Sem palpite'}</span>
-              </div>
-              <div className="match">
-                <div className="team team-a">{m.team_a}</div>
-                <div className="score-row">
-                  <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {g ? g.guess_a : '–'}
-                  </div>
-                  <span className="vs">x</span>
-                  <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {g ? g.guess_b : '–'}
-                  </div>
-                </div>
-                <div className="team team-b">{m.team_b}</div>
-              </div>
+        {days.map(day => (
+          <div key={day}>
+            <div style={{
+              margin: '20px 0 10px',
+              display: 'flex', alignItems: 'center', gap: 10
+            }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+              <span style={{
+                fontSize: 11, color: 'var(--gold)', textTransform: 'uppercase',
+                letterSpacing: '0.1em', fontWeight: 700, whiteSpace: 'nowrap'
+              }}>
+                {new Date(day + 'T12:00:00').toLocaleDateString('pt-BR', {
+                  weekday: 'short', day: '2-digit', month: 'short'
+                })}
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
             </div>
-          );
-        })}
+
+            {byDay[day].map(m => {
+              const g = byMatch[m.id];
+              return (
+                <div key={m.id} className="card">
+                  <div className="match-meta">
+                    <span style={{ fontSize: 11 }}>{m.phase}</span>
+                    <span>{new Date(m.match_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="match">
+                    <div className="team team-a">{m.team_a}</div>
+                    <div className="score-row">
+                      <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: g ? 1 : 0.3 }}>
+                        {g ? g.guess_a : '–'}
+                      </div>
+                      <span className="vs">x</span>
+                      <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: g ? 1 : 0.3 }}>
+                        {g ? g.guess_b : '–'}
+                      </div>
+                    </div>
+                    <div className="team team-b">{m.team_b}</div>
+                  </div>
+                  {!g && (
+                    <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted)', marginTop: 8 }}>
+                      Sem palpite
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        <div style={{ height: 100 }} />
       </main>
     );
   }
@@ -128,6 +180,8 @@ export default function GaleraGrupo() {
           </div>
         ))}
       </div>
+
+      <div style={{ height: 100 }} />
     </main>
   );
 }
