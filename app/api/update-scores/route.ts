@@ -6,63 +6,69 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const FD_API = 'https://api.football-data.org/v4';
-const COMPETITIONS = '2000,2001,2152,2013,2014,2015,2019,2021,2002';
+const API_FOOTBALL = 'https://v3.football.api-sports.io';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token  = searchParams.get('token');
   const debug  = searchParams.get('debug') === 'true';
-  const status = searchParams.get('status') || 'FINISHED';
 
   if (token !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const today     = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    // Busca jogos finalizados hoje e ontem no horário de Brasília
+    const now       = new Date();
+    const todayBR   = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const yesterdayBR = new Date(now.getTime() - 3 * 60 * 60 * 1000 - 86400000).toISOString().slice(0, 10);
 
-    const res = await fetch(
-      `${FD_API}/matches?status=${status}&competitions=${COMPETITIONS}&dateFrom=${yesterday}&dateTo=${today}`,
-      { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY! } }
-    );
+    // Busca os dois dias
+    const [resHoje, resOntem] = await Promise.all([
+      fetch(`${API_FOOTBALL}/fixtures?date=${todayBR}&status=FT`, {
+        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
+      }),
+      fetch(`${API_FOOTBALL}/fixtures?date=${yesterdayBR}&status=FT`, {
+        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
+      })
+    ]);
 
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const json = await res.json();
-    const apiMatches = json.matches ?? [];
+    const [jsonHoje, jsonOntem] = await Promise.all([resHoje.json(), resOntem.json()]);
+    const apiMatches = [
+      ...(jsonHoje.response ?? []),
+      ...(jsonOntem.response ?? [])
+    ];
 
-    // Modo debug: mostra nomes como a API retorna + tenta casar com banco
     if (debug) {
       const { data: dbMatches } = await supabase
         .from('matches').select('id, team_a, team_b, match_date').is('score_a', null);
 
       return NextResponse.json({
         total: apiMatches.length,
+        dates_searched: [yesterdayBR, todayBR],
         matches: apiMatches.map((m: any) => {
-          const homeTeam = m.homeTeam?.name ?? '';
-          const awayTeam = m.awayTeam?.name ?? '';
-          const apiDate  = m.utcDate?.slice(0, 10);
+          const homeTeam = m.teams?.home?.name ?? '';
+          const awayTeam = m.teams?.away?.name ?? '';
+          const apiDate  = new Date(m.fixture?.date).toISOString().slice(0, 10);
           const found = dbMatches?.find(d => {
             const dbDate = d.match_date?.slice(0, 10);
             return nameMatch(d.team_a, homeTeam) &&
                    nameMatch(d.team_b, awayTeam) &&
-                   (!apiDate || !dbDate || apiDate === dbDate);
+                   Math.abs(new Date(d.match_date).getTime() - new Date(m.fixture?.date).getTime()) < 86400000;
           });
           return {
             api_home: homeTeam,
             api_away: awayTeam,
             date: apiDate,
-            competition: m.competition?.name,
-            status: m.status,
-            score: `${m.score?.fullTime?.home ?? '?'} x ${m.score?.fullTime?.away ?? '?'}`,
+            league: m.league?.name,
+            score: `${m.goals?.home ?? '?'} x ${m.goals?.away ?? '?'}`,
             matched_in_db: found ? `✅ ${found.team_a} x ${found.team_b}` : '❌ não encontrado'
           };
         })
       });
     }
 
-    // Modo normal: atualiza placares
+    // Modo normal — atualiza placares
     const { data: dbMatches } = await supabase
       .from('matches').select('id, team_a, team_b, score_a, score_b, match_date').is('score_a', null);
 
@@ -70,26 +76,25 @@ export async function GET(req: Request) {
 
     let updated = 0;
     for (const m of apiMatches) {
-      const homeTeam = m.homeTeam?.name ?? '';
-      const awayTeam = m.awayTeam?.name ?? '';
-      const scoreA   = m.score?.fullTime?.home;
-      const scoreB   = m.score?.fullTime?.away;
+      const homeTeam = m.teams?.home?.name ?? '';
+      const awayTeam = m.teams?.away?.name ?? '';
+      const scoreA   = m.goals?.home;
+      const scoreB   = m.goals?.away;
       if (scoreA === null || scoreA === undefined) continue;
 
-      const apiDate  = m.utcDate?.slice(0, 10);
-      const dbMatch  = dbMatches.find(d => {
-        const dbDate = d.match_date?.slice(0, 10);
-        return nameMatch(d.team_a, homeTeam) &&
-               nameMatch(d.team_b, awayTeam) &&
-               (!apiDate || !dbDate || apiDate === dbDate);
-      });
+      const dbMatch = dbMatches.find(d =>
+        nameMatch(d.team_a, homeTeam) &&
+        nameMatch(d.team_b, awayTeam) &&
+        Math.abs(new Date(d.match_date).getTime() - new Date(m.fixture?.date).getTime()) < 86400000
+      );
       if (!dbMatch) continue;
 
+      // Pênaltis
       let penaltyWinner: 'A' | 'B' | null = null;
-      if (m.score?.penalties) {
-        const penA = m.score.penalties.home;
-        const penB = m.score.penalties.away;
-        if (penA !== null && penB !== null) penaltyWinner = penA > penB ? 'A' : 'B';
+      const penA = m.score?.penalty?.home;
+      const penB = m.score?.penalty?.away;
+      if (penA !== null && penA !== undefined && penB !== null && penB !== undefined) {
+        penaltyWinner = penA > penB ? 'A' : 'B';
       }
 
       const { error } = await supabase.from('matches').update({
@@ -132,37 +137,35 @@ function nameMatch(dbName: string, apiName: string): boolean {
     'novazelandia':       ['newzealand'],
     'costadomarfim':      ['ivorycoast', 'cotedivoire'],
     'rdcongo':            ['drcongo'],
-    'flamengo':           ['crflamengo', 'clubederegatasflamengo'],
-    'fluminense':         ['fluminensefootballclub'],
-    'palmeiras':          ['sociedadeesportivapalmeiras'],
-    'corinthians':        ['sportclubecorinthianspaulista'],
-    'atleticomineiro':    ['clubeatleticomg'],
-    'inter':              ['sportclubinternacional'],
-    'gremio':             ['gremio'],
-    'santos':             ['santosfc'],
-    'botafogo':           ['botafogoderj'],
-    'vasco':              ['crvasco'],
-    'cruzeiro':           ['cruzeiroec'],
+    'flamengo':           ['crflamengo', 'flamengorj'],
+    'fluminense':         ['fluminensefc'],
+    'palmeiras':          ['seapalmeiras', 'palmeirassp'],
+    'corinthians':        ['sccorinthians', 'corinthianssp'],
+    'atleticomineiro':    ['atleticomg'],
+    'inter':              ['internacional', 'scinter'],
+    'gremio':             ['gremiors'],
+    'cruzeiro':           ['cruzeiroec', 'cruzeromg'],
+    'botafogo':           ['botafogorj'],
+    'vasco':              ['vascodagama', 'crvasco'],
     'bahia':              ['ecbahia'],
     'fortaleza':          ['fortalezaec'],
-    'athleticopr':        ['clubeatleticoparanaense'],
-    'nacional':           ['clubnacionaldefootball'],
-    'penharol':           ['clubatleticope', 'penharoluy'],
-    'riverplate':         ['clubatleticoriverplate'],
-    'bocajuniors':        ['clubatleticobocajuniors'],
-    'racing':             ['racingclubarg'],
-    'independiente':      ['clubatleticoindependiente', 'cdindependientemedellin'],
-    'estudianteslp':      ['estudiantesdelajplata', 'estudianteslaplata'],
-    'bolivar':            ['clubbolivar'],
-    'universitario':      ['clubuniversitariodedeportes'],
+    'athleticopr':        ['athleticoparanaense'],
+    'bocajuniors':        ['bocajrs'],
+    'riverplate':         ['riverarg'],
+    'racing':             ['racingarg'],
+    'independiente':      ['independientearg', 'independientemedellin'],
+    'nacional':           ['nacionaluy', 'nacionalmontevideo'],
+    'penharol':           ['penaroluy'],
+    'cerroporteno':       ['cerrouy'],
+    'universitario':      ['universitarioperu'],
+    'sportingcristal':    ['sportingcristalperu'],
     'tolima':             ['cdtolima'],
-    'junior':             ['atleticojuniorbarranquilla', 'atleticojunior'],
-    'cerroporteno':       ['clubcerroporteno', 'cerroporte'],
-    'sportingcristal':    ['clubsportingcristal'],
-    'universidadcatolica':['clubdeportivouniversidadcatolica'],
-    'barcelonasc':        ['barcelonasc', 'barcelonasportingclub'],
+    'junior':             ['atleticojunior', 'juniorbarranquilla'],
+    'universidadcatolica':['udecatolica', 'ucatolica'],
+    'barcelonasc':        ['barcelonaec', 'barcelonaguayaquil'],
+    'bolivar':            ['clubbolivar'],
     'cusco':              ['cuscofc'],
-    'coquimbo':           ['cdcoquimbounido'],
+    'coquimbo':           ['coquimbounido'],
   };
 
   for (const [key, vals] of Object.entries(aliases)) {
@@ -170,6 +173,5 @@ function nameMatch(dbName: string, apiName: string): boolean {
     if ((db.includes(k) || k.includes(db)) && vals.some(v => api.includes(normalize(v)))) return true;
     if ((api.includes(k) || k.includes(api)) && vals.some(v => db.includes(normalize(v)))) return true;
   }
-
   return false;
 }
