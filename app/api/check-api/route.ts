@@ -11,37 +11,21 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Testa a chave e busca ligas do Brasil + Copa do Mundo
-    const [resBrasil, resWC, resStatus] = await Promise.all([
-      fetch(`${API_FOOTBALL}/leagues?country=Brazil&season=2026`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
-      }),
-      fetch(`${API_FOOTBALL}/leagues?type=World+Cup&season=2026`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
-      }),
-      fetch(`${API_FOOTBALL}/status`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
-      })
-    ]);
+    // Busca TODAS as ligas disponíveis pra conta
+    const res = await fetch(`${API_FOOTBALL}/leagues?current=true`, {
+      headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
+    });
 
-    const [jsonBrasil, jsonWC, jsonStatus] = await Promise.all([
-      resBrasil.json(), resWC.json(), resStatus.json()
-    ]);
+    const json = await res.json();
 
     return NextResponse.json({
-      api_status: jsonStatus?.response,
-      brasil_leagues: jsonBrasil?.response?.map((l: any) => ({
-        id: l.league?.id,
-        name: l.league?.name,
-        type: l.league?.type,
-        season: l.seasons?.find((s: any) => s.year === 2026)
-      })),
-      world_cup: jsonWC?.response?.map((l: any) => ({
+      total: json?.results,
+      leagues: json?.response?.map((l: any) => ({
         id: l.league?.id,
         name: l.league?.name,
         country: l.country?.name,
-        season: l.seasons?.find((s: any) => s.year === 2026)
-      }))
+        season: l.seasons?.find((s: any) => s.current)?.year
+      })).sort((a: any, b: any) => a.country?.localeCompare(b.country))
     });
 
   } catch (err: unknown) {
