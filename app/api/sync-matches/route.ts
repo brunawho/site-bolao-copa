@@ -7,11 +7,13 @@ const supabase = createClient(
 );
 
 const API_FOOTBALL = 'https://v3.football.api-sports.io';
+const SEASON = 2026;
 
-// IDs das competições na API-Football
 const COMPETITIONS = [
-  { id: 71,   name: 'Brasileirão',   phase: 'Brasileirão 2026', onlyNext: true  },
-  { id: 1,    name: 'Copa do Mundo', phase: 'Copa do Mundo 2026', onlyNext: false },
+  { id: 71,  name: 'Brasileirão',   phase: 'Brasileirão 2026',  onlyNext: true  },
+  { id: 1,   name: 'Copa do Mundo', phase: 'Copa do Mundo 2026', onlyNext: false },
+  { id: 13,  name: 'Libertadores',  phase: 'Libertadores 2026', onlyNext: false },
+  { id: 11,  name: 'Sudamericana',  phase: 'Sudamericana 2026', onlyNext: false },
 ];
 
 async function fetchAPI(path: string) {
@@ -23,16 +25,14 @@ async function fetchAPI(path: string) {
 }
 
 function toBrazilISO(utcDate: string): string {
-  // Converte UTC pra string ISO no horário de Brasília
   const d = new Date(utcDate);
-  // Retorna como timestamptz com offset -03
   const br = new Date(d.getTime() - 3 * 60 * 60 * 1000);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${br.getUTCFullYear()}-${pad(br.getUTCMonth()+1)}-${pad(br.getUTCDate())}T${pad(br.getUTCHours())}:${pad(br.getUTCMinutes())}:00-03:00`;
 }
 
 function isKnockout(round: string): boolean {
-  const ko = ['final', 'semi', 'quarter', 'oitavas', 'semifinal', 'quartas', 'round of', 'knockout'];
+  const ko = ['final', 'semi', 'quarter', 'oitavas', 'semifinal', 'quartas', 'round of', 'knockout', 'mata'];
   return ko.some(k => round.toLowerCase().includes(k));
 }
 
@@ -45,7 +45,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const year = new Date().getFullYear();
   let inserted = 0;
   let updated  = 0;
   const logs: string[] = [];
@@ -55,35 +54,50 @@ export async function GET(req: Request) {
       let fixtures: any[] = [];
 
       if (comp.onlyNext) {
-        // Busca próxima rodada do Brasileirão
-        const roundsJson = await fetchAPI(`/leagues/rounds?league=${comp.id}&season=${year}&current=true`);
-        const currentRound = roundsJson.response?.[0];
-        if (!currentRound) { logs.push(`${comp.name}: sem rodada atual`); continue; }
-
-        // Busca próxima rodada (atual + 1)
-        const allRoundsJson = await fetchAPI(`/leagues/rounds?league=${comp.id}&season=${year}`);
-        const allRounds: string[] = allRoundsJson.response ?? [];
-        const currentIdx = allRounds.indexOf(currentRound);
-        const nextRound = allRounds[currentIdx + 1] ?? currentRound;
-
-        const fixturesJson = await fetchAPI(
-          `/fixtures?league=${comp.id}&season=${year}&round=${encodeURIComponent(nextRound)}`
+        // Busca rodada atual do Brasileirão
+        const roundsJson = await fetchAPI(
+          `/fixtures/rounds?league=${comp.id}&season=${SEASON}&current=true`
         );
-        fixtures = fixturesJson.response ?? [];
-        logs.push(`${comp.name}: rodada "${nextRound}" → ${fixtures.length} jogos`);
+        const currentRound = roundsJson.response?.[0];
+
+        if (!currentRound) {
+          // Se não tem rodada atual, busca próximos jogos
+          const nextJson = await fetchAPI(
+            `/fixtures?league=${comp.id}&season=${SEASON}&next=10`
+          );
+          fixtures = nextJson.response ?? [];
+          logs.push(`${comp.name}: sem rodada atual, buscando próximos 10 jogos → ${fixtures.length} encontrados`);
+        } else {
+          // Busca também a próxima rodada
+          const allRoundsJson = await fetchAPI(
+            `/fixtures/rounds?league=${comp.id}&season=${SEASON}`
+          );
+          const allRounds: string[] = allRoundsJson.response ?? [];
+          const currentIdx = allRounds.indexOf(currentRound);
+          const nextRound  = allRounds[currentIdx + 1] ?? currentRound;
+
+          const [f1, f2] = await Promise.all([
+            fetchAPI(`/fixtures?league=${comp.id}&season=${SEASON}&round=${encodeURIComponent(currentRound)}`),
+            fetchAPI(`/fixtures?league=${comp.id}&season=${SEASON}&round=${encodeURIComponent(nextRound)}`)
+          ]);
+          fixtures = [...(f1.response ?? []), ...(f2.response ?? [])];
+          logs.push(`${comp.name}: rodadas "${currentRound}" e "${nextRound}" → ${fixtures.length} jogos`);
+        }
       } else {
-        // Copa do Mundo — busca todos os jogos da temporada
-        const fixturesJson = await fetchAPI(`/fixtures?league=${comp.id}&season=${year}`);
-        fixtures = fixturesJson.response ?? [];
-        logs.push(`${comp.name}: ${fixtures.length} jogos no total`);
+        // Para Copa do Mundo e Libertadores — busca próximos jogos
+        const nextJson = await fetchAPI(
+          `/fixtures?league=${comp.id}&season=${SEASON}&next=20`
+        );
+        fixtures = nextJson.response ?? [];
+        logs.push(`${comp.name}: próximos 20 jogos → ${fixtures.length} encontrados`);
       }
 
       for (const f of fixtures) {
-        const homeTeam  = f.teams?.home?.name ?? '';
-        const awayTeam  = f.teams?.away?.name ?? '';
-        const utcDate   = f.fixture?.date ?? '';
-        const round     = f.league?.round ?? '';
-        const status    = f.fixture?.status?.short ?? '';
+        const homeTeam = f.teams?.home?.name ?? '';
+        const awayTeam = f.teams?.away?.name ?? '';
+        const utcDate  = f.fixture?.date ?? '';
+        const round    = f.league?.round ?? '';
+        const status   = f.fixture?.status?.short ?? '';
 
         if (!homeTeam || !awayTeam || !utcDate) continue;
 
@@ -91,7 +105,7 @@ export async function GET(req: Request) {
         const phase     = `${comp.phase} · ${round}`;
         const knockout  = isKnockout(round);
 
-        // Verifica se já existe no banco (por times + data próxima)
+        // Verifica se já existe (por times + janela de 24h)
         const matchDateUTC = new Date(utcDate).toISOString();
         const dayStart = matchDateUTC.slice(0, 10) + 'T00:00:00Z';
         const dayEnd   = matchDateUTC.slice(0, 10) + 'T23:59:59Z';
@@ -106,7 +120,6 @@ export async function GET(req: Request) {
           .maybeSingle();
 
         if (existing) {
-          // Atualiza horário e fase, mas não sobrescreve placar se já tiver
           const updateData: any = { match_date: matchDate, phase, is_knockout: knockout };
           if (existing.score_a === null && ['FT','AET','PEN'].includes(status)) {
             updateData.score_a = f.goals?.home ?? null;
@@ -115,7 +128,6 @@ export async function GET(req: Request) {
           await supabase.from('matches').update(updateData).eq('id', existing.id);
           updated++;
         } else {
-          // Insere novo jogo
           const scoreA = ['FT','AET','PEN'].includes(status) ? (f.goals?.home ?? null) : null;
           const scoreB = ['FT','AET','PEN'].includes(status) ? (f.goals?.away ?? null) : null;
 
@@ -137,10 +149,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({
-    inserted,
-    updated,
-    logs,
-    ...(debug && { debug: true })
-  });
+  return NextResponse.json({ inserted, updated, logs, ...(debug && { debug: true }) });
 }
