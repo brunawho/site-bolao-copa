@@ -43,7 +43,7 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
     <>
       <div style={{
         position: 'sticky', top: 0, zIndex: 30,
-        background: 'rgba(10,31,23,0.95)', backdropFilter: 'blur(10px)',
+        background: 'rgba(10,15,31,0.95)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid var(--line)',
         padding: '12px 20px', display: 'flex',
         justifyContent: 'space-between', alignItems: 'center'
