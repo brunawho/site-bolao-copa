@@ -41,7 +41,6 @@ export default function GaleraGrupo() {
   const [copied, setCopied]         = useState(false);
   const [myUserId, setMyUserId]     = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
 
   useEffect(() => {
     (async () => {
@@ -75,7 +74,6 @@ export default function GaleraGrupo() {
 
   async function open(m: Member) {
     setSelected(m);
-    setFilter('today');
     setExpandedDays({ [todayBrazil()]: true });
     const { data } = await supabase.from('guesses').select('*').eq('group_member_id', m.id);
     setGuesses(data || []);
@@ -107,20 +105,8 @@ export default function GaleraGrupo() {
     const byMatch: Record<string, Guess> = {};
     guesses.forEach(g => { byMatch[g.match_id] = g; });
     const isMe = selected.user_id === myUserId;
-    const now = new Date();
-    const todayStr = todayBrazil();
-    const filteredMatches = matches.filter(m => {
-      const day = toBrazilDay(m.match_date);
-      if (filter === 'today')    return day === todayStr;
-      if (filter === 'past')     return day < todayStr;
-      if (filter === 'upcoming') return day > todayStr;
-      return true;
-    });
-    const byDay = groupByDay(filteredMatches);
+    const byDay = groupByDay(matches);
     const days = Object.keys(byDay).sort();
-    const todayCount    = matches.filter(m => toBrazilDay(m.match_date) === todayStr).length;
-    const pastCount     = matches.filter(m => toBrazilDay(m.match_date) < todayStr).length;
-    const upcomingCount = matches.filter(m => toBrazilDay(m.match_date) > todayStr).length;
 
     return (
       <main className="app">
@@ -136,32 +122,6 @@ export default function GaleraGrupo() {
         )}
 
         {matches.length === 0 && <div className="empty">Sem jogos.</div>}
-
-        {/* Filtros */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-          {([
-            { key: 'past',     label: '✅ Passados', count: pastCount },
-            { key: 'today',    label: '⚡ Hoje',     count: todayCount },
-            { key: 'upcoming', label: '⏳ Próximos', count: upcomingCount },
-          ] as const).map(f => (
-            <button key={f.key} onClick={() => {
-              setFilter(f.key);
-              setExpandedDays(f.key === 'today' ? { [todayBrazil()]: true } : {});
-            }} style={{
-              flex: 1, padding: '8px 4px', borderRadius: 10, border: '1px solid',
-              borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
-              background: filter === f.key ? 'var(--gold)' : 'var(--card)',
-              color: filter === f.key ? '#1a1a1a' : 'var(--text)',
-              fontWeight: filter === f.key ? 700 : 400,
-              fontSize: 11, cursor: 'pointer', lineHeight: 1.4
-            }}>
-              {f.label}<br />
-              <span style={{ fontSize: 10, opacity: 0.8 }}>({f.count})</span>
-            </button>
-          ))}
-        </div>
-
-        {days.length === 0 && <div className="empty">Nenhum jogo neste período.</div>}
 
         {days.map(day => {
           const expanded = !!expandedDays[day];
