@@ -41,6 +41,23 @@ function extractComp(phase: string): string {
   return phase.split(' ·')[0].split(' -')[0].trim();
 }
 
+
+// Componente de escudo/bandeira
+function Crest({ name, crests, size = 24 }: { name: string; crests: Record<string, string>; size?: number }) {
+  const url = crests[name];
+  if (!url) return null;
+  return (
+    <img
+      src={url}
+      alt={name}
+      width={size}
+      height={size}
+      style={{ objectFit: 'contain', flexShrink: 0 }}
+      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+    />
+  );
+}
+
 export default function PalpitesGrupo() {
   const params  = useParams();
   const groupId = String(params.id);
@@ -52,6 +69,7 @@ export default function PalpitesGrupo() {
   const [saving, setSaving]       = useState(false);
   const [toast, setToast]         = useState('');
   const [confirmDay, setConfirmDay] = useState<string | null>(null);
+  const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
@@ -67,6 +85,12 @@ export default function PalpitesGrupo() {
       if (!member) return;
       setMemberId(member.id);
       load(member.id);
+      // Busca escudos dos times
+      fetch('/api/wc-data').then(r => r.json()).then(d => {
+        const crestMap: Record<string, string> = {};
+        (d.teams ?? []).forEach((t: any) => { if (t.flag) crestMap[t.name] = t.flag; });
+        setCrests(crestMap);
+      }).catch(() => {});
     })();
   }, [groupId]);
 
@@ -315,7 +339,10 @@ export default function PalpitesGrupo() {
                         </div>
 
                         <div className="match">
-                          <div className="team team-a">{m.team_a}</div>
+                          <div className="team team-a" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                            {m.team_a}
+                            <Crest name={m.team_a} crests={crests} />
+                          </div>
                           <div className="score-row">
                             <input className="score-input" inputMode="numeric"
                               value={saved ? String(saved.guess_a) : d.a}
@@ -329,7 +356,10 @@ export default function PalpitesGrupo() {
                               disabled={!!saved || blocked}
                               style={{ opacity: blocked ? 0.4 : 1 }} />
                           </div>
-                          <div className="team team-b">{m.team_b}</div>
+                          <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
+                            <Crest name={m.team_b} crests={crests} />
+                            {m.team_b}
+                          </div>
                         </div>
 
                         {m.is_knockout && isDraw && !blocked && (
