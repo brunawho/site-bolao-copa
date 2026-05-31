@@ -5,12 +5,11 @@ import { supabase, type Match, type Guess, calcPoints } from '@/lib/supabase';
 
 type Draft = Record<string, { a: string; b: string; pen: 'A' | 'B' | '' }>;
 
-// Converte data UTC pra string YYYY-MM-DD no horário de Brasília
 function toBrazilDay(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric', month: '2-digit', day: '2-digit'
-  }).split('/').reverse().join('-'); // dd/mm/yyyy → yyyy-mm-dd
+  }).split('/').reverse().join('-');
 }
 
 function todayBrazil() {
@@ -27,28 +26,35 @@ function fmtDay(dateYMD: string) {
   });
 }
 
-function isToday(dateStr: string) {
-  return dateStr === todayBrazil();
-}
-
-function isPast(dateStr: string) {
-  return dateStr < todayBrazil();
-}
-
 function jogoComecou(matchDate: string) {
   return new Date(matchDate) <= new Date();
 }
 
+// Extrai o nome do campeonato da fase
+function extractComp(phase: string): string {
+  if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
+  if (phase.includes('Brasileirão'))   return 'Brasileirão';
+  if (phase.includes('Champions'))     return 'Champions League';
+  if (phase.includes('Libertadores'))  return 'Libertadores';
+  if (phase.includes('Sudamericana')) return 'Sudamericana';
+  if (phase.includes('Teste'))         return 'Teste';
+  return phase.split(' ·')[0].split(' -')[0].trim();
+}
+
 export default function PalpitesGrupo() {
-  const params = useParams();
+  const params  = useParams();
   const groupId = String(params.id);
-  const [matches, setMatches]       = useState<Match[]>([]);
-  const [myGuesses, setMyGuesses]   = useState<Record<string, Guess>>({});
-  const [draft, setDraft]           = useState<Draft>({});
-  const [memberId, setMemberId]     = useState<string | null>(null);
-  const [saving, setSaving]         = useState(false);
-  const [toast, setToast]           = useState('');
+
+  const [matches, setMatches]     = useState<Match[]>([]);
+  const [myGuesses, setMyGuesses] = useState<Record<string, Guess>>({});
+  const [draft, setDraft]         = useState<Draft>({});
+  const [memberId, setMemberId]   = useState<string | null>(null);
+  const [saving, setSaving]       = useState(false);
+  const [toast, setToast]         = useState('');
   const [confirmDay, setConfirmDay] = useState<string | null>(null);
+
+  // Seleção de campeonato e dia
+  const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -71,8 +77,7 @@ export default function PalpitesGrupo() {
     const map: Record<string, Guess> = {};
     (gs || []).forEach(g => { map[g.match_id] = g; });
     setMyGuesses(map);
-    const today = todayBrazil();
-    setExpandedDays({ [today]: true });
+    setExpandedDays({ [todayBrazil()]: true });
   }
 
   function toggleDay(day: string) {
@@ -88,16 +93,16 @@ export default function PalpitesGrupo() {
     setDraft(d => ({ ...d, [mid]: { ...(d[mid] || { a: '', b: '', pen: '' }), pen: val } }));
   }
 
-  function palpitesDoDia(day: string) {
-    return (byDay[day] || []).filter(m =>
+  function palpitesDoDia(dayMatches: Match[]) {
+    return dayMatches.filter(m =>
       !myGuesses[m.id] && !jogoComecou(m.match_date) &&
       draft[m.id]?.a !== '' && draft[m.id]?.b !== ''
     ).length;
   }
 
-  async function confirmarSalvar(day: string) {
+  async function confirmarSalvar(dayMatches: Match[]) {
     if (!memberId) return;
-    const toInsert = (byDay[day] || [])
+    const toInsert = dayMatches
       .filter(m => !myGuesses[m.id] && !jogoComecou(m.match_date) && draft[m.id]?.a !== '' && draft[m.id]?.b !== '')
       .map(m => {
         const v = draft[m.id];
@@ -133,13 +138,29 @@ export default function PalpitesGrupo() {
     );
   }
 
-  const byDay: Record<string, Match[]> = {};
+  // Agrupa por campeonato
+  const compMap: Record<string, Match[]> = {};
   matches.forEach(m => {
+    const comp = extractComp(m.phase);
+    if (!compMap[comp]) compMap[comp] = [];
+    compMap[comp].push(m);
+  });
+  const comps = Object.keys(compMap).sort();
+
+  // Filtra jogos do campeonato selecionado
+  const filteredMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
+
+  // Agrupa por dia
+  const byDay: Record<string, Match[]> = {};
+  filteredMatches.forEach(m => {
     const day = toBrazilDay(m.match_date);
     if (!byDay[day]) byDay[day] = [];
     byDay[day].push(m);
   });
   const days = Object.keys(byDay).sort();
+
+  // Modal day matches
+  const confirmDayMatches = confirmDay ? byDay[confirmDay] ?? [] : [];
 
   return (
     <main className="app">
@@ -161,7 +182,7 @@ export default function PalpitesGrupo() {
               Confirmar palpites?
             </h2>
             <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 8, textAlign: 'center' }}>
-              Você vai salvar <strong style={{ color: 'var(--gold)' }}>{palpitesDoDia(confirmDay)} palpite(s)</strong>.
+              Você vai salvar <strong style={{ color: 'var(--gold)' }}>{palpitesDoDia(confirmDayMatches)} palpite(s)</strong>.
             </p>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, textAlign: 'center', marginBottom: 20 }}>
               Depois de salvar, <strong style={{ color: 'var(--danger)' }}>não dá pra editar</strong>.
@@ -170,7 +191,7 @@ export default function PalpitesGrupo() {
               <button className="btn btn-ghost" disabled={saving}
                 onClick={() => setConfirmDay(null)} style={{ flex: 1 }}>Cancelar</button>
               <button className="btn" disabled={saving}
-                onClick={() => confirmarSalvar(confirmDay)} style={{ flex: 1 }}>
+                onClick={() => confirmarSalvar(confirmDayMatches)} style={{ flex: 1 }}>
                 {saving ? 'Salvando...' : 'Confirmar'}
               </button>
             </div>
@@ -187,138 +208,178 @@ export default function PalpitesGrupo() {
         🚫 Palpite enviado <strong style={{ color: 'var(--danger)' }}>não pode ser editado</strong> e não é permitido palpitar após o início do jogo.
       </div>
 
-      {matches.length === 0 && <div className="empty">Nenhum jogo cadastrado ainda.</div>}
-
-      {days.map(day => {
-        const dayMatches = byDay[day];
-        const expanded = !!expandedDays[day];
-        const today = isToday(day);
-        const past = isPast(day);
-        const palpitados = dayMatches.filter(m => myGuesses[m.id]).length;
-        const total = dayMatches.length;
-        const novos = palpitesDoDia(day);
-
-        return (
-          <div key={day} style={{ marginBottom: 8 }}>
-            <button onClick={() => toggleDay(day)} style={{
-              width: '100%', background: expanded ? 'var(--card)' : 'var(--bg-soft)',
-              border: `1px solid ${today ? 'var(--gold)' : 'var(--line)'}`,
-              borderRadius: expanded ? '14px 14px 0 0' : 14,
-              padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {today && <span style={{
-                  background: 'var(--gold)', color: '#1a1a1a',
-                  fontSize: 10, fontWeight: 700, padding: '2px 8px',
-                  borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.08em'
-                }}>Hoje</span>}
-                <span style={{
-                  fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.08em', color: today ? 'var(--gold)' : 'var(--text)'
-                }}>
-                  {fmtDay(day)}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>{palpitados}/{total} ✓</span>
-                <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
-              </div>
-            </button>
-
-            {expanded && (
-              <div style={{
-                border: `1px solid ${today ? 'var(--gold)' : 'var(--line)'}`,
-                borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden'
+      {/* MENU DE CAMPEONATOS */}
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+          Selecione o campeonato
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {comps.map(comp => {
+            const total    = compMap[comp].length;
+            const palpitados = compMap[comp].filter(m => myGuesses[m.id]).length;
+            const isSelected = selectedComp === comp;
+            return (
+              <button key={comp} onClick={() => {
+                setSelectedComp(isSelected ? null : comp);
+                setExpandedDays({ [todayBrazil()]: true });
+              }} style={{
+                padding: '10px 16px', borderRadius: 12, border: '1px solid',
+                borderColor: isSelected ? 'var(--gold)' : 'var(--line)',
+                background: isSelected ? 'var(--gold)' : 'var(--card)',
+                color: isSelected ? '#1a1a1a' : 'var(--text)',
+                fontWeight: isSelected ? 700 : 500,
+                fontSize: 13, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2
               }}>
-                {dayMatches.map((m, i) => {
-                  const saved = myGuesses[m.id];
-                  const started = jogoComecou(m.match_date);
-                  const blocked = !saved && started; // jogo começou mas não palpitou
-                  const d = draft[m.id] || { a: '', b: '', pen: '' };
-                  const pts = previewPts(m.id, m);
-                  const isDraw = saved
-                    ? saved.guess_a === saved.guess_b
-                    : (d.a !== '' && d.b !== '' && d.a === d.b);
+                <span>{comp}</span>
+                <span style={{ fontSize: 10, opacity: 0.7 }}>{palpitados}/{total} ✓</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-                  return (
-                    <div key={m.id} style={{
-                      padding: 16,
-                      borderTop: i > 0 ? '1px solid var(--line)' : 'none',
-                      background: saved ? 'rgba(46,168,76,0.04)' : blocked ? 'rgba(227,93,93,0.04)' : 'var(--card)',
-                    }}>
-                      <div className="match-meta" style={{ marginBottom: 8 }}>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>{m.phase}</span>
-                        <span style={{ fontSize: 12 }}>
-                          {new Date(m.match_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
+      {/* JOGOS POR DIA */}
+      {!selectedComp ? (
+        <div className="empty" style={{ marginTop: 40 }}>
+          👆 Selecione um campeonato acima para ver os jogos
+        </div>
+      ) : days.length === 0 ? (
+        <div className="empty">Nenhum jogo encontrado.</div>
+      ) : (
+        days.map(day => {
+          const dayMatches = byDay[day];
+          const expanded   = !!expandedDays[day];
+          const today      = day === todayBrazil();
+          const palpitados = dayMatches.filter(m => myGuesses[m.id]).length;
+          const novos      = palpitesDoDia(dayMatches);
 
-                      <div className="match">
-                        <div className="team team-a">{m.team_a}</div>
-                        <div className="score-row">
-                          <input className="score-input" inputMode="numeric"
-                            value={saved ? String(saved.guess_a) : d.a}
-                            onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
-                            disabled={!!saved || blocked}
-                            style={{ opacity: blocked ? 0.4 : 1 }} />
-                          <span className="vs">x</span>
-                          <input className="score-input" inputMode="numeric"
-                            value={saved ? String(saved.guess_b) : d.b}
-                            onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
-                            disabled={!!saved || blocked}
-                            style={{ opacity: blocked ? 0.4 : 1 }} />
-                        </div>
-                        <div className="team team-b">{m.team_b}</div>
-                      </div>
+          return (
+            <div key={day} style={{ marginBottom: 8 }}>
+              <button onClick={() => toggleDay(day)} style={{
+                width: '100%', background: expanded ? 'var(--card)' : 'var(--bg-soft)',
+                border: `1px solid ${today ? 'var(--gold)' : 'var(--line)'}`,
+                borderRadius: expanded ? '14px 14px 0 0' : 14,
+                padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {today && <span style={{
+                    background: 'var(--gold)', color: '#1a1a1a',
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                    borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.08em'
+                  }}>Hoje</span>}
+                  <span style={{
+                    fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
+                    letterSpacing: '0.08em', color: today ? 'var(--gold)' : 'var(--text)'
+                  }}>
+                    {fmtDay(day)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{palpitados}/{dayMatches.length} ✓</span>
+                  <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
+                </div>
+              </button>
 
-                      {m.is_knockout && isDraw && !blocked && (
-                        <div style={{ marginTop: 12, textAlign: 'center' }}>
-                          <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                            Quem avança nos pênaltis?
-                          </p>
-                          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                            {(['A', 'B'] as const).map(side => {
-                              const isSelected = saved ? saved.guess_penalty_winner === side : d.pen === side;
-                              return (
-                                <button key={side} onClick={() => !saved && setPen(m.id, isSelected ? '' : side)}
-                                  style={{
-                                    padding: '8px 16px', borderRadius: 10, border: '1px solid',
-                                    borderColor: isSelected ? 'var(--gold)' : 'var(--line)',
-                                    background: isSelected ? 'var(--gold)' : 'var(--bg-soft)',
-                                    color: isSelected ? '#1a1a1a' : 'var(--text)',
-                                    fontWeight: 700, fontSize: 13, cursor: saved ? 'default' : 'pointer'
-                                  }}>
-                                  {side === 'A' ? m.team_a : m.team_b}
-                                </button>
-                              );
+              {expanded && (
+                <div style={{
+                  border: `1px solid ${today ? 'var(--gold)' : 'var(--line)'}`,
+                  borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden'
+                }}>
+                  {dayMatches.map((m, i) => {
+                    const saved   = myGuesses[m.id];
+                    const started = jogoComecou(m.match_date);
+                    const blocked = !saved && started;
+                    const d       = draft[m.id] || { a: '', b: '', pen: '' };
+                    const pts     = previewPts(m.id, m);
+                    const isDraw  = saved
+                      ? saved.guess_a === saved.guess_b
+                      : (d.a !== '' && d.b !== '' && d.a === d.b);
+
+                    return (
+                      <div key={m.id} style={{
+                        padding: 16,
+                        borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                        background: saved ? 'rgba(46,168,76,0.04)' : blocked ? 'rgba(227,93,93,0.04)' : 'var(--card)',
+                      }}>
+                        <div className="match-meta" style={{ marginBottom: 8 }}>
+                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                            {m.phase.split('·').slice(1).join('·').trim() || m.phase}
+                          </span>
+                          <span style={{ fontSize: 12 }}>
+                            {new Date(m.match_date).toLocaleTimeString('pt-BR', {
+                              timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
                             })}
-                          </div>
+                          </span>
                         </div>
-                      )}
 
-                      <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {saved && <span className="locked-badge">🔒 Palpite enviado</span>}
-                        {blocked && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ Jogo já iniciou</span>}
-                        {!saved && !blocked && <span />}
-                        {pts !== null && <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>+{pts} pts</span>}
+                        <div className="match">
+                          <div className="team team-a">{m.team_a}</div>
+                          <div className="score-row">
+                            <input className="score-input" inputMode="numeric"
+                              value={saved ? String(saved.guess_a) : d.a}
+                              onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
+                              disabled={!!saved || blocked}
+                              style={{ opacity: blocked ? 0.4 : 1 }} />
+                            <span className="vs">x</span>
+                            <input className="score-input" inputMode="numeric"
+                              value={saved ? String(saved.guess_b) : d.b}
+                              onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
+                              disabled={!!saved || blocked}
+                              style={{ opacity: blocked ? 0.4 : 1 }} />
+                          </div>
+                          <div className="team team-b">{m.team_b}</div>
+                        </div>
+
+                        {m.is_knockout && isDraw && !blocked && (
+                          <div style={{ marginTop: 12, textAlign: 'center' }}>
+                            <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                              Quem avança nos pênaltis?
+                            </p>
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                              {(['A', 'B'] as const).map(side => {
+                                const isSelected = saved ? saved.guess_penalty_winner === side : d.pen === side;
+                                return (
+                                  <button key={side} onClick={() => !saved && setPen(m.id, isSelected ? '' : side)}
+                                    style={{
+                                      padding: '8px 16px', borderRadius: 10, border: '1px solid',
+                                      borderColor: isSelected ? 'var(--gold)' : 'var(--line)',
+                                      background: isSelected ? 'var(--gold)' : 'var(--bg-soft)',
+                                      color: isSelected ? '#1a1a1a' : 'var(--text)',
+                                      fontWeight: 700, fontSize: 13, cursor: saved ? 'default' : 'pointer'
+                                    }}>
+                                    {side === 'A' ? m.team_a : m.team_b}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          {saved    && <span className="locked-badge">🔒 Palpite enviado</span>}
+                          {blocked  && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ Jogo já iniciou</span>}
+                          {!saved && !blocked && <span />}
+                          {pts !== null && <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>+{pts} pts</span>}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
 
-                {novos > 0 && (
-                  <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderTop: '1px solid var(--line)' }}>
-                    <button className="btn" onClick={() => setConfirmDay(day)} disabled={saving}>
-                      Salvar palpites do dia ({novos})
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  {novos > 0 && (
+                    <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderTop: '1px solid var(--line)' }}>
+                      <button className="btn" onClick={() => setConfirmDay(day)} disabled={saving}>
+                        Salvar palpites do dia ({novos})
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
 
       <div style={{ height: 100 }} />
     </main>
