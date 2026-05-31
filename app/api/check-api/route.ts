@@ -10,58 +10,38 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
   try {
-    // Testa buscar jogos de hoje na Libertadores e Brasileirão
-    const [resLib, resBra, resWC] = await Promise.all([
-      fetch(`${API_FOOTBALL}/fixtures?league=13&season=2026&date=${today}`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
-      }),
-      fetch(`${API_FOOTBALL}/fixtures?league=71&season=2026&date=${today}`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
-      }),
-      fetch(`${API_FOOTBALL}/fixtures?league=1&season=2026&date=${today}`, {
-        headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
-      })
-    ]);
+    // Busca os times da Copa do Mundo 2026 (league=1, season=2026)
+    const resTeams = await fetch(`${API_FOOTBALL}/teams?league=1&season=2026`, {
+      headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
+    });
+    const jsonTeams = await resTeams.json();
+    const teams = jsonTeams.response ?? [];
 
-    const [jsonLib, jsonBra, jsonWC] = await Promise.all([
-      resLib.json(), resBra.json(), resWC.json()
-    ]);
+    if (!teams.length) {
+      return NextResponse.json({
+        error: 'Nenhum time encontrado para Copa 2026',
+        raw: jsonTeams
+      });
+    }
+
+    // Testa buscar squad do primeiro time
+    const firstTeam = teams[0];
+    const resSquad = await fetch(
+      `${API_FOOTBALL}/players/squads?team=${firstTeam.team.id}`,
+      { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! } }
+    );
+    const jsonSquad = await resSquad.json();
 
     return NextResponse.json({
-      date: today,
-      libertadores: {
-        total: jsonLib?.results,
-        errors: jsonLib?.errors,
-        matches: jsonLib?.response?.map((f: any) => ({
-          home: f.teams?.home?.name,
-          away: f.teams?.away?.name,
-          time: f.fixture?.date,
-          status: f.fixture?.status?.short
-        }))
-      },
-      brasileirao: {
-        total: jsonBra?.results,
-        errors: jsonBra?.errors,
-        matches: jsonBra?.response?.map((f: any) => ({
-          home: f.teams?.home?.name,
-          away: f.teams?.away?.name,
-          time: f.fixture?.date,
-          status: f.fixture?.status?.short
-        }))
-      },
-      copa_mundo: {
-        total: jsonWC?.results,
-        errors: jsonWC?.errors,
-        matches: jsonWC?.response?.slice(0, 5)?.map((f: any) => ({
-          home: f.teams?.home?.name,
-          away: f.teams?.away?.name,
-          time: f.fixture?.date,
-          status: f.fixture?.status?.short
-        }))
-      }
+      teams_found: teams.length,
+      first_team: firstTeam.team.name,
+      squad_sample: jsonSquad?.response?.[0]?.players?.slice(0, 5)?.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position
+      })),
+      squad_errors: jsonSquad?.errors
     });
 
   } catch (err: unknown) {
