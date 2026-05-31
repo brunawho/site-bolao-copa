@@ -1,10 +1,10 @@
 :root {
-  --bg: #0a1f17;
-  --bg-soft: #0f2a1f;
-  --card: #14352a;
-  --line: #1d4634;
-  --text: #f5f1e8;
-  --muted: #9bbfa9;
+  --bg: #0a0f1f;
+  --bg-soft: #0d1428;
+  --card: #111a35;
+  --line: #1a2a4a;
+  --text: #f0f2f8;
+  --muted: #7a92b8;
   --gold: #d4a72c;
   --gold-soft: #f0c75e;
   --green: #2ea84c;
@@ -25,8 +25,8 @@ html, body {
 
 body {
   background:
-    radial-gradient(1200px 600px at 100% -10%, rgba(212,167,44,0.12), transparent 60%),
-    radial-gradient(800px 500px at -10% 110%, rgba(46,168,76,0.18), transparent 60%),
+    radial-gradient(1200px 600px at 100% -10%, rgba(212,167,44,0.10), transparent 60%),
+    radial-gradient(800px 500px at -10% 110%, rgba(30,60,140,0.20), transparent 60%),
     var(--bg);
 }
 
@@ -122,7 +122,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', 'Inter', sans-serif; letter-spacing: 0.0
 
 .nav {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(10,31,23,0.92);
+  background: rgba(10,15,31,0.95);
   backdrop-filter: blur(14px);
   border-top: 1px solid var(--line);
   display: flex; justify-content: space-around;
