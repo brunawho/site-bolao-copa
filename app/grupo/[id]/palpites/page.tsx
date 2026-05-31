@@ -74,6 +74,7 @@ export default function PalpitesGrupo() {
   // Seleção de campeonato e dia
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -179,7 +180,11 @@ export default function PalpitesGrupo() {
   const comps = Object.keys(compMap).sort();
 
   // Filtra jogos do campeonato selecionado
-  const filteredMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
+  const allCompMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
+  const now = new Date();
+  const upcomingMatches = allCompMatches.filter(m => new Date(m.match_date) > now);
+  const pastMatches     = allCompMatches.filter(m => new Date(m.match_date) <= now);
+  const filteredMatches = showPast ? pastMatches : upcomingMatches;
 
   // Agrupa por dia
   const byDay: Record<string, Match[]> = {};
@@ -252,6 +257,7 @@ export default function PalpitesGrupo() {
             return (
               <button key={comp} onClick={() => {
                 setSelectedComp(isSelected ? null : comp);
+                setShowPast(false);
                 setExpandedDays({ [todayBrazil()]: true });
               }} style={{
                 padding: '10px 16px', borderRadius: 12, border: '1px solid',
@@ -269,6 +275,32 @@ export default function PalpitesGrupo() {
           })}
         </div>
       </div>
+
+      {/* FILTRO PRÓXIMOS / PASSADOS */}
+      {selectedComp && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button onClick={() => { setShowPast(false); setExpandedDays({ [todayBrazil()]: true }); }}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 12, border: '1px solid',
+              borderColor: !showPast ? 'var(--gold)' : 'var(--line)',
+              background: !showPast ? 'var(--gold)' : 'var(--card)',
+              color: !showPast ? '#1a1a1a' : 'var(--text)',
+              fontWeight: !showPast ? 700 : 500, fontSize: 13, cursor: 'pointer'
+            }}>
+            ⏳ Próximos ({upcomingMatches.length})
+          </button>
+          <button onClick={() => { setShowPast(true); setExpandedDays({}); }}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 12, border: '1px solid',
+              borderColor: showPast ? 'var(--gold)' : 'var(--line)',
+              background: showPast ? 'var(--gold)' : 'var(--card)',
+              color: showPast ? '#1a1a1a' : 'var(--text)',
+              fontWeight: showPast ? 700 : 500, fontSize: 13, cursor: 'pointer'
+            }}>
+            ✅ Passados ({pastMatches.length})
+          </button>
+        </div>
+      )}
 
       {/* JOGOS POR DIA */}
       {!selectedComp ? (
