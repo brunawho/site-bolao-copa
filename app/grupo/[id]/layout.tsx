@@ -24,8 +24,6 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
       if (!member) { router.push('/grupos'); return; }
 
       setGroupName((member as any).groups?.name || '');
-      sessionStorage.setItem('current_group_id', groupId);
-      sessionStorage.setItem('current_member_id', member.id);
       setLoading(false);
     })();
   }, [groupId, router]);
@@ -34,15 +32,15 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { href: `/grupo/${groupId}/palpites`,    label: 'Palpites',  icon: '⚽' },
+    { href: `/grupo/${groupId}/apostas`,     label: 'Especiais', icon: '🏆' },
     { href: `/grupo/${groupId}/galera`,      label: 'Galera',    icon: '👥' },
-    { href: `/grupo/${groupId}/ranking`,     label: 'Ranking',   icon: '🏆' },
+    { href: `/grupo/${groupId}/ranking`,     label: 'Ranking',   icon: '📊' },
     { href: `/grupo/${groupId}/meus-pontos`, label: 'Meus pts',  icon: '⭐' },
     { href: `/grupo/${groupId}/faq`,         label: 'Regras',    icon: '📖' },
   ];
 
   return (
     <>
-      {/* Header */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 30,
         background: 'rgba(10,31,23,0.95)', backdropFilter: 'blur(10px)',
@@ -50,10 +48,7 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
         padding: '12px 20px', display: 'flex',
         justifyContent: 'space-between', alignItems: 'center'
       }}>
-        <Link href="/grupos" style={{
-          color: 'var(--muted)', textDecoration: 'none',
-          fontSize: 13, display: 'flex', alignItems: 'center', gap: 6
-        }}>
+        <Link href="/grupos" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 13 }}>
           ← Grupos
         </Link>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>{groupName}</span>
@@ -61,11 +56,11 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
 
       {children}
 
-      {/* Bottom nav com 5 abas */}
-      <nav className="nav">
+      <nav className="nav" style={{ justifyContent: 'space-around' }}>
         {navItems.map(it => (
-          <Link key={it.href} href={it.href} className={pathname === it.href ? 'active' : ''}>
-            <span className="nav-icon">{it.icon}</span>
+          <Link key={it.href} href={it.href} className={pathname === it.href ? 'active' : ''}
+            style={{ fontSize: 9 }}>
+            <span className="nav-icon" style={{ fontSize: 16 }}>{it.icon}</span>
             {it.label}
           </Link>
         ))}
