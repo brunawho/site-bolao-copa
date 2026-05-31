@@ -85,11 +85,11 @@ export default function PalpitesGrupo() {
       if (!member) return;
       setMemberId(member.id);
       load(member.id);
-      // Busca escudos dos times
+      // Busca bandeiras dos times
       fetch('/api/wc-data').then(r => r.json()).then(d => {
-        const crestMap: Record<string, string> = {};
-        (d.teams ?? []).forEach((t: any) => { if (t.flag) crestMap[t.name] = t.flag; });
-        setCrests(crestMap);
+        const flagMap: Record<string, string> = {};
+        (d.teams ?? []).forEach((t: any) => { if (t.flag) flagMap[t.name] = t.flag; });
+        setCrests(flagMap);
       }).catch(() => {});
     })();
   }, [groupId]);
