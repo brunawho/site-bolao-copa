@@ -8,34 +8,6 @@ const supabase = createClient(
 
 const FD_API = 'https://api.football-data.org/v4';
 
-// Competições monitoradas na football-data.org
-const COMPETITION_CODES = ['WC', 'BSA', 'CL', 'BL1', 'PL', 'PD', 'SA', 'FL1', 'PPL', 'DED', 'ELC'];
-
-function normalize(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
-}
-
-function nameMatch(dbName: string, apiName: string): boolean {
-  const db  = normalize(dbName);
-  const api = normalize(apiName);
-
-  // Match exato
-  if (db === api) return true;
-
-  // Match parcial — um contém o início do outro (mín 4 chars)
-  if (db.length >= 4 && api.includes(db.slice(0, 4))) return true;
-  if (api.length >= 4 && db.includes(api.slice(0, 4))) return true;
-
-  // Match por palavras — qualquer palavra significativa em comum
-  const stopWords = new Set(['fc', 'sc', 'ca', 'cr', 'ec', 'ac', 'cf', 'sd', 'ud', 'de', 'do', 'da', 'the']);
-  const dbWords  = db.split(/[^a-z]+/).filter(w => w.length > 2 && !stopWords.has(w));
-  const apiWords = api.split(/[^a-z]+/).filter(w => w.length > 2 && !stopWords.has(w));
-  if (dbWords.some(w => apiWords.includes(w))) return true;
-  if (dbWords.some(w => apiWords.some(a => a.includes(w) || w.includes(a)))) return true;
-
-  return false;
-}
-
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get('token');
@@ -46,22 +18,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Busca jogos pendentes no banco
-    const { data: dbMatches } = await supabase
-      .from('matches')
-      .select('id, team_a, team_b, score_a, score_b, match_date, is_knockout')
-      .is('score_a', null);
-
-    if (!dbMatches?.length) {
-      return NextResponse.json({ updated: 0, msg: 'Nenhum jogo pendente' });
-    }
-
-    // Datas a buscar (hoje e ontem no horário Brasília)
+    // Janela de busca: últimas 48h no horário de Brasília
     const now         = new Date();
     const todayBR     = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const yesterdayBR = new Date(now.getTime() - 3 * 60 * 60 * 1000 - 86400000).toISOString().slice(0, 10);
 
-    // Busca jogos finalizados nas últimas 48h em todas as competições
     const res = await fetch(
       `${FD_API}/matches?status=FINISHED&dateFrom=${yesterdayBR}&dateTo=${todayBR}`,
       { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY! } }
@@ -71,22 +32,42 @@ export async function GET(req: Request) {
     const json = await res.json();
     const apiMatches = json.matches ?? [];
 
+    // Busca jogos pendentes no banco
+    const { data: dbMatches } = await supabase
+      .from('matches')
+      .select('id, team_a, team_b, score_a, score_b, match_date')
+      .is('score_a', null);
+
+    if (!dbMatches?.length) {
+      return NextResponse.json({ updated: 0, msg: 'Nenhum jogo pendente' });
+    }
+
     if (debug) {
       return NextResponse.json({
         total: apiMatches.length,
         dates: [yesterdayBR, todayBR],
+        pending_in_db: dbMatches.length,
         matches: apiMatches.map((m: any) => {
           const homeTeam = m.homeTeam?.name ?? '';
           const awayTeam = m.awayTeam?.name ?? '';
-          const found = dbMatches.find(d =>
-            nameMatch(d.team_a, homeTeam) && nameMatch(d.team_b, awayTeam)
+          const apiDate  = m.utcDate?.slice(0, 10);
+          // Tenta casar por nome exato + data
+          const found = dbMatches.find(d => {
+            const dbDate = new Date(d.match_date).toISOString().slice(0, 10);
+            return d.team_a === homeTeam && d.team_b === awayTeam && dbDate === apiDate;
+          });
+          // Tenta só por nome exato (sem data)
+          const foundByName = dbMatches.find(d =>
+            d.team_a === homeTeam && d.team_b === awayTeam
           );
           return {
             home: homeTeam,
             away: awayTeam,
+            api_date: apiDate,
             score: `${m.score?.fullTime?.home} x ${m.score?.fullTime?.away}`,
             competition: m.competition?.name,
-            matched: found ? `✅ ${found.team_a} x ${found.team_b}` : '❌ não encontrado'
+            matched_exact: found ? `✅ ${found.team_a} x ${found.team_b}` : '❌',
+            matched_name_only: foundByName ? `✅ ${foundByName.team_a} x ${foundByName.team_b} (${new Date(foundByName.match_date).toISOString().slice(0,10)})` : '❌'
           };
         })
       });
@@ -98,10 +79,12 @@ export async function GET(req: Request) {
       const awayTeam = m.awayTeam?.name ?? '';
       const scoreA   = m.score?.fullTime?.home;
       const scoreB   = m.score?.fullTime?.away;
+      const apiDate  = m.utcDate?.slice(0, 10);
       if (scoreA === null || scoreA === undefined) continue;
 
+      // Casa por nome exato — sem depender de data pois o sync já salvou certo
       const dbMatch = dbMatches.find(d =>
-        nameMatch(d.team_a, homeTeam) && nameMatch(d.team_b, awayTeam)
+        d.team_a === homeTeam && d.team_b === awayTeam
       );
       if (!dbMatch) continue;
 
