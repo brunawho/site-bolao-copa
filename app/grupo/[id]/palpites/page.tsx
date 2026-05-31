@@ -74,7 +74,7 @@ export default function PalpitesGrupo() {
   // Seleção de campeonato e dia
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  const [showPast, setShowPast] = useState(false);
+  const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
 
   useEffect(() => {
     (async () => {
@@ -181,10 +181,11 @@ export default function PalpitesGrupo() {
 
   // Filtra jogos do campeonato selecionado
   const allCompMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
-  const now = new Date();
-  const upcomingMatches = allCompMatches.filter(m => new Date(m.match_date) > now);
-  const pastMatches     = allCompMatches.filter(m => new Date(m.match_date) <= now);
-  const filteredMatches = showPast ? pastMatches : upcomingMatches;
+  const todayStr = todayBrazil();
+  const upcomingMatches = allCompMatches.filter(m => toBrazilDay(m.match_date) > todayStr);
+  const todayMatches    = allCompMatches.filter(m => toBrazilDay(m.match_date) === todayStr);
+  const pastMatches     = allCompMatches.filter(m => toBrazilDay(m.match_date) < todayStr);
+  const filteredMatches = filter === 'past' ? pastMatches : filter === 'today' ? todayMatches : upcomingMatches;
 
   // Agrupa por dia
   const byDay: Record<string, Match[]> = {};
@@ -257,7 +258,7 @@ export default function PalpitesGrupo() {
             return (
               <button key={comp} onClick={() => {
                 setSelectedComp(isSelected ? null : comp);
-                setShowPast(false);
+                setFilter('today');
                 setExpandedDays({ [todayBrazil()]: true });
               }} style={{
                 padding: '10px 16px', borderRadius: 12, border: '1px solid',
@@ -276,29 +277,29 @@ export default function PalpitesGrupo() {
         </div>
       </div>
 
-      {/* FILTRO PRÓXIMOS / PASSADOS */}
+      {/* FILTRO PASSADOS / HOJE / PRÓXIMOS */}
       {selectedComp && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <button onClick={() => { setShowPast(false); setExpandedDays({ [todayBrazil()]: true }); }}
-            style={{
-              flex: 1, padding: '10px 0', borderRadius: 12, border: '1px solid',
-              borderColor: !showPast ? 'var(--gold)' : 'var(--line)',
-              background: !showPast ? 'var(--gold)' : 'var(--card)',
-              color: !showPast ? '#1a1a1a' : 'var(--text)',
-              fontWeight: !showPast ? 700 : 500, fontSize: 13, cursor: 'pointer'
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+          {([
+            { key: 'past',     label: '✅ Passados', count: pastMatches.length },
+            { key: 'today',    label: '⚡ Hoje',     count: todayMatches.length },
+            { key: 'upcoming', label: '⏳ Próximos', count: upcomingMatches.length },
+          ] as const).map(f => (
+            <button key={f.key} onClick={() => {
+              setFilter(f.key);
+              setExpandedDays(f.key === 'today' ? { [todayBrazil()]: true } : {});
+            }} style={{
+              flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
+              borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
+              background: filter === f.key ? 'var(--gold)' : 'var(--card)',
+              color: filter === f.key ? '#1a1a1a' : 'var(--text)',
+              fontWeight: filter === f.key ? 700 : 400,
+              fontSize: 11, cursor: 'pointer', lineHeight: 1.4
             }}>
-            ⏳ Próximos ({upcomingMatches.length})
-          </button>
-          <button onClick={() => { setShowPast(true); setExpandedDays({}); }}
-            style={{
-              flex: 1, padding: '10px 0', borderRadius: 12, border: '1px solid',
-              borderColor: showPast ? 'var(--gold)' : 'var(--line)',
-              background: showPast ? 'var(--gold)' : 'var(--card)',
-              color: showPast ? '#1a1a1a' : 'var(--text)',
-              fontWeight: showPast ? 700 : 500, fontSize: 13, cursor: 'pointer'
-            }}>
-            ✅ Passados ({pastMatches.length})
-          </button>
+              {f.label}<br />
+              <span style={{ fontSize: 10, opacity: 0.8 }}>({f.count})</span>
+            </button>
+          ))}
         </div>
       )}
 
