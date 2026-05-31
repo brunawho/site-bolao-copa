@@ -19,29 +19,28 @@ const FLAG_CODES: Record<string, string> = {
   'Turkey': 'tr', 'United States': 'us', 'Uruguay': 'uy', 'Uzbekistan': 'uz',
 };
 
-// Escudos dos times de clube via football-data.org IDs
-// https://crests.football-data.org/{id}.png
+// Escudos dos times de clube — IDs confirmados via API football-data.org
 const CLUB_CRESTS: Record<string, string> = {
-  'CR Flamengo':            'https://crests.football-data.org/264.png',
-  'SE Palmeiras':           'https://crests.football-data.org/1598.png',
-  'SC Corinthians Paulista':'https://crests.football-data.org/1783.png',
-  'Fluminense FC':          'https://crests.football-data.org/263.png',
-  'SC Internacional':       'https://crests.football-data.org/1784.png',
-  'Grêmio FBPA':            'https://crests.football-data.org/1777.png',
-  'CA Mineiro':             'https://crests.football-data.org/1062.png',
-  'Cruzeiro EC':            'https://crests.football-data.org/1782.png',
-  'Botafogo FR':            'https://crests.football-data.org/262.png',
-  'CR Vasco da Gama':       'https://crests.football-data.org/260.png',
-  'São Paulo FC':           'https://crests.football-data.org/1785.png',
-  'EC Bahia':               'https://crests.football-data.org/1774.png',
-  'Santos FC':              'https://crests.football-data.org/1773.png',
+  'Fluminense FC':          'https://crests.football-data.org/1765.png',
+  'CA Mineiro':             'https://crests.football-data.org/1766.png',
+  'Grêmio FBPA':            'https://crests.football-data.org/1767.png',
   'CA Paranaense':          'https://crests.football-data.org/1768.png',
-  'RB Bragantino':          'https://crests.football-data.org/1747.png',
-  'EC Vitória':             'https://crests.football-data.org/7991.png',
-  'Coritiba FBC':           'https://crests.football-data.org/1771.png',
-  'Mirassol FC':            'https://crests.football-data.org/7453.png',
-  'Chapecoense AF':         'https://crests.football-data.org/1769.png',
-  'Clube do Remo':          'https://crests.football-data.org/7986.png',
+  'SE Palmeiras':           'https://crests.football-data.org/1769.png',
+  'Botafogo FR':            'https://crests.football-data.org/1770.png',
+  'Cruzeiro EC':            'https://crests.football-data.org/1771.png',
+  'Chapecoense AF':         'https://crests.football-data.org/1772_large.png',
+  'São Paulo FC':           'https://crests.football-data.org/1776.png',
+  'EC Bahia':               'https://crests.football-data.org/1777.png',
+  'SC Corinthians Paulista':'https://crests.football-data.org/1779.png',
+  'CR Vasco da Gama':       'https://crests.football-data.org/1780.png',
+  'EC Vitória':             'https://crests.football-data.org/1782.png',
+  'CR Flamengo':            'https://crests.football-data.org/1783.png',
+  'Coritiba FBC':           'https://crests.football-data.org/4241.png',
+  'RB Bragantino':          'https://crests.football-data.org/4286.png',
+  'Clube do Remo':          'https://crests.football-data.org/4287.png',
+  'Mirassol FC':            'https://crests.football-data.org/4364.png',
+  'SC Internacional':       'https://crests.football-data.org/6684.png',
+  'Santos FC':              'https://crests.football-data.org/6685.png',
 };
 
 function getCrest(teamName: string): string | null {
