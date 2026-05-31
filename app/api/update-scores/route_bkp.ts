@@ -18,41 +18,21 @@ function normalize(s: string) {
 function nameMatch(dbName: string, apiName: string): boolean {
   const db  = normalize(dbName);
   const api = normalize(apiName);
+
+  // Match exato
   if (db === api) return true;
-  if (db.length > 4 && api.includes(db.slice(0, 5))) return true;
-  if (api.length > 4 && db.includes(api.slice(0, 5))) return true;
 
-  const aliases: Record<string, string[]> = {
-    'crflamengo':            ['flamengo'],
-    'sepalmeiras':           ['palmeiras'],
-    'sccorinthianspaulista': ['corinthians'],
-    'fluminensefc':          ['fluminense'],
-    'scinternal':            ['internacional'],
-    'gremiofbpa':            ['gremio'],
-    'camineiro':             ['atleticomineiro', 'atleticomg'],
-    'cruzeiroec':            ['cruzeiro'],
-    'botafogofrj':           ['botafogo'],
-    'crvascodagama':         ['vasco'],
-    'saopaulofc':            ['saopaulo'],
-    'ecbahia':               ['bahia'],
-    'santosfc':              ['santos'],
-    'caparanaense':          ['paranaense', 'athletico'],
-    'rbbragantino':          ['bragantino', 'redbullbragantino'],
-    'ecvitoria':             ['vitoria'],
-    'coritibafbc':           ['coritiba'],
-    'mirassolfc':            ['mirassol'],
-    'chapecoenseaf':         ['chapecoense'],
-    'clubedoremo':           ['remo'],
-  };
+  // Match parcial — um contém o início do outro (mín 4 chars)
+  if (db.length >= 4 && api.includes(db.slice(0, 4))) return true;
+  if (api.length >= 4 && db.includes(api.slice(0, 4))) return true;
 
-  for (const [key, vals] of Object.entries(aliases)) {
-    if (db.includes(key) || key.includes(db)) {
-      if (vals.some(v => api.includes(normalize(v)))) return true;
-    }
-    if (api.includes(key) || key.includes(api)) {
-      if (vals.some(v => db.includes(normalize(v)))) return true;
-    }
-  }
+  // Match por palavras — qualquer palavra significativa em comum
+  const stopWords = new Set(['fc', 'sc', 'ca', 'cr', 'ec', 'ac', 'cf', 'sd', 'ud', 'de', 'do', 'da', 'the']);
+  const dbWords  = db.split(/[^a-z]+/).filter(w => w.length > 2 && !stopWords.has(w));
+  const apiWords = api.split(/[^a-z]+/).filter(w => w.length > 2 && !stopWords.has(w));
+  if (dbWords.some(w => apiWords.includes(w))) return true;
+  if (dbWords.some(w => apiWords.some(a => a.includes(w) || w.includes(a)))) return true;
+
   return false;
 }
 
