@@ -50,8 +50,12 @@ export async function GET(req: Request) {
 
       const matchDate  = toBrazilISO(utcDate);
       const phaseLabel = `Brasileirão 2026 · ${stage} · Rodada ${matchday}`;
-      const scoreA     = ['FINISHED', 'AWARDED'].includes(status) ? (m.score?.fullTime?.home ?? null) : null;
-      const scoreB     = ['FINISHED', 'AWARDED'].includes(status) ? (m.score?.fullTime?.away ?? null) : null;
+      // Só salva placar se jogo realmente finalizado E placar não nulo
+      const isFinished = ['FINISHED', 'AWARDED'].includes(status);
+      const fullTimeA  = m.score?.fullTime?.home;
+      const fullTimeB  = m.score?.fullTime?.away;
+      const scoreA     = (isFinished && fullTimeA !== null && fullTimeA !== undefined) ? fullTimeA : null;
+      const scoreB     = (isFinished && fullTimeB !== null && fullTimeB !== undefined) ? fullTimeB : null;
 
       // Busca jogo existente por times
       const { data: existing } = await supabase
@@ -61,7 +65,8 @@ export async function GET(req: Request) {
 
       if (existing) {
         const updateData: any = { match_date: matchDate, phase: phaseLabel };
-        if (existing.score_a === null && scoreA !== null) {
+        // Atualiza placar se: ainda não tem OU se a API trouxe valor diferente (corrige erros)
+        if (scoreA !== null) {
           updateData.score_a = scoreA;
           updateData.score_b = scoreB;
         }
