@@ -59,14 +59,14 @@ export async function GET(req: Request) {
 
       // Busca jogo existente por times
       const { data: existing } = await supabase
-        .from('matches').select('id, score_a, score_b')
+        .from('matches').select('id, score_a, score_b, score_locked')
         .eq('team_a', homeTeam).eq('team_b', awayTeam)
         .maybeSingle();
 
       if (existing) {
         const updateData: any = { match_date: matchDate, phase: phaseLabel };
-        // Atualiza placar se: ainda não tem OU se a API trouxe valor diferente (corrige erros)
-        if (scoreA !== null) {
+        // Só atualiza placar se ainda não tiver (evita sobrescrever com dados errados da API)
+        if (scoreA !== null && existing.score_a === null) {
           updateData.score_a = scoreA;
           updateData.score_b = scoreB;
         }
