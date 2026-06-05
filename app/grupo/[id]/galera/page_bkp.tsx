@@ -41,6 +41,13 @@ export default function GaleraGrupo() {
   const [copied, setCopied]         = useState(false);
   const [myUserId, setMyUserId]     = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [isCreator, setIsCreator]   = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [payment, setPayment]       = useState({ id: '', entry_value: 0, prize_1st: 60, prize_2nd: 30, prize_3rd: 10, prize_locked: false });
+  const [memberPayments, setMemberPayments] = useState<Record<string, boolean>>({});
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [configTab, setConfigTab]   = useState<'pagamentos' | 'premio'>('pagamentos');
+  const [ranking, setRanking]       = useState<{ name: string; total_points: number }[]>([]);
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
 
   useEffect(() => {
@@ -67,6 +74,29 @@ export default function GaleraGrupo() {
 
       const { data: mt } = await supabase.from('matches').select('*').order('match_date');
       setMatches(mt || []);
+
+      // Verifica se é criador
+      const { data: group } = await supabase
+        .from('groups').select('created_by').eq('id', groupId).maybeSingle();
+      setIsCreator(group?.created_by === session.session.user.id);
+
+      // Busca config de pagamento
+      const { data: payData } = await supabase
+        .from('group_payments').select('*').eq('group_id', groupId).maybeSingle();
+      if (payData) setPayment(payData);
+
+      // Busca status de pagamentos
+      const { data: memberPays } = await supabase
+        .from('member_payments').select('user_id, paid').eq('group_id', groupId);
+      const payMap: Record<string, boolean> = {};
+      (memberPays || []).forEach((p: any) => { payMap[p.user_id] = p.paid; });
+      setMemberPayments(payMap);
+
+      // Ranking
+      const { data: rankData } = await supabase
+        .from('ranking').select('name, total_points').eq('group_id', groupId)
+        .order('total_points', { ascending: false });
+      setRanking(rankData || []);
 
       // Expande hoje por padrão
       setExpandedDays({ [todayBrazil()]: true });
@@ -101,6 +131,46 @@ export default function GaleraGrupo() {
       byDay[day].push(m);
     });
     return byDay;
+  }
+
+  async function savePaymentConfig(lockPrize = false) {
+    setSavingConfig(true);
+    const total = payment.prize_1st + payment.prize_2nd + payment.prize_3rd;
+    if (total !== 100) { alert('A soma das % deve ser 100%'); setSavingConfig(false); return; }
+    if (payment.id) {
+      await supabase.from('group_payments').update({
+        entry_value: payment.entry_value,
+        prize_1st: payment.prize_1st,
+        prize_2nd: payment.prize_2nd,
+        prize_3rd: payment.prize_3rd,
+        ...(lockPrize && { prize_locked: true }),
+        updated_at: new Date().toISOString()
+      }).eq('id', payment.id);
+      if (lockPrize) setPayment(p => ({ ...p, prize_locked: true }));
+    } else {
+      const { data } = await supabase.from('group_payments').insert({
+        group_id: groupId, entry_value: payment.entry_value,
+        prize_1st: payment.prize_1st, prize_2nd: payment.prize_2nd,
+        prize_3rd: payment.prize_3rd, ...(lockPrize && { prize_locked: true }),
+      }).select().single();
+      if (data) setPayment(data);
+    }
+    setSavingConfig(false);
+  }
+
+  async function togglePaid(userId: string, currentPaid: boolean) {
+    const { data: existing } = await supabase
+      .from('member_payments').select('id').eq('group_id', groupId).eq('user_id', userId).maybeSingle();
+    if (existing) {
+      await supabase.from('member_payments').update({
+        paid: !currentPaid, paid_at: !currentPaid ? new Date().toISOString() : null
+      }).eq('id', existing.id);
+    } else {
+      await supabase.from('member_payments').insert({
+        group_id: groupId, user_id: userId, paid: true, paid_at: new Date().toISOString()
+      });
+    }
+    setMemberPayments(mp => ({ ...mp, [userId]: !currentPaid }));
   }
 
   if (selected) {
@@ -298,6 +368,149 @@ export default function GaleraGrupo() {
       )}
 
       {members.length === 0 && <div className="empty">Ninguém entrou ainda.</div>}
+
+      {/* CONFIG — só para o criador */}
+      {isCreator && (
+        <div style={{ marginBottom: 16 }}>
+          <button onClick={() => setShowConfig(s => !s)} className="btn btn-ghost" style={{ marginBottom: showConfig ? 0 : 0 }}>
+            {showConfig ? '▲ Ocultar configurações' : '⚙️ Configurações do grupo'}
+          </button>
+
+          {showConfig && (
+            <div className="card" style={{ marginTop: 8 }}>
+              {/* Resumo */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)' }}>
+                    R$ {(Object.values(memberPayments).filter(Boolean).length * payment.entry_value).toFixed(0)}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#2ea84c' }}>
+                    {Object.values(memberPayments).filter(Boolean).length}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--danger)' }}>
+                    {members.length - Object.values(memberPayments).filter(Boolean).length}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
+                </div>
+              </div>
+
+              {/* Abas */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {(['pagamentos', 'premio'] as const).map(tab => (
+                  <button key={tab} onClick={() => setConfigTab(tab)} style={{
+                    flex: 1, padding: '8px', borderRadius: 10, border: '1px solid',
+                    borderColor: configTab === tab ? 'var(--gold)' : 'var(--line)',
+                    background: configTab === tab ? 'var(--gold)' : 'var(--bg-soft)',
+                    color: configTab === tab ? '#1a1a1a' : 'var(--text)',
+                    fontWeight: configTab === tab ? 700 : 400, fontSize: 12, cursor: 'pointer'
+                  }}>
+                    {tab === 'pagamentos' ? '💰 Pagamentos' : '🏆 Prêmio'}
+                  </button>
+                ))}
+              </div>
+
+              {configTab === 'pagamentos' && (
+                <>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
+                    <input className="input" type="number" min="0"
+                      value={payment.entry_value}
+                      onChange={e => setPayment(p => ({ ...p, entry_value: Number(e.target.value) }))} />
+                    <button className="btn" style={{ marginTop: 8 }} onClick={() => savePaymentConfig()} disabled={savingConfig}>
+                      {savingConfig ? '...' : 'Salvar valor'}
+                    </button>
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+                    <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
+                    {members.map(m => (
+                      <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
+                        <button onClick={() => togglePaid(m.user_id, memberPayments[m.user_id] || false)} style={{
+                          padding: '6px 12px', borderRadius: 8, border: '1px solid',
+                          borderColor: memberPayments[m.user_id] ? '#2ea84c' : 'var(--line)',
+                          background: memberPayments[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
+                          color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--muted)',
+                          fontSize: 12, cursor: 'pointer', fontWeight: 600
+                        }}>
+                          {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {configTab === 'premio' && (
+                <>
+                  {payment.prize_locked ? (
+                    <div style={{ padding: '12px', borderRadius: 12, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 13, color: '#2ea84c', marginBottom: 12 }}>
+                      🔒 Distribuição confirmada e bloqueada
+                    </div>
+                  ) : (
+                    <>
+                      {[
+                        { label: '🥇 1º lugar', key: 'prize_1st' as const },
+                        { label: '🥈 2º lugar', key: 'prize_2nd' as const },
+                        { label: '🥉 3º lugar', key: 'prize_3rd' as const },
+                      ].map(f => (
+                        <div key={f.key} style={{ marginBottom: 10 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <label style={{ fontSize: 12 }}>{f.label}</label>
+                            <span style={{ fontSize: 12, color: 'var(--gold)' }}>
+                              R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * payment[f.key] / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <input className="input" type="number" min="0" max="100"
+                              value={payment[f.key]}
+                              onChange={e => setPayment(p => ({ ...p, [f.key]: Number(e.target.value) }))} />
+                            <span style={{ color: 'var(--muted)', fontSize: 13 }}>%</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                        <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
+                          Salvar rascunho
+                        </button>
+                        <button className="btn" style={{ background: '#2ea84c' }}
+                          onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
+                          disabled={savingConfig}>
+                          🔒 Confirmar e bloquear
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Projeção */}
+                  {ranking.length > 0 && (
+                    <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12, marginTop: 12 }}>
+                      <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Projeção atual:</p>
+                      {[
+                        { pos: 0, pct: payment.prize_1st },
+                        { pos: 1, pct: payment.prize_2nd },
+                        { pos: 2, pct: payment.prize_3rd },
+                      ].map(({ pos, pct }) => ranking[pos] && (
+                        <div key={pos} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 13 }}>{['🥇','🥈','🥉'][pos]} {ranking[pos].name}</span>
+                          <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>
+                            R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * pct / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="card" style={{ padding: 0 }}>
         {members.map(m => (

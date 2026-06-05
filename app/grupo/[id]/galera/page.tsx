@@ -78,7 +78,7 @@ export default function GaleraGrupo() {
       // Verifica se é criador
       const { data: group } = await supabase
         .from('groups').select('created_by').eq('id', groupId).maybeSingle();
-      setIsCreator(group?.created_by === session.session.user.id);
+      setIsCreator(group?.created_by === session.session?.user.id);
 
       // Busca config de pagamento
       const { data: payData } = await supabase
