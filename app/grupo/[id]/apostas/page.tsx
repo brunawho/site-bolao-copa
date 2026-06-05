@@ -21,7 +21,7 @@ type SpecialResult = { top_scorer: string|null; champion: string|null; runner_up
 
 // Componente de autocomplete reutilizável
 function AutocompleteInput({
-  value, onChange, options, placeholder, disabled, getLabel
+  value, onChange, options, placeholder, disabled, getLabel, crests
 }: {
   value: string;
   onChange: (val: string) => void;
@@ -29,6 +29,7 @@ function AutocompleteInput({
   placeholder: string;
   disabled?: boolean;
   getLabel?: (opt: string) => string;
+  crests?: Record<string, string>;
 }) {
   const [query, setQuery]     = useState(value);
   const [open, setOpen]       = useState(false);

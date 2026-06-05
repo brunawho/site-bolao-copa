@@ -14,8 +14,8 @@ function fmtDeadline() {
   });
 }
 
-type Team   = { id: number; name: string };
-type Player = { name: string; team: string; position: string };
+type Team   = { id: number; name: string; flag?: string };
+type Player = { name: string; team: string; position: string; flag?: string };
 type SpecialBet = { id?: string; top_scorer: string; champion: string; runner_up: string; third_place: string };
 type SpecialResult = { top_scorer: string|null; champion: string|null; runner_up: string|null; third_place: string|null };
 
@@ -103,8 +103,9 @@ export default function ApostasEspeciais() {
   const [bet, setBet]             = useState<SpecialBet>({ top_scorer: '', champion: '', runner_up: '', third_place: '' });
   const [savedBet, setSavedBet]   = useState<SpecialBet | null>(null);
   const [result, setResult]       = useState<SpecialResult | null>(null);
-  const [teams, setTeams]         = useState<string[]>([]);
+  const [teams, setTeams]         = useState<Team[]>([]);
   const [players, setPlayers]     = useState<Player[]>([]);
+  const [crests, setCrests]       = useState<Record<string, string>>({});
   const [saving, setSaving]       = useState(false);
   const [toast, setToast]         = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -136,14 +137,16 @@ export default function ApostasEspeciais() {
       const wcRes = await fetch('/api/wc-data');
       if (wcRes.ok) {
         const wcData = await wcRes.json();
-        setTeams((wcData.teams ?? []).map((t: Team) => t.name));
+        setTeams(wcData.teams ?? []);
         setPlayers(wcData.players ?? []);
+        if (wcData.crests) setCrests(wcData.crests);
       }
       setLoadingData(false);
     })();
   }, [groupId]);
 
   const playerOptions = players.map(p => p.name);
+  const teamOptions   = teams.map(t => t.name);
   const playerLabel   = (name: string) => {
     const p = players.find(pl => pl.name === name);
     return p ? `${name} · ${p.team}` : name;
@@ -283,7 +286,7 @@ export default function ApostasEspeciais() {
                 <AutocompleteInput
                   value={bet[f.key]}
                   onChange={val => setBet(b => ({ ...b, [f.key]: val }))}
-                  options={teams}
+                  options={teamOptions} crests={crests}
                   placeholder="Digite o nome da seleção..."
                   disabled={deadline}
                 />
