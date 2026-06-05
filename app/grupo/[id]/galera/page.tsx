@@ -466,41 +466,95 @@ export default function GaleraGrupo() {
 
             {configTab === 'premio' && (
               <>
-                {/* Distribuição — só criador edita se não bloqueado */}
-                {isCreator && !payment.prize_locked && (
-                  <>
-                    {[
-                      { label: '🥇 1º lugar', key: 'prize_1st' as const },
-                      { label: '🥈 2º lugar', key: 'prize_2nd' as const },
-                      { label: '🥉 3º lugar', key: 'prize_3rd' as const },
-                    ].map(f => (
-                      <div key={f.key} style={{ marginBottom: 10 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <label style={{ fontSize: 12 }}>{f.label}</label>
-                          <span style={{ fontSize: 12, color: 'var(--gold)' }}>
-                            R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * payment[f.key] / 100).toFixed(2)}
-                          </span>
+                {/* Distribuição com sliders encadeados — só criador edita */}
+                {isCreator && !payment.prize_locked && (() => {
+                  const total = Object.values(memberPayments).filter(Boolean).length * payment.entry_value;
+                  const max2 = 100 - payment.prize_1st;
+                  const max3 = max2 - payment.prize_2nd;
+                  const prize3 = max3 < 0 ? 0 : max3;
+
+                  return (
+                    <>
+                      <style>{`
+                        .prize-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; }
+                        .prize-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid #1a1a1a; }
+                        .prize-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid #1a1a1a; }
+                      `}</style>
+
+                      {/* 1º lugar */}
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>🥇 1º lugar</span>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_1st}%</span>
+                            {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_1st / 100).toFixed(2)}</span>}
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <input className="input" type="number" min="0" max="100"
-                            value={payment[f.key]}
-                            onChange={e => setPayment(p => ({ ...p, [f.key]: Number(e.target.value) }))} />
-                          <span style={{ color: 'var(--muted)', fontSize: 13 }}>%</span>
-                        </div>
+                        <input type="range" className="prize-slider" min="0" max="100" step="1"
+                          value={payment.prize_1st}
+                          style={{ background: `linear-gradient(to right, var(--gold) ${payment.prize_1st}%, var(--line) ${payment.prize_1st}%)` }}
+                          onChange={e => {
+                            const v1 = Number(e.target.value);
+                            const remaining = 100 - v1;
+                            const v2 = Math.min(payment.prize_2nd, remaining);
+                            const v3 = remaining - v2;
+                            setPayment(p => ({ ...p, prize_1st: v1, prize_2nd: v2, prize_3rd: v3 }));
+                          }} />
                       </div>
-                    ))}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, marginBottom: 12 }}>
-                      <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
-                        Salvar rascunho
-                      </button>
-                      <button className="btn" style={{ background: '#2ea84c' }}
-                        onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
-                        disabled={savingConfig}>
-                        🔒 Confirmar e bloquear
-                      </button>
-                    </div>
-                  </>
-                )}
+
+                      {/* 2º lugar */}
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>🥈 2º lugar</span>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_2nd}%</span>
+                            {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_2nd / 100).toFixed(2)}</span>}
+                          </div>
+                        </div>
+                        <input type="range" className="prize-slider" min="0" max={max2} step="1"
+                          value={payment.prize_2nd}
+                          style={{ background: `linear-gradient(to right, var(--gold) ${max2 > 0 ? (payment.prize_2nd / max2 * 100) : 0}%, var(--line) ${max2 > 0 ? (payment.prize_2nd / max2 * 100) : 0}%)` }}
+                          onChange={e => {
+                            const v2 = Number(e.target.value);
+                            const v3 = max2 - v2;
+                            setPayment(p => ({ ...p, prize_2nd: v2, prize_3rd: v3 < 0 ? 0 : v3 }));
+                          }} />
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Disponível: {max2}%</div>
+                      </div>
+
+                      {/* 3º lugar — calculado automaticamente */}
+                      <div style={{ marginBottom: 16, padding: '12px', background: 'var(--bg-soft)', borderRadius: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>🥉 3º lugar</span>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{prize3}%</span>
+                            {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * prize3 / 100).toFixed(2)}</span>}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Calculado automaticamente (sobra do 2º)</div>
+                      </div>
+
+                      {/* Verificação */}
+                      <div style={{
+                        padding: '8px 12px', borderRadius: 10, marginBottom: 12, textAlign: 'center', fontSize: 13,
+                        background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', color: '#2ea84c'
+                      }}>
+                        Total: {payment.prize_1st + payment.prize_2nd + prize3}% ✅
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                        <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
+                          Salvar rascunho
+                        </button>
+                        <button className="btn" style={{ background: '#2ea84c' }}
+                          onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
+                          disabled={savingConfig}>
+                          🔒 Confirmar e bloquear
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
 
                 {/* Visualização da distribuição para todos */}
                 {(payment.prize_locked || !isCreator) && (
