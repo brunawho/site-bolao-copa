@@ -26,15 +26,21 @@ function fmtDay(dateYMD: string) {
   });
 }
 
-function getResult(guess: Guess, match: Match): { points: number; label: string; color: string; icon: string } {
-  if (!guess) return { points: 0, label: 'Sem palpite', color: 'var(--muted)', icon: '—' };
+function extractComp(phase: string): string {
+  if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
+  if (phase.includes('Brasileirão'))   return 'Brasileirão';
+  if (phase.includes('Champions'))     return 'Champions League';
+  if (phase.includes('Libertadores'))  return 'Libertadores';
+  if (phase.includes('Sudamericana')) return 'Sudamericana';
+  if (phase.includes('Teste'))         return 'Teste';
+  return phase.split(' ·')[0].split(' -')[0].trim();
+}
 
+function getResult(guess: Guess, match: Match): { points: number; label: string; color: string; icon: string } {
   const pts = calcPoints(
     guess.guess_a, guess.guess_b, guess.guess_penalty_winner,
-    match.score_a!, match.score_b!, match.penalty_winner,
-    match.is_knockout
+    match.score_a!, match.score_b!, match.penalty_winner, match.is_knockout
   );
-
   if (pts === 9) return { points: 9, label: 'Placar exato + pênaltis', color: '#2ea84c', icon: '🏆' };
   if (pts === 6) {
     const isExact = guess.guess_a === match.score_a && guess.guess_b === match.score_b;
@@ -52,11 +58,12 @@ function getResult(guess: Guess, match: Match): { points: number; label: string;
 }
 
 export default function MeusPontos() {
-  const params = useParams();
+  const params  = useParams();
   const groupId = String(params.id);
   const [items, setItems]         = useState<MatchWithGuess[]>([]);
   const [loading, setLoading]     = useState(true);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [selectedComp, setSelectedComp] = useState<string>('Geral');
 
   useEffect(() => {
     (async () => {
@@ -68,7 +75,6 @@ export default function MeusPontos() {
         .eq('group_id', groupId).eq('user_id', session.session.user.id).maybeSingle();
       if (!member) return;
 
-      // Só jogos finalizados (com placar real)
       const { data: ms } = await supabase
         .from('matches').select('*')
         .not('score_a', 'is', null)
@@ -90,13 +96,10 @@ export default function MeusPontos() {
       });
 
       setItems(result);
-
-      // Expande o dia mais recente
       if (result.length > 0) {
         const firstDay = toBrazilDay(result[0].match.match_date);
         setExpandedDays({ [firstDay]: true });
       }
-
       setLoading(false);
     })();
   }, [groupId]);
@@ -105,14 +108,21 @@ export default function MeusPontos() {
     setExpandedDays(d => ({ ...d, [day]: !d[day] }));
   }
 
-  const totalPts = items.reduce((sum, i) => sum + i.points, 0);
-  const exactHits = items.filter(i => i.points === 6 && i.guess &&
-    i.guess.guess_a === i.match.score_a && i.guess.guess_b === i.match.score_b).length;
-  const winnerHits = items.filter(i => i.points === 3 || i.points === 4).length;
+  // Campeonatos disponíveis
+  const comps = ['Geral', ...Array.from(new Set(items.map(i => extractComp(i.match.phase)))).sort()];
 
-  // Agrupa por dia
+  // Filtra por campeonato
+  const filtered = selectedComp === 'Geral'
+    ? items
+    : items.filter(i => extractComp(i.match.phase) === selectedComp);
+
+  const totalPts   = filtered.reduce((sum, i) => sum + i.points, 0);
+  const exactHits  = filtered.filter(i => (i.points === 6 || i.points === 9) && i.guess &&
+    i.guess.guess_a === i.match.score_a && i.guess.guess_b === i.match.score_b).length;
+  const winnerHits = filtered.filter(i => i.points === 3 || i.points === 4).length;
+
   const byDay: Record<string, MatchWithGuess[]> = {};
-  items.forEach(item => {
+  filtered.forEach(item => {
     const day = toBrazilDay(item.match.match_date);
     if (!byDay[day]) byDay[day] = [];
     byDay[day].push(item);
@@ -122,49 +132,58 @@ export default function MeusPontos() {
   return (
     <main className="app">
       <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>Meus Pontos</h1>
-      <p className="subtitle" style={{ marginBottom: 20 }}>Seu desempenho nos jogos finalizados.</p>
+      <p className="subtitle" style={{ marginBottom: 16 }}>Seu desempenho nos jogos finalizados.</p>
+
+      {/* Menu de campeonatos */}
+      {comps.length > 1 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+          {comps.map(comp => (
+            <button key={comp} onClick={() => {
+              setSelectedComp(comp);
+              setExpandedDays({});
+            }} style={{
+              padding: '8px 14px', borderRadius: 12, border: '1px solid',
+              borderColor: selectedComp === comp ? 'var(--gold)' : 'var(--line)',
+              background: selectedComp === comp ? 'var(--gold)' : 'var(--card)',
+              color: selectedComp === comp ? '#1a1a1a' : 'var(--text)',
+              fontWeight: selectedComp === comp ? 700 : 400,
+              fontSize: 13, cursor: 'pointer'
+            }}>
+              {comp}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="empty">Carregando...</div>
-      ) : items.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="empty">Nenhum jogo finalizado ainda.</div>
       ) : (
         <>
-          {/* Resumo geral */}
+          {/* Resumo */}
           <div className="card" style={{ marginBottom: 20, background: 'rgba(212,167,44,0.08)', border: '1px solid var(--gold)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center' }}>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>
-                  {totalPts}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  pts total
-                </div>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>{totalPts}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>pts total</div>
               </div>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: '#2ea84c' }}>
-                  {exactHits}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  exatos
-                </div>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: '#2ea84c' }}>{exactHits}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>exatos</div>
               </div>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>
-                  {winnerHits}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  vencedor
-                </div>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>{winnerHits}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>vencedor</div>
               </div>
             </div>
           </div>
 
-          {/* Jogos agrupados por dia */}
+          {/* Jogos por dia */}
           {days.map(day => {
-            const expanded = !!expandedDays[day];
-            const dayItems = byDay[day];
-            const dayPts = dayItems.reduce((sum, i) => sum + i.points, 0);
+            const expanded  = !!expandedDays[day];
+            const dayItems  = byDay[day];
+            const dayPts    = dayItems.reduce((sum, i) => sum + i.points, 0);
 
             return (
               <div key={day} style={{ marginBottom: 8 }}>
@@ -187,22 +206,19 @@ export default function MeusPontos() {
                 </button>
 
                 {expanded && (
-                  <div style={{
-                    border: '1px solid var(--line)', borderTop: 'none',
-                    borderRadius: '0 0 14px 14px', overflow: 'hidden'
-                  }}>
+                  <div style={{ border: '1px solid var(--line)', borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
                     {dayItems.map((item, i) => {
                       const { match: m, guess: g, points, label, color, icon } = item;
-
                       return (
                         <div key={m.id} style={{
                           padding: 16,
                           borderTop: i > 0 ? '1px solid var(--line)' : 'none',
                           background: 'var(--card)'
                         }}>
-                          {/* Fase + horário */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                            <span style={{ fontSize: 11, color: 'var(--muted)' }}>{m.phase}</span>
+                            <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                              {m.phase.split('·').slice(1).join('·').trim() || m.phase}
+                            </span>
                             <span style={{ fontSize: 11, color: 'var(--muted)' }}>
                               {new Date(m.match_date).toLocaleTimeString('pt-BR', {
                                 timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
@@ -210,11 +226,9 @@ export default function MeusPontos() {
                             </span>
                           </div>
 
-                          {/* Times + placar real x palpite */}
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center', marginBottom: 12 }}>
                             <div style={{ textAlign: 'right', fontWeight: 600, fontSize: 14 }}>{m.team_a}</div>
                             <div style={{ textAlign: 'center' }}>
-                              {/* Placar real */}
                               <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', marginBottom: 4 }}>
                                 <div style={{
                                   width: 40, height: 40, background: 'var(--bg-soft)',
@@ -230,14 +244,11 @@ export default function MeusPontos() {
                                   border: '1px solid var(--line)'
                                 }}>{m.score_b}</div>
                               </div>
-                              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                resultado
-                              </div>
+                              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>resultado</div>
                             </div>
                             <div style={{ textAlign: 'left', fontWeight: 600, fontSize: 14 }}>{m.team_b}</div>
                           </div>
 
-                          {/* Palpite + resultado */}
                           <div style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                             padding: '10px 12px', borderRadius: 12,
@@ -245,9 +256,7 @@ export default function MeusPontos() {
                             border: `1px solid ${g ? color : 'var(--line)'}`
                           }}>
                             <div>
-                              <span style={{ fontSize: 13, color: color, fontWeight: 700 }}>
-                                {icon} {label}
-                              </span>
+                              <span style={{ fontSize: 13, color: color, fontWeight: 700 }}>{icon} {label}</span>
                               {g && (
                                 <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                                   Seu palpite: {g.guess_a} x {g.guess_b}
@@ -256,19 +265,13 @@ export default function MeusPontos() {
                                   )}
                                 </div>
                               )}
-                              {!g && (
-                                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                                  Você não palpitou neste jogo
-                                </div>
-                              )}
+                              {!g && <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Você não palpitou</div>}
                             </div>
                             <div style={{
                               fontFamily: "'Bebas Neue', sans-serif",
                               fontSize: 28, color: points > 0 ? color : 'var(--muted)',
                               minWidth: 48, textAlign: 'right'
-                            }}>
-                              +{points}
-                            </div>
+                            }}>+{points}</div>
                           </div>
                         </div>
                       );
@@ -280,7 +283,6 @@ export default function MeusPontos() {
           })}
         </>
       )}
-
       <div style={{ height: 100 }} />
     </main>
   );

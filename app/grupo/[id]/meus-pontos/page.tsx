@@ -65,7 +65,7 @@ export default function MeusPontos() {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [selectedComp, setSelectedComp] = useState<string>('Geral');
 
-  useEffect(() => {
+  async function loadData() {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
@@ -102,6 +102,12 @@ export default function MeusPontos() {
       }
       setLoading(false);
     })();
+  }
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 3 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [groupId]);
 
   function toggleDay(day: string) {

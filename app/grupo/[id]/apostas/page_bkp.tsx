@@ -171,8 +171,9 @@ export default function ApostasEspeciais() {
       setSavedBet({ ...bet, id: data.id });
     }
 
+    const newSaved = { ...(savedBet ?? {}), ...bet } as SpecialBet & { id?: string };
+    setSavedBet(newSaved);
     setSaving(false); setConfirmOpen(false); setEditing(false);
-    setSavedBet(prev => ({ ...(prev ?? bet), ...bet }));
     showToast('Apostas salvas! ✅');
   }
 

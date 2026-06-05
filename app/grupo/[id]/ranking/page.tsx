@@ -23,6 +23,22 @@ function calcSpecialPoints(bet: SpecialBet, result: SpecialResult): number {
 }
 
 const COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
+
+// Componente Avatar — inicial colorida
+function Avatar({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: `${color}30`, border: `2px solid ${color}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, fontSize: size * 0.4, fontWeight: 700, color
+    }}>
+      {initial}
+    </div>
+  );
+}
+
 const medals = ['🥇', '🥈', '🥉'];
 
 export default function RankingGrupo() {
@@ -295,7 +311,7 @@ export default function RankingGrupo() {
                   }}>
                     <span className="rank-pos">{i < 3 ? medals[i] : `${i + 1}º`}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                      <Avatar name={r.name} color={r.color} size={34} />
                       <div>
                         <div className="rank-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {isLeader && (

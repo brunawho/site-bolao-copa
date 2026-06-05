@@ -498,7 +498,8 @@ export default function GaleraGrupo() {
                             const remaining = 100 - v1;
                             const v2 = Math.min(payment.prize_2nd, remaining);
                             const v3 = remaining - v2;
-                            setPayment(p => ({ ...p, prize_1st: v1, prize_2nd: v2, prize_3rd: v3 }));
+                            const v3final = v3 < 0 ? 0 : v3;
+                            setPayment(p => ({ ...p, prize_1st: v1, prize_2nd: v2, prize_3rd: v3final }));
                           }} />
                       </div>
 

@@ -217,7 +217,7 @@ export default function RankingGrupo() {
     return rounds[0] ?? null;
   })();
 
-  const roundStats = lastRound === null ? [] : members.map(member => {
+  const roundStats = lastRound === null ? [] : memberStats.map(member => {
     const guessByMatch: Record<string, Guess> = {};
     allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
     const roundMatches = matches.filter(m => {
@@ -230,8 +230,7 @@ export default function RankingGrupo() {
       if (!g) return;
       pts += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
     });
-    const memberStat = memberStats.find(ms => ms.id === member.id);
-    return { name: member.name, pts, color: memberStat?.color ?? '#d4a72c', user_id: member.user_id };
+    return { name: member.name, pts, color: member.color, user_id: member.user_id };
   }).filter(r => r.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
 
   // Ranking de seleções — pontos gerados por cada time da Copa
@@ -240,7 +239,7 @@ export default function RankingGrupo() {
     const teamPts: Record<string, number> = {};
 
     wcMatches.forEach(m => {
-      allGuesses.forEach(g => {
+      allGuesses.filter(g => members.some(mb => mb.id === g.group_member_id)).forEach(g => {
         if (g.match_id !== m.id) return;
         const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
         if (pts > 0) {

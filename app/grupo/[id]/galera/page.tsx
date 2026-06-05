@@ -40,6 +40,7 @@ export default function GaleraGrupo() {
   const [inviteCode, setInviteCode] = useState('');
   const [copied, setCopied]         = useState(false);
   const [myUserId, setMyUserId]     = useState<string | null>(null);
+  const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [isCreator, setIsCreator]   = useState(false);
   const [showConfig, setShowConfig] = useState(false);
