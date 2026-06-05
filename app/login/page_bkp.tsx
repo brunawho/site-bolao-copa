@@ -36,6 +36,9 @@ export default function Login() {
     }
 
     if (mode === 'signup') {
+      if (!name.trim()) { setErr('Digite seu nome para continuar.'); setLoading(false); return; }
+      if (name.trim().length < 2) { setErr('Nome deve ter pelo menos 2 caracteres.'); setLoading(false); return; }
+
       const { error } = await supabase.auth.signUp({
         email, password,
         options: { data: { name: name.trim() } }

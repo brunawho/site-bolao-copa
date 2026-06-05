@@ -69,6 +69,11 @@ export default function Convite() {
       if (!name.trim()) { setErr('Digite seu nome para continuar.'); setSaving(false); return; }
       if (name.trim().length < 2) { setErr('Nome deve ter pelo menos 2 caracteres.'); setSaving(false); return; }
 
+      // Verifica nome duplicado ANTES de criar a conta
+      const { data: existingProfile } = await supabase
+        .from('profiles').select('id').ilike('name', name.trim()).maybeSingle();
+      if (existingProfile) { setErr('Este nome já está em uso. Escolha outro.'); setSaving(false); return; }
+
       const { error } = await supabase.auth.signUp({
         email, password,
         options: { data: { name: name.trim() } }
