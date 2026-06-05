@@ -66,16 +66,20 @@ export default function Convite() {
     setErr(''); setSaving(true);
 
     if (authMode === 'signup') {
-      // Verifica se nome já existe
-      const { data: existingName } = await supabase
-        .from('profiles').select('id').ilike('name', name.trim()).maybeSingle();
-      if (existingName) { setErr('Este nome já está em uso. Escolha outro.'); setSaving(false); return; }
-
       const { error } = await supabase.auth.signUp({
         email, password,
         options: { data: { name: name.trim() } }
       });
-      if (error) { setErr(error.message); setSaving(false); return; }
+      if (error) {
+        if (error.message.includes('already registered')) {
+          setErr('Este email já está cadastrado.');
+        } else if (error.message.includes('unique') || error.message.includes('duplicate')) {
+          setErr('Este nome já está em uso. Escolha outro.');
+        } else {
+          setErr(error.message);
+        }
+        setSaving(false); return;
+      }
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
