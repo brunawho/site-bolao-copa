@@ -36,18 +36,28 @@ export default function Login() {
     }
 
     if (mode === 'signup') {
-      // Verifica se nome já existe
-      const { data: existingName } = await supabase
-        .from('profiles').select('id').ilike('name', name.trim()).maybeSingle();
-      if (existingName) { setErr('Este nome já está em uso. Escolha outro.'); setLoading(false); return; }
-
       const { error } = await supabase.auth.signUp({
         email, password,
         options: { data: { name: name.trim() } }
       });
-      if (error) { setErr(error.message); setLoading(false); return; }
+      if (error) {
+        if (error.message.includes('already registered')) {
+          setErr('Este email já está cadastrado.');
+        } else {
+          setErr(error.message);
+        }
+        setLoading(false); return;
+      }
       const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
-      if (loginErr) { setErr(loginErr.message); setLoading(false); return; }
+      if (loginErr) {
+        // Verifica se foi erro de nome duplicado (constraint do banco)
+        if (loginErr.message.includes('unique') || loginErr.message.includes('duplicate')) {
+          setErr('Este nome já está em uso. Escolha outro.');
+        } else {
+          setErr(loginErr.message);
+        }
+        setLoading(false); return;
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) { setErr('Email ou senha incorretos'); setLoading(false); return; }

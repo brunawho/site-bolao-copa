@@ -66,6 +66,9 @@ export default function Convite() {
     setErr(''); setSaving(true);
 
     if (authMode === 'signup') {
+      if (!name.trim()) { setErr('Digite seu nome para continuar.'); setSaving(false); return; }
+      if (name.trim().length < 2) { setErr('Nome deve ter pelo menos 2 caracteres.'); setSaving(false); return; }
+
       const { error } = await supabase.auth.signUp({
         email, password,
         options: { data: { name: name.trim() } }
