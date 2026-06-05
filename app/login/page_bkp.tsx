@@ -111,11 +111,11 @@ export default function Login() {
       <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
         {mode === 'login' && (
           <>
-            <button onClick={() => { setMode('signup'); setErr(''); setSuccess(''); }}
+            <button onClick={() => { setMode('signup'); setErr(''); setSuccess(''); setPassword(''); }}
               style={{ background: 'transparent', border: 'none', color: 'var(--gold)', fontSize: 13, cursor: 'pointer' }}>
               Não tem conta? Criar uma
             </button>
-            <button onClick={() => { setMode('reset'); setErr(''); setSuccess(''); }}
+            <button onClick={() => { setMode('reset'); setErr(''); setSuccess(''); setPassword(''); }}
               style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 12, cursor: 'pointer' }}>
               Esqueci minha senha
             </button>

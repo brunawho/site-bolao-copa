@@ -77,6 +77,8 @@ export default function Convite() {
     if (error) { setErr('Email ou senha incorretos'); setSaving(false); return; }
 
     setSaving(false);
+    // Pequeno delay para garantir que o profile foi criado pelo trigger
+    await new Promise(r => setTimeout(r, 500));
     await entrarNoGrupo(groupId, data.session!.user.id);
   }
 

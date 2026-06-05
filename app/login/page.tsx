@@ -36,6 +36,11 @@ export default function Login() {
     }
 
     if (mode === 'signup') {
+      // Verifica se nome já existe
+      const { data: existingName } = await supabase
+        .from('profiles').select('id').ilike('name', name.trim()).maybeSingle();
+      if (existingName) { setErr('Este nome já está em uso. Escolha outro.'); setLoading(false); return; }
+
       const { error } = await supabase.auth.signUp({
         email, password,
         options: { data: { name: name.trim() } }
