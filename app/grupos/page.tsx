@@ -95,7 +95,7 @@ export default function Grupos() {
 
     // Cria o grupo
     const { data: newGroup, error: groupErr } = await supabase
-      .from('groups').insert({ name: groupName.trim(), invite_code: inviteCode })
+      .from('groups').insert({ name: groupName.trim(), invite_code: inviteCode, created_by: userId })
       .select().single();
 
     if (groupErr || !newGroup) {
