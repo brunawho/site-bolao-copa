@@ -205,6 +205,34 @@ export default function RankingGrupo() {
 
   }, [showChart, matches, allGuesses, memberStats, members]);
 
+  // Melhor da rodada — última rodada com jogos finalizados
+  const lastRound = (() => {
+    if (!matches.length) return null;
+    // Pega a rodada mais recente
+    const rounds = Array.from(new Set(matches.map(m => {
+      const r = m.phase.match(/Rodada (\d+)/);
+      return r ? parseInt(r[1]) : 0;
+    }))).filter(r => r > 0).sort((a, b) => b - a);
+    return rounds[0] ?? null;
+  })();
+
+  const roundStats = lastRound === null ? [] : members.map(member => {
+    const guessByMatch: Record<string, Guess> = {};
+    allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
+    const roundMatches = matches.filter(m => {
+      const r = m.phase.match(/Rodada (\d+)/);
+      return r && parseInt(r[1]) === lastRound;
+    });
+    let pts = 0;
+    roundMatches.forEach(m => {
+      const g = guessByMatch[m.id];
+      if (!g) return;
+      pts += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+    });
+    const memberStat = memberStats.find(ms => ms.id === member.id);
+    return { name: member.name, pts, color: memberStat?.color ?? '#d4a72c', user_id: member.user_id };
+  }).filter(r => r.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
+
   return (
     <main className="app">
       <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>Ranking</h1>
@@ -266,6 +294,32 @@ export default function RankingGrupo() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Melhor da rodada */}
+          {roundStats.length > 0 && (
+            <div className="card" style={{ marginBottom: 16, background: 'rgba(212,167,44,0.06)', border: '1px solid rgba(212,167,44,0.3)' }}>
+              <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+                🏅 Melhor da Rodada {lastRound}
+              </p>
+              {roundStats.map((r, i) => (
+                <div key={r.user_id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 0',
+                  borderTop: i > 0 ? '1px solid var(--line)' : 'none'
+                }}>
+                  <span style={{ fontSize: 20 }}>{['🥇', '🥈', '🥉'][i]}</span>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>
+                    {r.name}
+                    {r.user_id === myUserId && <span style={{ fontSize: 11, color: 'var(--gold)', marginLeft: 6 }}>← você</span>}
+                  </span>
+                  <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>
+                    +{r.pts} pts
+                  </span>
+                </div>
+              ))}
             </div>
           )}
 
