@@ -49,7 +49,7 @@ export default function Login() {
         options: { data: { name: name.trim() } }
       });
       if (error) {
-        if (error.message.includes('already registered')) {
+        if (error.message.includes('already registered') || error.message.includes('already exists')) {
           setErr('Este email já está cadastrado.');
         } else {
           setErr(error.message);
@@ -58,12 +58,7 @@ export default function Login() {
       }
       const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
       if (loginErr) {
-        // Verifica se foi erro de nome duplicado (constraint do banco)
-        if (loginErr.message.includes('unique') || loginErr.message.includes('duplicate')) {
-          setErr('Este nome já está em uso. Escolha outro.');
-        } else {
-          setErr(loginErr.message);
-        }
+        setErr('Erro ao fazer login após cadastro. Tente novamente.');
         setLoading(false); return;
       }
     } else {

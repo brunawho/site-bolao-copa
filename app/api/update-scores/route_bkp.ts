@@ -23,8 +23,9 @@ export async function GET(req: Request) {
     const todayBR     = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const yesterdayBR = new Date(now.getTime() - 3 * 60 * 60 * 1000 - 86400000).toISOString().slice(0, 10);
 
+    // Busca FINISHED e IN_PLAY para pegar jogos que terminaram recentemente
     const res = await fetch(
-      `${FD_API}/matches?status=FINISHED&dateFrom=${yesterdayBR}&dateTo=${todayBR}`,
+      `${FD_API}/matches?status=FINISHED,IN_PLAY,PAUSED&dateFrom=${yesterdayBR}&dateTo=${todayBR}`,
       { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY! } }
     );
 
@@ -64,6 +65,7 @@ export async function GET(req: Request) {
             home: homeTeam,
             away: awayTeam,
             api_date: apiDate,
+            status: m.status,
             score: `${m.score?.fullTime?.home} x ${m.score?.fullTime?.away}`,
             competition: m.competition?.name,
             matched_exact: found ? `✅ ${found.team_a} x ${found.team_b}` : '❌',
@@ -77,9 +79,12 @@ export async function GET(req: Request) {
     for (const m of apiMatches) {
       const homeTeam = m.homeTeam?.name ?? '';
       const awayTeam = m.awayTeam?.name ?? '';
+      const status   = m.status ?? '';
       const scoreA   = m.score?.fullTime?.home;
       const scoreB   = m.score?.fullTime?.away;
       const apiDate  = m.utcDate?.slice(0, 10);
+      // Só atualiza jogos finalizados com placar real
+      if (!['FINISHED', 'AWARDED'].includes(status)) continue;
       if (scoreA === null || scoreA === undefined) continue;
 
       // Casa por nome exato — sem depender de data pois o sync já salvou certo

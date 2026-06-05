@@ -61,13 +61,10 @@ export async function GET(req: Request) {
       const penB = m.score?.penalties?.away;
       if (penA != null && penB != null) penaltyWinner = penA > penB ? 'A' : 'B';
 
-      const dayStart = utcDate.slice(0, 10) + 'T00:00:00Z';
-      const dayEnd   = utcDate.slice(0, 10) + 'T23:59:59Z';
-
+      // Busca por times exatos — sem depender de data pra evitar duplicatas por fuso
       const { data: existing } = await supabase
         .from('matches').select('id, score_a, score_b')
         .eq('team_a', homeTeam).eq('team_b', awayTeam)
-        .gte('match_date', dayStart).lte('match_date', dayEnd)
         .maybeSingle();
 
       if (existing) {

@@ -63,13 +63,13 @@ export async function GET(req: Request) {
 
       // Busca por times exatos — sem depender de data pra evitar duplicatas por fuso
       const { data: existing } = await supabase
-        .from('matches').select('id, score_a, score_b')
+        .from('matches').select('id, score_a, score_b, score_locked')
         .eq('team_a', homeTeam).eq('team_b', awayTeam)
         .maybeSingle();
 
       if (existing) {
         const updateData: any = { match_date: matchDate, phase: phaseLabel, is_knockout: knockout };
-        if (existing.score_a === null && scoreA !== null) {
+        if (existing.score_a === null && scoreA !== null && !existing.score_locked) {
           updateData.score_a = scoreA;
           updateData.score_b = scoreB;
           if (penaltyWinner) updateData.penalty_winner = penaltyWinner;

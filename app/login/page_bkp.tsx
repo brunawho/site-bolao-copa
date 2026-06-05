@@ -39,10 +39,10 @@ export default function Login() {
       if (!name.trim()) { setErr('Digite seu nome para continuar.'); setLoading(false); return; }
       if (name.trim().length < 2) { setErr('Nome deve ter pelo menos 2 caracteres.'); setLoading(false); return; }
 
-      // Verifica nome duplicado ANTES de criar a conta
-      const { data: existingProfile } = await supabase
-        .from('profiles').select('id').ilike('name', name.trim()).maybeSingle();
-      if (existingProfile) { setErr('Este nome já está em uso. Escolha outro.'); setLoading(false); return; }
+      // Verifica nome duplicado via function (sem precisar de autenticação)
+      const { data: nameAvailable } = await supabase
+        .rpc('check_name_available', { check_name: name.trim() });
+      if (!nameAvailable) { setErr('Este nome já está em uso. Escolha outro.'); setLoading(false); return; }
 
       const { error } = await supabase.auth.signUp({
         email, password,
