@@ -96,27 +96,6 @@ function AutocompleteInput({
   );
 }
 
-
-// Mapa de tradução dos nomes dos países (exibição apenas — banco mantém inglês)
-const TEAM_TRANSLATIONS: Record<string, string> = {
-  'Algeria': 'Argélia', 'Argentina': 'Argentina', 'Australia': 'Austrália',
-  'Austria': 'Áustria', 'Belgium': 'Bélgica', 'Bosnia-Herzegovina': 'Bósnia-Herzegovina',
-  'Brazil': 'Brasil', 'Canada': 'Canadá', 'Cape Verde Islands': 'Cabo Verde',
-  'Colombia': 'Colômbia', 'Congo DR': 'Congo', 'Croatia': 'Croácia',
-  'Curaçao': 'Curaçao', 'Czechia': 'República Tcheca', 'Ecuador': 'Equador',
-  'Egypt': 'Egito', 'England': 'Inglaterra', 'France': 'França',
-  'Germany': 'Alemanha', 'Ghana': 'Gana', 'Haiti': 'Haiti',
-  'Iran': 'Irã', 'Iraq': 'Iraque', 'Ivory Coast': 'Costa do Marfim',
-  'Japan': 'Japão', 'Jordan': 'Jordânia', 'Mexico': 'México',
-  'Morocco': 'Marrocos', 'Netherlands': 'Holanda', 'New Zealand': 'Nova Zelândia',
-  'Norway': 'Noruega', 'Panama': 'Panamá', 'Paraguay': 'Paraguai',
-  'Portugal': 'Portugal', 'Qatar': 'Catar', 'Saudi Arabia': 'Arábia Saudita',
-  'Scotland': 'Escócia', 'Senegal': 'Senegal', 'South Africa': 'África do Sul',
-  'South Korea': 'Coreia do Sul', 'Spain': 'Espanha', 'Sweden': 'Suécia',
-  'Switzerland': 'Suíça', 'Tunisia': 'Tunísia', 'Turkey': 'Turquia',
-  'United States': 'Estados Unidos', 'Uruguay': 'Uruguai', 'Uzbekistan': 'Uzbequistão',
-};
-
 export default function ApostasEspeciais() {
   const params  = useParams();
   const groupId = String(params.id);
@@ -169,19 +148,6 @@ export default function ApostasEspeciais() {
 
   const playerOptions = players.map(p => p.name);
   const teamOptions   = teams.map(t => t.name);
-  // Mapa de crests usando nome inglês (chave do banco)
-  const teamCrestsMap = teams.reduce((acc, t) => {
-    // Adiciona tanto pelo nome inglês quanto pelo nome traduzido
-    if (t.flag) {
-      acc[t.name] = t.flag;
-      const ptName = TEAM_TRANSLATIONS[t.name];
-      if (ptName) acc[ptName] = t.flag;
-    }
-    return acc;
-  }, { ...crests } as Record<string, string>);
-
-  // Opções com nome traduzido para exibição
-  const teamOptionsPT = teamOptions.map(name => TEAM_TRANSLATIONS[name] || name);
   const playerLabel   = (name: string) => {
     const p = players.find(pl => pl.name === name);
     return p ? `${name} · ${p.team}` : name;
@@ -319,13 +285,9 @@ export default function ApostasEspeciais() {
                   <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)' }}>{f.pts} pts</span>
                 </div>
                 <AutocompleteInput
-                  value={TEAM_TRANSLATIONS[bet[f.key]] || bet[f.key]}
-                  onChange={val => {
-                    const engName = Object.entries(TEAM_TRANSLATIONS).find(([, pt]) => pt === val)?.[0] || val;
-                    setBet(b => ({ ...b, [f.key]: engName }));
-                  }}
-                  options={teamOptionsPT}
-                  crests={teamCrestsMap}
+                  value={bet[f.key]}
+                  onChange={val => setBet(b => ({ ...b, [f.key]: val }))}
+                  options={teamOptions} crests={crests}
                   placeholder="Digite o nome da seleção..."
                   disabled={deadline}
                 />
@@ -373,9 +335,7 @@ export default function ApostasEspeciais() {
                 }}>
                   <div>
                     <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{f.label}</div>
-                    <div style={{ fontWeight: 700, fontSize: 16 }}>
-                      {savedBet?.[f.key] ? (TEAM_TRANSLATIONS[savedBet[f.key]] || savedBet[f.key]) : '—'}
-                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{savedBet?.[f.key] || '—'}</div>
                     {result?.[f.key] && (
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                         Resultado: {result[f.key]}
