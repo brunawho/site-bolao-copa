@@ -37,6 +37,7 @@ export default function RankingGrupo() {
   const [loading, setLoading]         = useState(true);
   const [myUserId, setMyUserId]       = useState<string | null>(null);
   const [showChart, setShowChart]     = useState(false);
+  const [rankTab, setRankTab]         = useState<'geral' | 'selecoes'>('geral');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -233,6 +234,27 @@ export default function RankingGrupo() {
     return { name: member.name, pts, color: memberStat?.color ?? '#d4a72c', user_id: member.user_id };
   }).filter(r => r.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
 
+  // Ranking de seleções — pontos gerados por cada time da Copa
+  const selectionRanking = (() => {
+    const wcMatches = matches.filter(m => m.phase.includes('Copa do Mundo'));
+    const teamPts: Record<string, number> = {};
+
+    wcMatches.forEach(m => {
+      allGuesses.forEach(g => {
+        if (g.match_id !== m.id) return;
+        const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+        if (pts > 0) {
+          teamPts[m.team_a] = (teamPts[m.team_a] ?? 0) + pts;
+          teamPts[m.team_b] = (teamPts[m.team_b] ?? 0) + pts;
+        }
+      });
+    });
+
+    return Object.entries(teamPts)
+      .map(([team, pts]) => ({ team, pts }))
+      .sort((a, b) => b.pts - a.pts);
+  })();
+
   return (
     <main className="app">
       <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>Ranking</h1>
@@ -242,38 +264,90 @@ export default function RankingGrupo() {
         <div className="empty">Carregando...</div>
       ) : (
         <>
-          {/* Ranking */}
-          <div className="card" style={{ padding: 0, marginBottom: 16 }}>
-            {memberStats.map((r, i) => {
-              const isMe = r.user_id === myUserId;
-              return (
-                <div key={r.id} className="rank-row"
-                  style={{ background: isMe ? 'rgba(212,167,44,0.08)' : undefined }}>
-                  <span className="rank-pos">{i < 3 ? medals[i] : `${i + 1}º`}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {/* Bolinha colorida do gráfico */}
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
-                    <div>
-                      <div className="rank-name">
-                        {r.name} {isMe && <span style={{ fontSize: 11, color: 'var(--gold)' }}>← você</span>}
-                        {i === 0 && <span style={{ marginLeft: 6, fontSize: 14 }}>👑</span>}
-                      </div>
-                      <div className="rank-meta">
-                        {r.exact_hits} exato{r.exact_hits !== 1 ? 's' : ''} · {r.winner_hits} vencedor{r.winner_hits !== 1 ? 'es' : ''}
-                        {r.special_pts > 0 && <span style={{ color: 'var(--gold)' }}> · +{r.special_pts} especial</span>}
+          {/* Abas Geral / Seleções */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <button onClick={() => setRankTab('geral')} style={{
+              flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
+              borderColor: rankTab === 'geral' ? 'var(--gold)' : 'var(--line)',
+              background: rankTab === 'geral' ? 'var(--gold)' : 'var(--card)',
+              color: rankTab === 'geral' ? '#1a1a1a' : 'var(--text)',
+              fontWeight: rankTab === 'geral' ? 700 : 400, fontSize: 13, cursor: 'pointer'
+            }}>🏆 Geral</button>
+            <button onClick={() => setRankTab('selecoes')} style={{
+              flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
+              borderColor: rankTab === 'selecoes' ? 'var(--gold)' : 'var(--line)',
+              background: rankTab === 'selecoes' ? 'var(--gold)' : 'var(--card)',
+              color: rankTab === 'selecoes' ? '#1a1a1a' : 'var(--text)',
+              fontWeight: rankTab === 'selecoes' ? 700 : 400, fontSize: 13, cursor: 'pointer'
+            }}>🌍 Seleções</button>
+          </div>
+
+          {rankTab === 'geral' ? (
+            <div className="card" style={{ padding: 0, marginBottom: 16 }}>
+              {memberStats.map((r, i) => {
+                const isMe = r.user_id === myUserId;
+                const isLeader = i === 0;
+                return (
+                  <div key={r.id} className="rank-row" style={{
+                    background: isLeader
+                      ? 'rgba(212,167,44,0.12)'
+                      : isMe ? 'rgba(212,167,44,0.06)' : undefined,
+                    borderLeft: isLeader ? '3px solid var(--gold)' : undefined,
+                  }}>
+                    <span className="rank-pos">{i < 3 ? medals[i] : `${i + 1}º`}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                      <div>
+                        <div className="rank-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {isLeader && (
+                            <span style={{
+                              fontSize: 16,
+                              display: 'inline-block',
+                              animation: 'bounce 1s infinite'
+                            }}>👑</span>
+                          )}
+                          {r.name}
+                          {isMe && <span style={{ fontSize: 11, color: 'var(--gold)' }}>← você</span>}
+                        </div>
+                        <div className="rank-meta">
+                          {r.exact_hits} exato{r.exact_hits !== 1 ? 's' : ''} · {r.winner_hits} vencedor{r.winner_hits !== 1 ? 'es' : ''}
+                          {r.special_pts > 0 && <span style={{ color: 'var(--gold)' }}> · +{r.special_pts} especial</span>}
+                        </div>
                       </div>
                     </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span className="rank-points" style={{ color: isLeader ? 'var(--gold)' : undefined }}>{r.grand_total}</span>
+                      {r.special_pts > 0 && (
+                        <div style={{ fontSize: 10, color: 'var(--gold)' }}>{r.total_points} + {r.special_pts}</div>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="rank-points">{r.grand_total}</span>
-                    {r.special_pts > 0 && (
-                      <div style={{ fontSize: 10, color: 'var(--gold)' }}>{r.total_points} + {r.special_pts}</div>
-                    )}
+                );
+              })}
+            </div>
+          ) : (
+            <div className="card" style={{ padding: 0, marginBottom: 16 }}>
+              {selectionRanking.length === 0 ? (
+                <div className="empty">Nenhum ponto gerado ainda.</div>
+              ) : (
+                selectionRanking.map((s, i) => (
+                  <div key={s.team} style={{
+                    display: 'grid', gridTemplateColumns: '36px 1fr auto',
+                    alignItems: 'center', padding: '12px 14px',
+                    borderBottom: i < selectionRanking.length - 1 ? '1px solid var(--line)' : 'none'
+                  }}>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)' }}>
+                      {i + 1}º
+                    </span>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>{s.team}</span>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: 'var(--gold)' }}>
+                      {s.pts}
+                    </span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                ))
+              )}
+            </div>
+          )}
 
           {/* Botão gráfico */}
           <button className="btn btn-ghost" onClick={() => setShowChart(s => !s)} style={{ marginBottom: 16 }}>
@@ -330,6 +404,12 @@ export default function RankingGrupo() {
           </div>
         </>
       )}
+      <style>{`
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+      `}</style>
       <div style={{ height: 100 }} />
     </main>
   );
