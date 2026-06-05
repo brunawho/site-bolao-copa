@@ -11,6 +11,7 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
   const groupId  = String(params.id);
   const [groupName, setGroupName] = useState('');
   const [loading, setLoading]     = useState(true);
+  const [isCreator, setIsCreator] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -18,12 +19,14 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
       if (!session.session) { router.push('/login'); return; }
 
       const { data: member } = await supabase
-        .from('group_members').select('id, groups(name)')
+        .from('group_members').select('id, groups(name, created_by)')
         .eq('group_id', groupId).eq('user_id', session.session.user.id).maybeSingle();
 
       if (!member) { router.push('/grupos'); return; }
 
       setGroupName((member as any).groups?.name || '');
+      // Verifica se é o criador do grupo
+      setIsCreator((member as any).groups?.created_by === session.session.user.id);
       setLoading(false);
     })();
   }, [groupId, router]);
@@ -37,6 +40,7 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
     { href: `/grupo/${groupId}/ranking`,     label: 'Ranking',   icon: '📊' },
     { href: `/grupo/${groupId}/meus-pontos`, label: 'Meus pts',  icon: '⭐' },
     { href: `/grupo/${groupId}/faq`,         label: 'Regras',    icon: '📖' },
+    ...(isCreator ? [{ href: `/grupo/${groupId}/config`, label: 'Config', icon: '⚙️' }] : []),
   ];
 
   return (
