@@ -1,22 +1,16 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { supabase, type RankingRow } from '@/lib/supabase';
+import { supabase, calcPoints, type Match, type Guess } from '@/lib/supabase';
 
-type SpecialResult = {
-  top_scorer: string | null;
-  champion: string | null;
-  runner_up: string | null;
-  third_place: string | null;
-};
+type Member = { id: string; user_id: string; name: string };
+type SpecialResult = { top_scorer: string|null; champion: string|null; runner_up: string|null; third_place: string|null };
+type SpecialBet    = { group_member_id: string; top_scorer: string; champion: string; runner_up: string; third_place: string };
 
-type SpecialBet = {
-  group_member_id: string;
-  top_scorer: string;
-  champion: string;
-  runner_up: string;
-  third_place: string;
-};
+function extractRound(phase: string): string {
+  const match = phase.match(/Rodada (\d+)/);
+  return match ? `R${match[1]}` : phase.split('·').pop()?.trim() ?? phase;
+}
 
 function calcSpecialPoints(bet: SpecialBet, result: SpecialResult): number {
   const norm = (s: string | null) => s?.toLowerCase().trim() ?? '';
@@ -28,74 +22,188 @@ function calcSpecialPoints(bet: SpecialBet, result: SpecialResult): number {
   return pts;
 }
 
+const COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
+const medals = ['🥇', '🥈', '🥉'];
+
 export default function RankingGrupo() {
   const params  = useParams();
   const groupId = String(params.id);
-  const [rows, setRows]       = useState<RankingRow[]>([]);
+
+  const [members, setMembers]         = useState<Member[]>([]);
+  const [matches, setMatches]         = useState<Match[]>([]);
+  const [allGuesses, setAllGuesses]   = useState<Guess[]>([]);
   const [specialBets, setSpecialBets] = useState<SpecialBet[]>([]);
   const [specialResult, setSpecialResult] = useState<SpecialResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [myUserId, setMyUserId]       = useState<string | null>(null);
+  const [showChart, setShowChart]     = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
       setMyUserId(session.session?.user.id || null);
 
-      const { data: rankData } = await supabase
-        .from('ranking').select('*').eq('group_id', groupId);
-      setRows(rankData || []);
+      const { data: ms } = await supabase
+        .from('group_members').select('id, user_id').eq('group_id', groupId);
+      if (!ms?.length) { setLoading(false); return; }
 
-      // Busca apostas especiais do grupo
-      const { data: members } = await supabase
-        .from('group_members').select('id').eq('group_id', groupId);
-      if (members?.length) {
-        const memberIds = members.map((m: any) => m.id);
-        const { data: bets } = await supabase
-          .from('special_bets').select('*').in('group_member_id', memberIds);
-        setSpecialBets(bets || []);
-      }
+      const { data: profiles } = await supabase.from('profiles').select('id, name');
+      const memberList: Member[] = ms.map((m: any) => ({
+        id: m.id, user_id: m.user_id,
+        name: profiles?.find((p: any) => p.id === m.user_id)?.name || 'Sem nome'
+      }));
+      setMembers(memberList);
 
-      // Resultado especial
-      const { data: res } = await supabase
-        .from('special_results').select('*').maybeSingle();
+      const { data: matchData } = await supabase
+        .from('matches').select('*').not('score_a', 'is', null).not('score_b', 'is', null)
+        .order('match_date');
+      setMatches(matchData || []);
+
+      const memberIds = ms.map((m: any) => m.id);
+      const { data: guessData } = await supabase
+        .from('guesses').select('*').in('group_member_id', memberIds);
+      setAllGuesses(guessData || []);
+
+      const { data: bets } = await supabase
+        .from('special_bets').select('*').in('group_member_id', memberIds);
+      setSpecialBets(bets || []);
+
+      const { data: res } = await supabase.from('special_results').select('*').maybeSingle();
       setSpecialResult(res || null);
 
       setLoading(false);
     })();
   }, [groupId]);
 
-  // Mapa de user_id → group_member_id
-  const getMemberId = (userId: string) => {
-    return rows.find(r => r.user_id === userId);
-  };
+  // Calcula pontos por membro
+  const memberStats = members.map((member, idx) => {
+    const guessByMatch: Record<string, Guess> = {};
+    allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
 
-  // Calcula pontos especiais por user
-  function getSpecialPts(row: RankingRow): number {
-    if (!specialResult) return 0;
-    const bet = specialBets.find(b => {
-      // precisa achar o group_member_id do user
-      return b.group_member_id === row.user_id; // fallback
+    let totalPts = 0, exactHits = 0, winnerHits = 0;
+    matches.forEach(m => {
+      const g = guessByMatch[m.id];
+      if (!g) return;
+      const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+      totalPts += pts;
+      if (pts >= 6 && g.guess_a === m.score_a && g.guess_b === m.score_b) exactHits++;
+      if (pts === 3 || pts === 4) winnerHits++;
     });
 
-    // Busca pelo group_member_id correto
-    const memberBet = specialBets.find(b => {
-      const member = rows.find(r => r.user_id === row.user_id);
-      return member && b.group_member_id === (row as any).group_member_id;
-    }) ?? specialBets.find(b => b.group_member_id === row.user_id);
+    let specialPts = 0;
+    if (specialResult) {
+      const bet = specialBets.find(b => b.group_member_id === member.id);
+      if (bet) specialPts = calcSpecialPoints(bet, specialResult);
+    }
 
-    if (!memberBet) return 0;
-    return calcSpecialPoints(memberBet, specialResult);
-  }
+    return { ...member, total_points: totalPts, exact_hits: exactHits, winner_hits: winnerHits, special_pts: specialPts, grand_total: totalPts + specialPts, color: COLORS[idx % COLORS.length] };
+  }).sort((a, b) => b.grand_total - a.grand_total || b.exact_hits - a.exact_hits);
 
-  const medals = ['🥇', '🥈', '🥉'];
+  // Dados do gráfico — pontos acumulados por rodada
+  useEffect(() => {
+    if (!showChart || !canvasRef.current || !matches.length) return;
 
-  // Ordena combinando pontos de jogos + especiais
-  const rowsWithTotal = rows.map(r => ({
-    ...r,
-    special_pts: getSpecialPts(r),
-    grand_total: Number(r.total_points) + getSpecialPts(r)
-  })).sort((a, b) => b.grand_total - a.grand_total || b.exact_hits - a.exact_hits);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Agrupa matches por rodada
+    const roundMap: Record<string, Match[]> = {};
+    matches.forEach(m => {
+      const round = extractRound(m.phase);
+      if (!roundMap[round]) roundMap[round] = [];
+      roundMap[round].push(m);
+    });
+    const rounds = Object.keys(roundMap).sort((a, b) => {
+      const na = parseInt(a.replace('R', '')) || 0;
+      const nb = parseInt(b.replace('R', '')) || 0;
+      return na - nb;
+    });
+
+    // Calcula pontos acumulados por pessoa por rodada
+    const memberData = memberStats.map(member => {
+      const guessByMatch: Record<string, Guess> = {};
+      allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
+
+      let accumulated = 0;
+      const points = rounds.map(round => {
+        const roundMatches = roundMap[round];
+        roundMatches.forEach(m => {
+          const g = guessByMatch[m.id];
+          if (!g) return;
+          accumulated += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+        });
+        return accumulated;
+      });
+      return { name: member.name, color: member.color, points };
+    });
+
+    // Desenha o gráfico
+    const dpr    = window.devicePixelRatio || 1;
+    const width  = canvas.offsetWidth;
+    const height = canvas.offsetHeight;
+    canvas.width  = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const padL = 40, padR = 16, padT = 16, padB = 40;
+    const chartW = width - padL - padR;
+    const chartH = height - padT - padB;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const maxPts = Math.max(...memberData.flatMap(m => m.points), 1);
+    const step   = chartW / Math.max(rounds.length - 1, 1);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (chartH / 4) * i;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '10px Inter';
+      ctx.textAlign = 'right';
+      ctx.fillText(String(Math.round(maxPts - (maxPts / 4) * i)), padL - 4, y + 3);
+    }
+
+    // Labels eixo X
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '9px Inter';
+    ctx.textAlign = 'center';
+    const maxLabels = Math.min(rounds.length, 10);
+    const labelStep = Math.ceil(rounds.length / maxLabels);
+    rounds.forEach((r, i) => {
+      if (i % labelStep !== 0 && i !== rounds.length - 1) return;
+      const x = padL + i * step;
+      ctx.fillText(r, x, height - padB + 14);
+    });
+
+    // Linhas por pessoa
+    memberData.forEach(member => {
+      if (!member.points.length) return;
+      ctx.beginPath();
+      ctx.strokeStyle = member.color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      member.points.forEach((pts, i) => {
+        const x = padL + i * step;
+        const y = padT + chartH - (pts / maxPts) * chartH;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Ponto final
+      const lastX = padL + (member.points.length - 1) * step;
+      const lastY = padT + chartH - ((member.points[member.points.length - 1] || 0) / maxPts) * chartH;
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = member.color;
+      ctx.fill();
+    });
+
+  }, [showChart, matches, allGuesses, memberStats, members]);
 
   return (
     <main className="app">
@@ -104,54 +212,70 @@ export default function RankingGrupo() {
 
       {loading ? (
         <div className="empty">Carregando...</div>
-      ) : rowsWithTotal.length === 0 ? (
-        <div className="empty">Sem pontuação ainda.</div>
       ) : (
-        <div className="card" style={{ padding: 0 }}>
-          {rowsWithTotal.map((r, i) => {
-            const isMe = r.user_id === myUserId;
-            return (
-              <div key={r.user_id} className="rank-row"
-                style={{ background: isMe ? 'rgba(212,167,44,0.08)' : undefined }}>
-                <span className="rank-pos">{i < 3 ? medals[i] : `${i + 1}º`}</span>
-                <div>
-                  <div className="rank-name">
-                    {r.name} {isMe && <span style={{ fontSize: 11, color: 'var(--gold)' }}>← você</span>}
-                  </div>
-                  <div className="rank-meta">
-                    {r.exact_hits} exato{r.exact_hits !== 1 ? 's' : ''} ·{' '}
-                    {r.result_hits} result. ·{' '}
-                    {r.special_pts > 0 && <span style={{ color: 'var(--gold)' }}>+{r.special_pts} especial</span>}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span className="rank-points">{r.grand_total}</span>
-                  {r.special_pts > 0 && (
-                    <div style={{ fontSize: 10, color: 'var(--gold)' }}>
-                      {r.total_points} + {r.special_pts}
+        <>
+          {/* Ranking */}
+          <div className="card" style={{ padding: 0, marginBottom: 16 }}>
+            {memberStats.map((r, i) => {
+              const isMe = r.user_id === myUserId;
+              return (
+                <div key={r.id} className="rank-row"
+                  style={{ background: isMe ? 'rgba(212,167,44,0.08)' : undefined }}>
+                  <span className="rank-pos">{i < 3 ? medals[i] : `${i + 1}º`}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {/* Bolinha colorida do gráfico */}
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                    <div>
+                      <div className="rank-name">
+                        {r.name} {isMe && <span style={{ fontSize: 11, color: 'var(--gold)' }}>← você</span>}
+                        {i === 0 && <span style={{ marginLeft: 6, fontSize: 14 }}>👑</span>}
+                      </div>
+                      <div className="rank-meta">
+                        {r.exact_hits} exato{r.exact_hits !== 1 ? 's' : ''} · {r.winner_hits} vencedor{r.winner_hits !== 1 ? 'es' : ''}
+                        {r.special_pts > 0 && <span style={{ color: 'var(--gold)' }}> · +{r.special_pts} especial</span>}
+                      </div>
                     </div>
-                  )}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span className="rank-points">{r.grand_total}</span>
+                    {r.special_pts > 0 && (
+                      <div style={{ fontSize: 10, color: 'var(--gold)' }}>{r.total_points} + {r.special_pts}</div>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+          {/* Botão gráfico */}
+          <button className="btn btn-ghost" onClick={() => setShowChart(s => !s)} style={{ marginBottom: 16 }}>
+            {showChart ? '▲ Ocultar gráfico' : '📊 Ver evolução de pontos'}
+          </button>
+
+          {/* Gráfico */}
+          {showChart && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Evolução por rodada</p>
+              <canvas ref={canvasRef} style={{ width: '100%', height: 200, display: 'block' }} />
+              {/* Legenda */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+                {memberStats.map(m => (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                    <div style={{ width: 12, height: 3, background: m.color, borderRadius: 2 }} />
+                    <span style={{ color: 'var(--muted)' }}>{m.name}</span>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+
+          {/* Legenda pontuação */}
+          <div style={{ padding: '12px 16px', background: 'var(--card)', borderRadius: 14, border: '1px solid var(--line)', fontSize: 12, color: 'var(--muted)', lineHeight: 1.8 }}>
+            <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Pontuação</strong>
+            6 pts · placar exato · 4 pts · vencedor + gols · 3 pts · vencedor · 1 pt · gols
+          </div>
+        </>
       )}
-
-      <div style={{
-        marginTop: 20, padding: '12px 16px', background: 'var(--card)',
-        borderRadius: 14, border: '1px solid var(--line)',
-        fontSize: 12, color: 'var(--muted)', lineHeight: 1.8
-      }}>
-        <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Pontuação jogos</strong>
-        6 pts · placar exato · 4 pts · vencedor + gols · 3 pts · vencedor · 1 pt · gols<br />
-        <strong style={{ color: 'var(--text)', display: 'block', marginTop: 8, marginBottom: 4 }}>Apostas especiais</strong>
-        🥇 Campeão: <span style={{ color: 'var(--gold)' }}>25 pts</span> ·
-        🥈 Vice: <span style={{ color: 'var(--gold)' }}>20 pts</span> ·
-        🥉 3º: <span style={{ color: 'var(--gold)' }}>15 pts</span> ·
-        ⚽ Artilheiro: <span style={{ color: 'var(--gold)' }}>15 pts</span>
-      </div>
-
       <div style={{ height: 100 }} />
     </main>
   );
