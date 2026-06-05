@@ -369,55 +369,54 @@ export default function GaleraGrupo() {
 
       {members.length === 0 && <div className="empty">Ninguém entrou ainda.</div>}
 
-      {/* CAIXINHA — visível para todos, editável só pelo criador */}
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => setShowConfig(s => !s)} className="btn btn-ghost">
-          {showConfig ? '▲ Ocultar caixinha' : '💰 Caixinha do grupo'}
-        </button>
+      {/* CONFIG — só para o criador */}
+      {isCreator && (
+        <div style={{ marginBottom: 16 }}>
+          <button onClick={() => setShowConfig(s => !s)} className="btn btn-ghost" style={{ marginBottom: showConfig ? 0 : 0 }}>
+            {showConfig ? '▲ Ocultar configurações' : '⚙️ Configurações do grupo'}
+          </button>
 
-        {showConfig && (
-          <div className="card" style={{ marginTop: 8 }}>
-            {/* Resumo financeiro */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)' }}>
-                  R$ {(Object.values(memberPayments).filter(Boolean).length * payment.entry_value).toFixed(0)}
+          {showConfig && (
+            <div className="card" style={{ marginTop: 8 }}>
+              {/* Resumo */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)' }}>
+                    R$ {(Object.values(memberPayments).filter(Boolean).length * payment.entry_value).toFixed(0)}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
-              </div>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#2ea84c' }}>
-                  {Object.values(memberPayments).filter(Boolean).length}
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#2ea84c' }}>
+                    {Object.values(memberPayments).filter(Boolean).length}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
-              </div>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--danger)' }}>
-                  {members.length - Object.values(memberPayments).filter(Boolean).length}
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--danger)' }}>
+                    {members.length - Object.values(memberPayments).filter(Boolean).length}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
               </div>
-            </div>
 
-            {/* Abas */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {(['pagamentos', 'premio'] as const).map(tab => (
-                <button key={tab} onClick={() => setConfigTab(tab)} style={{
-                  flex: 1, padding: '8px', borderRadius: 10, border: '1px solid',
-                  borderColor: configTab === tab ? 'var(--gold)' : 'var(--line)',
-                  background: configTab === tab ? 'var(--gold)' : 'var(--bg-soft)',
-                  color: configTab === tab ? '#1a1a1a' : 'var(--text)',
-                  fontWeight: configTab === tab ? 700 : 400, fontSize: 12, cursor: 'pointer'
-                }}>
-                  {tab === 'pagamentos' ? '💰 Pagamentos' : '🏆 Prêmio'}
-                </button>
-              ))}
-            </div>
+              {/* Abas */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {(['pagamentos', 'premio'] as const).map(tab => (
+                  <button key={tab} onClick={() => setConfigTab(tab)} style={{
+                    flex: 1, padding: '8px', borderRadius: 10, border: '1px solid',
+                    borderColor: configTab === tab ? 'var(--gold)' : 'var(--line)',
+                    background: configTab === tab ? 'var(--gold)' : 'var(--bg-soft)',
+                    color: configTab === tab ? '#1a1a1a' : 'var(--text)',
+                    fontWeight: configTab === tab ? 700 : 400, fontSize: 12, cursor: 'pointer'
+                  }}>
+                    {tab === 'pagamentos' ? '💰 Pagamentos' : '🏆 Prêmio'}
+                  </button>
+                ))}
+              </div>
 
-            {configTab === 'pagamentos' && (
-              <>
-                {/* Valor da entrada — só criador edita */}
-                {isCreator && (
+              {configTab === 'pagamentos' && (
+                <>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
                     <input className="input" type="number" min="0"
@@ -427,20 +426,11 @@ export default function GaleraGrupo() {
                       {savingConfig ? '...' : 'Salvar valor'}
                     </button>
                   </div>
-                )}
-                {!isCreator && payment.entry_value > 0 && (
-                  <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 10, fontSize: 13 }}>
-                    Valor da entrada: <strong style={{ color: 'var(--gold)' }}>R$ {payment.entry_value.toFixed(2)}</strong>
-                  </div>
-                )}
-
-                {/* Status de pagamento */}
-                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                  <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
-                  {members.map(m => (
-                    <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
-                      {isCreator ? (
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+                    <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
+                    {members.map(m => (
+                      <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
                         <button onClick={() => togglePaid(m.user_id, memberPayments[m.user_id] || false)} style={{
                           padding: '6px 12px', borderRadius: 8, border: '1px solid',
                           borderColor: memberPayments[m.user_id] ? '#2ea84c' : 'var(--line)',
@@ -450,104 +440,77 @@ export default function GaleraGrupo() {
                         }}>
                           {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
                         </button>
-                      ) : (
-                        <span style={{
-                          padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                          color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--danger)',
-                        }}>
-                          {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
 
-            {configTab === 'premio' && (
-              <>
-                {/* Distribuição — só criador edita se não bloqueado */}
-                {isCreator && !payment.prize_locked && (
-                  <>
-                    {[
-                      { label: '🥇 1º lugar', key: 'prize_1st' as const },
-                      { label: '🥈 2º lugar', key: 'prize_2nd' as const },
-                      { label: '🥉 3º lugar', key: 'prize_3rd' as const },
-                    ].map(f => (
-                      <div key={f.key} style={{ marginBottom: 10 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <label style={{ fontSize: 12 }}>{f.label}</label>
-                          <span style={{ fontSize: 12, color: 'var(--gold)' }}>
-                            R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * payment[f.key] / 100).toFixed(2)}
+              {configTab === 'premio' && (
+                <>
+                  {payment.prize_locked ? (
+                    <div style={{ padding: '12px', borderRadius: 12, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 13, color: '#2ea84c', marginBottom: 12 }}>
+                      🔒 Distribuição confirmada e bloqueada
+                    </div>
+                  ) : (
+                    <>
+                      {[
+                        { label: '🥇 1º lugar', key: 'prize_1st' as const },
+                        { label: '🥈 2º lugar', key: 'prize_2nd' as const },
+                        { label: '🥉 3º lugar', key: 'prize_3rd' as const },
+                      ].map(f => (
+                        <div key={f.key} style={{ marginBottom: 10 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <label style={{ fontSize: 12 }}>{f.label}</label>
+                            <span style={{ fontSize: 12, color: 'var(--gold)' }}>
+                              R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * payment[f.key] / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <input className="input" type="number" min="0" max="100"
+                              value={payment[f.key]}
+                              onChange={e => setPayment(p => ({ ...p, [f.key]: Number(e.target.value) }))} />
+                            <span style={{ color: 'var(--muted)', fontSize: 13 }}>%</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                        <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
+                          Salvar rascunho
+                        </button>
+                        <button className="btn" style={{ background: '#2ea84c' }}
+                          onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
+                          disabled={savingConfig}>
+                          🔒 Confirmar e bloquear
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Projeção */}
+                  {ranking.length > 0 && (
+                    <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12, marginTop: 12 }}>
+                      <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Projeção atual:</p>
+                      {[
+                        { pos: 0, pct: payment.prize_1st },
+                        { pos: 1, pct: payment.prize_2nd },
+                        { pos: 2, pct: payment.prize_3rd },
+                      ].map(({ pos, pct }) => ranking[pos] && (
+                        <div key={pos} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 13 }}>{['🥇','🥈','🥉'][pos]} {ranking[pos].name}</span>
+                          <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>
+                            R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * pct / 100).toFixed(2)}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <input className="input" type="number" min="0" max="100"
-                            value={payment[f.key]}
-                            onChange={e => setPayment(p => ({ ...p, [f.key]: Number(e.target.value) }))} />
-                          <span style={{ color: 'var(--muted)', fontSize: 13 }}>%</span>
-                        </div>
-                      </div>
-                    ))}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, marginBottom: 12 }}>
-                      <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
-                        Salvar rascunho
-                      </button>
-                      <button className="btn" style={{ background: '#2ea84c' }}
-                        onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
-                        disabled={savingConfig}>
-                        🔒 Confirmar e bloquear
-                      </button>
+                      ))}
                     </div>
-                  </>
-                )}
-
-                {/* Visualização da distribuição para todos */}
-                {(payment.prize_locked || !isCreator) && (
-                  <div style={{ marginBottom: 12 }}>
-                    {payment.prize_locked && (
-                      <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 12, color: '#2ea84c', marginBottom: 12 }}>
-                        🔒 Distribuição confirmada
-                      </div>
-                    )}
-                    {[
-                      { label: '🥇 1º lugar', pct: payment.prize_1st },
-                      { label: '🥈 2º lugar', pct: payment.prize_2nd },
-                      { label: '🥉 3º lugar', pct: payment.prize_3rd },
-                    ].map(f => (
-                      <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-                        <span>{f.label} — {f.pct}%</span>
-                        <span style={{ color: 'var(--gold)', fontWeight: 700 }}>
-                          R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * f.pct / 100).toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Projeção com ranking */}
-                {ranking.length > 0 && (
-                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                    <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Projeção atual:</p>
-                    {[
-                      { pos: 0, pct: payment.prize_1st },
-                      { pos: 1, pct: payment.prize_2nd },
-                      { pos: 2, pct: payment.prize_3rd },
-                    ].map(({ pos, pct }) => ranking[pos] && (
-                      <div key={pos} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span style={{ fontSize: 13 }}>{['🥇','🥈','🥉'][pos]} {ranking[pos].name}</span>
-                        <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>
-                          R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * pct / 100).toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="card" style={{ padding: 0 }}>
         {members.map(m => (
