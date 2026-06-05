@@ -84,22 +84,28 @@ export default function FAQGrupo() {
     {
       icon: '🥅', title: 'Pênaltis no mata-mata',
       content: (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <tbody>
-            {[
-              [9, 'Empate exato + pênaltis certo', 'Chutou 1-1, terminou 1-1, acertou quem avança'],
-              [6, 'Empate exato, pênaltis errado', 'Chutou 1-1, terminou 1-1, errou pênaltis'],
-              [6, 'Empate (sem exato) + pênaltis certo', 'Chutou 0-0, terminou 2-2, acertou quem avança'],
-              [3, 'Empate sem exato e pênaltis errado', 'Chutou 0-0, terminou 2-2, errou pênaltis'],
-            ].map(([pts, rule, ex]) => (
-              <tr key={String(rule)} style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={{ padding: '8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)', width: 36 }}>{pts}</td>
-                <td style={{ padding: '8px 8px', fontSize: 13 }}>{rule}</td>
-                <td style={{ padding: '8px 0', fontSize: 11, color: 'var(--muted)' }}>{ex}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
+            <tbody>
+              {[
+                [9, 'Empate exato + pênaltis certo', 'Chutou 1-1, terminou 1-1, acertou quem avança'],
+                [6, 'Empate exato, pênaltis errado', 'Chutou 1-1, terminou 1-1, errou pênaltis'],
+                [6, 'Empate (sem exato) + pênaltis certo', 'Chutou 0-0, terminou 2-2, acertou quem avança'],
+                [3, 'Empate sem exato e pênaltis errado', 'Chutou 0-0, terminou 2-2, errou pênaltis'],
+                [3, 'Chutou vitória, time se classificou nos pênaltis', 'Chutou 2-1 pro Brasil, terminou 1-1, Brasil avançou nos pênaltis'],
+              ].map(([pts, rule, ex]) => (
+                <tr key={String(rule)} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)', width: 36 }}>{pts}</td>
+                  <td style={{ padding: '8px 8px', fontSize: 13 }}>{rule}</td>
+                  <td style={{ padding: '8px 0', fontSize: 11, color: 'var(--muted)' }}>{ex}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 12, fontStyle: 'italic' }}>
+            💡 Se você chutar vitória de um time e o jogo terminar empatado, você ganha 3 pts se o time que você escolheu se classificar nos pênaltis.
+          </p>
+        </>
       )
     },
     {
