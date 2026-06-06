@@ -58,6 +58,125 @@ function Crest({ name, crests, size = 24 }: { name: string; crests: Record<strin
   );
 }
 
+
+// Componente de Chaveamento Visual da Copa
+function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record<string, any> }) {
+  const stages = [
+    { key: 'ROUND_OF_16',   label: 'Oitavas',    rounds: 8 },
+    { key: 'QUARTER_FINALS', label: 'Quartas',   rounds: 4 },
+    { key: 'SEMI_FINALS',   label: 'Semifinais', rounds: 2 },
+    { key: 'THIRD_PLACE',   label: '3º Lugar',   rounds: 1 },
+    { key: 'FINAL',         label: 'Final',      rounds: 1 },
+  ];
+
+  function getStageMatches(stageKey: string) {
+    return matches.filter(m => m.phase.toUpperCase().includes(stageKey));
+  }
+
+  function MatchCard({ m }: { m: any }) {
+    const guess  = myGuesses[m.id];
+    const isDone = m.score_a !== null;
+    const isUpcoming = !isDone;
+
+    return (
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 10, padding: '8px 10px', minWidth: 160,
+        fontSize: 12
+      }}>
+        {/* Time A */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontWeight: 600, fontSize: 11, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {m.team_a || '?'}
+          </span>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 4 }}>
+            {isDone && (
+              <span style={{
+                fontWeight: 700, fontSize: 14,
+                color: m.score_a > m.score_b ? 'var(--gold)' : 'var(--muted)'
+              }}>{m.score_a}</span>
+            )}
+            {guess && (
+              <span style={{ fontSize: 10, color: 'var(--muted)', background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: 4 }}>
+                {guess.guess_a}
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Divisor */}
+        <div style={{ borderTop: '1px solid var(--line)', margin: '4px 0' }} />
+        {/* Time B */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontWeight: 600, fontSize: 11, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {m.team_b || '?'}
+          </span>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 4 }}>
+            {isDone && (
+              <span style={{
+                fontWeight: 700, fontSize: 14,
+                color: m.score_b > m.score_a ? 'var(--gold)' : 'var(--muted)'
+              }}>{m.score_b}</span>
+            )}
+            {guess && (
+              <span style={{ fontSize: 10, color: 'var(--muted)', background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: 4 }}>
+                {guess.guess_b}
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Data */}
+        {isUpcoming && (
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4, textAlign: 'center' }}>
+            {new Date(m.match_date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const knockoutMatches = matches.filter(m =>
+    stages.some(s => m.phase.toUpperCase().includes(s.key))
+  );
+
+  if (knockoutMatches.length === 0) {
+    return (
+      <div className="empty" style={{ marginTop: 20 }}>
+        ⏳ O chaveamento será exibido quando o mata-mata começar.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      {/* Legenda */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, fontSize: 11, color: 'var(--muted)' }}>
+        <span>Placar real: <strong style={{ color: 'var(--gold)' }}>grande</strong></span>
+        <span>Seu palpite: <span style={{ background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: 4 }}>pequeno</span></span>
+      </div>
+
+      {stages.map(stage => {
+        const stageMatches = getStageMatches(stage.key);
+        if (!stageMatches.length) return null;
+        return (
+          <div key={stage.key} style={{ marginBottom: 24 }}>
+            <p style={{
+              fontSize: 12, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.1em', color: 'var(--gold)', marginBottom: 10
+            }}>
+              {stage.label} ({stageMatches.length} jogos)
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {stageMatches.map(m => (
+                <MatchCard key={m.id} m={m} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function PalpitesGrupo() {
   const params  = useParams();
   const groupId = String(params.id);
@@ -75,6 +194,7 @@ export default function PalpitesGrupo() {
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
+  const [view, setView]     = useState<'palpites' | 'chaveamento'>('palpites');
 
   useEffect(() => {
     (async () => {
@@ -259,6 +379,7 @@ export default function PalpitesGrupo() {
               <button key={comp} onClick={() => {
                 setSelectedComp(isSelected ? null : comp);
                 setFilter('today');
+                setView('palpites');
                 setExpandedDays({ [todayBrazil()]: true });
               }} style={{
                 padding: '10px 16px', borderRadius: 12, border: '1px solid',
@@ -303,12 +424,37 @@ export default function PalpitesGrupo() {
         </div>
       )}
 
+      {/* TOGGLE PALPITES / CHAVEAMENTO (só na Copa do Mundo) */}
+      {selectedComp === 'Copa do Mundo' && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button onClick={() => setView('palpites')} style={{
+            flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
+            borderColor: view === 'palpites' ? 'var(--gold)' : 'var(--line)',
+            background: view === 'palpites' ? 'var(--gold)' : 'var(--card)',
+            color: view === 'palpites' ? '#1a1a1a' : 'var(--text)',
+            fontWeight: view === 'palpites' ? 700 : 400, fontSize: 13, cursor: 'pointer'
+          }}>⚽ Palpites</button>
+          <button onClick={() => setView('chaveamento')} style={{
+            flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
+            borderColor: view === 'chaveamento' ? 'var(--gold)' : 'var(--line)',
+            background: view === 'chaveamento' ? 'var(--gold)' : 'var(--card)',
+            color: view === 'chaveamento' ? '#1a1a1a' : 'var(--text)',
+            fontWeight: view === 'chaveamento' ? 700 : 400, fontSize: 13, cursor: 'pointer'
+          }}>🗺️ Chaveamento</button>
+        </div>
+      )}
+
+      {/* CHAVEAMENTO VISUAL */}
+      {view === 'chaveamento' && selectedComp === 'Copa do Mundo' && (
+        <Chaveamento matches={allCompMatches} myGuesses={myGuesses} />
+      )}
+
       {/* JOGOS POR DIA */}
       {!selectedComp ? (
         <div className="empty" style={{ marginTop: 40 }}>
           👆 Selecione um campeonato acima para ver os jogos
         </div>
-      ) : days.length === 0 ? (
+      ) : view === 'chaveamento' ? null : days.length === 0 ? (
         <div className="empty">Nenhum jogo encontrado.</div>
       ) : (
         days.map(day => {

@@ -87,7 +87,7 @@ function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record
         {/* Time A */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={{ fontWeight: 600, fontSize: 11, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {m.team_a || '?'}
+            {toPT(m.team_a) || '?'}
           </span>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 4 }}>
             {isDone && (
@@ -108,7 +108,7 @@ function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record
         {/* Time B */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontWeight: 600, fontSize: 11, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {m.team_b || '?'}
+            {toPT(m.team_b) || '?'}
           </span>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 4 }}>
             {isDone && (
@@ -177,6 +177,30 @@ function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record
   );
 }
 
+
+const TEAM_TRANSLATIONS: Record<string, string> = {
+  'Algeria': 'Argélia', 'Argentina': 'Argentina', 'Australia': 'Austrália',
+  'Austria': 'Áustria', 'Belgium': 'Bélgica', 'Bosnia-Herzegovina': 'Bósnia-Herzegovina',
+  'Brazil': 'Brasil', 'Canada': 'Canadá', 'Cape Verde Islands': 'Cabo Verde',
+  'Colombia': 'Colômbia', 'Congo DR': 'Congo', 'Croatia': 'Croácia',
+  'Curaçao': 'Curaçao', 'Czechia': 'República Tcheca', 'Ecuador': 'Equador',
+  'Egypt': 'Egito', 'England': 'Inglaterra', 'France': 'França',
+  'Germany': 'Alemanha', 'Ghana': 'Gana', 'Haiti': 'Haiti',
+  'Iran': 'Irã', 'Iraq': 'Iraque', 'Ivory Coast': 'Costa do Marfim',
+  'Japan': 'Japão', 'Jordan': 'Jordânia', 'Mexico': 'México',
+  'Morocco': 'Marrocos', 'Netherlands': 'Holanda', 'New Zealand': 'Nova Zelândia',
+  'Norway': 'Noruega', 'Panama': 'Panamá', 'Paraguay': 'Paraguai',
+  'Portugal': 'Portugal', 'Qatar': 'Catar', 'Saudi Arabia': 'Arábia Saudita',
+  'Scotland': 'Escócia', 'Senegal': 'Senegal', 'South Africa': 'África do Sul',
+  'South Korea': 'Coreia do Sul', 'Spain': 'Espanha', 'Sweden': 'Suécia',
+  'Switzerland': 'Suíça', 'Tunisia': 'Tunísia', 'Turkey': 'Turquia',
+  'United States': 'Estados Unidos', 'Uruguay': 'Uruguai', 'Uzbekistan': 'Uzbequistão',
+};
+
+function toPT(name: string): string {
+  return TEAM_TRANSLATIONS[name] || name;
+}
+
 export default function PalpitesGrupo() {
   const params  = useParams();
   const groupId = String(params.id);
@@ -209,14 +233,22 @@ export default function PalpitesGrupo() {
       // Busca bandeiras e escudos dos times
       fetch('/api/wc-data').then(r => r.json()).then(d => {
         const crestMap: Record<string, string> = {};
-        // Usa o mapa completo do endpoint
+        // Mapa completo do endpoint
         if (d.crests) {
           Object.entries(d.crests).forEach(([name, url]) => {
             if (url) crestMap[name as string] = url as string;
           });
         }
-        // Fallback: times individuais
-        (d.teams ?? []).forEach((t: any) => { if (t.flag) crestMap[t.name] = t.flag; });
+        // Times individuais com flag
+        (d.teams ?? []).forEach((t: any) => {
+          if (t.flag) crestMap[t.name] = t.flag;
+        });
+        // Fallback: busca também pelo nome sem acento
+        const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        Object.keys(crestMap).forEach(key => {
+          const norm = normalize(key);
+          if (!crestMap[norm]) crestMap[norm] = crestMap[key];
+        });
         setCrests(crestMap);
       }).catch(() => {});
     })();
