@@ -21,6 +21,9 @@ export default function Grupos() {
   const [saving, setSaving]       = useState(false);
   const [err, setErr]             = useState('');
   const [toast, setToast]         = useState('');
+  const [copyFrom, setCopyFrom]   = useState<string | null>(null);
+  const [copying, setCopying]     = useState(false);
+  const [userId, setUserId]       = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -29,6 +32,7 @@ export default function Grupos() {
     if (!session.session) { router.push('/login'); return; }
 
     const userId = session.session.user.id;
+    setUserId(userId);
 
     const { data: profile } = await supabase
       .from('profiles').select('name').eq('id', userId).maybeSingle();
@@ -115,6 +119,56 @@ export default function Grupos() {
     load();
   }
 
+  async function copiarPalpites(fromGroupId: string) {
+    if (!userId) return;
+    setCopying(true);
+
+    // Busca o group_member_id do usuário no grupo origem
+    const { data: fromMember } = await supabase
+      .from('group_members').select('id')
+      .eq('group_id', fromGroupId).eq('user_id', userId).maybeSingle();
+    if (!fromMember) { setCopying(false); showToast('❌ Você não é membro do grupo origem'); return; }
+
+    // Busca todos os palpites do grupo origem
+    const { data: sourceGuesses } = await supabase
+      .from('guesses').select('*').eq('group_member_id', fromMember.id);
+    if (!sourceGuesses?.length) { setCopying(false); showToast('❌ Nenhum palpite encontrado no grupo origem'); return; }
+
+    // Busca os outros grupos do usuário (exceto o origem)
+    const otherGroups = groups.filter(g => g.id !== fromGroupId);
+    if (!otherGroups.length) { setCopying(false); showToast('❌ Sem outros grupos para copiar'); return; }
+
+    let totalCopied = 0;
+
+    for (const group of otherGroups) {
+      const { data: toMember } = await supabase
+        .from('group_members').select('id')
+        .eq('group_id', group.id).eq('user_id', userId).maybeSingle();
+      if (!toMember) continue;
+
+      for (const guess of sourceGuesses) {
+        // Verifica se já existe palpite para esse jogo nesse grupo
+        const { data: existing } = await supabase
+          .from('guesses').select('id')
+          .eq('group_member_id', toMember.id).eq('match_id', guess.match_id).maybeSingle();
+        if (existing) continue; // Não sobrescreve palpites existentes
+
+        await supabase.from('guesses').insert({
+          group_member_id: toMember.id,
+          match_id: guess.match_id,
+          guess_a: guess.guess_a,
+          guess_b: guess.guess_b,
+          guess_penalty_winner: guess.guess_penalty_winner,
+        });
+        totalCopied++;
+      }
+    }
+
+    setCopying(false);
+    setCopyFrom(null);
+    showToast(`✅ ${totalCopied} palpites copiados para ${otherGroups.length} grupo${otherGroups.length > 1 ? 's' : ''}!`);
+  }
+
   function showToast(msg: string) {
     setToast(msg); setTimeout(() => setToast(''), 4000);
   }
@@ -153,18 +207,50 @@ export default function Grupos() {
         </div>
       ) : (
         groups.map(g => (
-          <Link key={g.id} href={`/grupo/${g.id}/palpites`} className="card"
-            style={{ display: 'block', textDecoration: 'none', color: 'inherit', cursor: 'pointer', marginBottom: 12 }}>
+          <div key={g.id} className="card" style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+              <Link href={`/grupo/${g.id}/palpites`}
+                style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{g.name}</h3>
                 <p style={{ fontSize: 12, color: 'var(--muted)' }}>
                   Código: <strong style={{ color: 'var(--gold)', fontFamily: 'monospace', letterSpacing: 2 }}>{g.invite_code}</strong>
                 </p>
+              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <Link href={`/grupo/${g.id}/palpites`} style={{ color: 'var(--muted)', fontSize: 20, textDecoration: 'none' }}>›</Link>
+                {groups.length > 1 && (
+                  <button onClick={() => setCopyFrom(copyFrom === g.id ? null : g.id)}
+                    title="Copiar palpites deste grupo"
+                    style={{
+                      background: copyFrom === g.id ? 'var(--gold)' : 'var(--bg-soft)',
+                      border: '1px solid var(--line)', borderRadius: 8,
+                      padding: '4px 8px', fontSize: 12, cursor: 'pointer',
+                      color: copyFrom === g.id ? '#1a1a1a' : 'var(--muted)'
+                    }}>📋</button>
+                )}
               </div>
-              <span style={{ color: 'var(--muted)', fontSize: 20 }}>›</span>
             </div>
-          </Link>
+
+            {/* Painel de copiar */}
+            {copyFrom === g.id && (
+              <div style={{ marginTop: 12, padding: '12px', background: 'var(--bg-soft)', borderRadius: 10, borderTop: '1px solid var(--line)' }}>
+                <p style={{ fontSize: 13, marginBottom: 10, color: 'var(--text)' }}>
+                  Copiar palpites de <strong style={{ color: 'var(--gold)' }}>{g.name}</strong> para os outros {groups.length - 1} grupo{groups.length - 1 > 1 ? 's' : ''}?
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
+                  ⚠️ Palpites já existentes não serão sobrescritos.
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-ghost" onClick={() => setCopyFrom(null)} style={{ flex: 1 }}>
+                    Cancelar
+                  </button>
+                  <button className="btn" onClick={() => copiarPalpites(g.id)} disabled={copying} style={{ flex: 1 }}>
+                    {copying ? 'Copiando...' : 'Confirmar'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ))
       )}
 

@@ -143,13 +143,13 @@ export default function FAQGrupo() {
         <>
           <p style={{ marginBottom: 8 }}>O ranking tem duas abas:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
-            <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais. O líder tem 👑 coroa animada.</li>
-            <li><strong style={{ color: 'var(--text)' }}>🌍 Seleções</strong> — ranking de quais seleções geraram mais pontos pro grupo</li>
+            <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais. O líder tem <strong style={{ color: 'var(--gold)' }}>👑 coroa animada</strong> e destaque dourado.</li>
+            <li><strong style={{ color: 'var(--text)' }}>🌍 Seleções</strong> — quais seleções da Copa geraram mais pontos pro grupo (soma de todos os palpites corretos envolvendo cada time)</li>
           </ul>
           <p style={{ marginBottom: 8 }}>Abaixo da tabela:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
-            <li><strong style={{ color: 'var(--text)' }}>📊 Gráfico de evolução</strong> — linhas coloridas mostrando pontos acumulados por rodada</li>
-            <li><strong style={{ color: 'var(--text)' }}>🏅 Melhor da rodada</strong> — top 3 de quem mais pontuou na última rodada</li>
+            <li><strong style={{ color: 'var(--text)' }}>📊 Gráfico de evolução</strong> — linhas coloridas mostrando pontos acumulados por rodada de cada participante</li>
+            <li><strong style={{ color: 'var(--text)' }}>🏅 Melhor da rodada</strong> — top 3 de quem mais pontuou na última rodada disputada</li>
           </ul>
           <p>Em caso de empate em pontos, quem tiver mais <strong style={{ color: 'var(--text)' }}>acertos de placar exato</strong> fica na frente.</p>
         </>
@@ -174,11 +174,19 @@ export default function FAQGrupo() {
       content: (
         <>
           <p style={{ marginBottom: 8 }}>Na aba <strong style={{ color: 'var(--text)' }}>Galera</strong> você vê os palpites de todos do grupo.</p>
-          <ul style={{ paddingLeft: 16 }}>
+          <ul style={{ paddingLeft: 16, marginBottom: 12 }}>
             <li>Toque em alguém para ver os palpites</li>
             <li>Filtre por <strong style={{ color: 'var(--text)' }}>Passados · Hoje · Próximos</strong></li>
             <li>Palpites ficam <strong style={{ color: 'var(--text)' }}>ocultos</strong> até o jogo começar</li>
             <li>Compartilhe o código ou link de convite para convidar mais pessoas</li>
+          </ul>
+          <p style={{ marginBottom: 8, fontWeight: 700, color: 'var(--text)' }}>💰 Caixinha do grupo</p>
+          <ul style={{ paddingLeft: 16 }}>
+            <li>Clique em <strong style={{ color: 'var(--text)' }}>💰 Caixinha do grupo</strong> para ver o status financeiro</li>
+            <li>Mostra quanto foi arrecadado, quem pagou e quem está pendente</li>
+            <li>Aba <strong style={{ color: 'var(--text)' }}>🏆 Prêmio</strong> mostra a distribuição e a projeção de quem vai ganhar baseada no ranking atual</li>
+            <li>O <strong style={{ color: 'var(--text)' }}>criador do grupo</strong> pode definir o valor da entrada, marcar pagamentos e configurar a divisão do prêmio com sliders</li>
+            <li>A distribuição pode ser <strong style={{ color: 'var(--text)' }}>bloqueada</strong> pelo criador — após confirmada não pode ser alterada</li>
           </ul>
         </>
       )
