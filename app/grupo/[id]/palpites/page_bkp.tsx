@@ -558,7 +558,7 @@ export default function PalpitesGrupo() {
 
                         <div className="match">
                           <div className="team team-a" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
-                            {m.team_a}
+                            {toPT(m.team_a)}
                             <Crest name={m.team_a} crests={crests} />
                           </div>
                           <div className="score-row">
@@ -576,7 +576,7 @@ export default function PalpitesGrupo() {
                           </div>
                           <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
                             <Crest name={m.team_b} crests={crests} />
-                            {m.team_b}
+                            {toPT(m.team_b)}
                           </div>
                         </div>
 
@@ -597,7 +597,7 @@ export default function PalpitesGrupo() {
                                       color: isSelected ? '#1a1a1a' : 'var(--text)',
                                       fontWeight: 700, fontSize: 13, cursor: saved ? 'default' : 'pointer'
                                     }}>
-                                    {side === 'A' ? m.team_a : m.team_b}
+                                    {side === 'A' ? toPT(m.team_a) : toPT(m.team_b)}
                                   </button>
                                 );
                               })}
