@@ -139,8 +139,19 @@ export default function Grupos() {
       .from('guesses').select('*').eq('group_member_id', fromMember.id);
     if (!sourceGuesses?.length) { setCopying(false); showToast('❌ Nenhum palpite encontrado no grupo origem'); return; }
 
+    // Busca apenas jogos futuros (ainda não iniciados)
+    const now = new Date().toISOString();
+    const { data: futureMatches } = await supabase
+      .from('matches').select('id')
+      .gt('match_date', now)
+      .is('score_a', null);
+    const futureIds = new Set((futureMatches || []).map((m: any) => m.id));
+
     let totalCopied = 0;
     for (const guess of sourceGuesses) {
+      // Só copia palpites de jogos futuros
+      if (!futureIds.has(guess.match_id)) continue;
+
       const { data: existing } = await supabase
         .from('guesses').select('id')
         .eq('group_member_id', toMember.id).eq('match_id', guess.match_id).maybeSingle();

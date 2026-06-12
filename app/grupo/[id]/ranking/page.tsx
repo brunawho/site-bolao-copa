@@ -117,6 +117,18 @@ export default function RankingGrupo() {
     return { ...member, total_points: totalPts, exact_hits: exactHits, winner_hits: winnerHits, special_pts: specialPts, grand_total: totalPts + specialPts, color: COLORS[idx % COLORS.length] };
   }).sort((a, b) => b.grand_total - a.grand_total || b.exact_hits - a.exact_hits);
 
+  // Calcula posições compartilhadas (empate = mesma posição)
+  const rankingWithPos = memberStats.map((r, i) => {
+    let pos = 1;
+    for (let j = 0; j < i; j++) {
+      const prev = memberStats[j];
+      if (prev.grand_total !== r.grand_total || prev.exact_hits !== r.exact_hits) {
+        pos = j + 2;
+      }
+    }
+    return { ...r, pos };
+  });
+
   // Dados do gráfico — pontos acumulados por rodada
   useEffect(() => {
     if (!showChart || !canvasRef.current || !matches.length) return;
@@ -299,9 +311,10 @@ export default function RankingGrupo() {
 
           {rankTab === 'geral' ? (
             <div className="card" style={{ padding: 0, marginBottom: 16 }}>
-              {memberStats.map((r, i) => {
+              {rankingWithPos.map((r, i) => {
                 const isMe = r.user_id === myUserId;
-                const isLeader = i === 0;
+                const isLeader = r.pos === 1;
+                const posLabel = r.pos <= 3 ? medals[r.pos - 1] : `${r.pos}º`;
                 return (
                   <div key={r.id} className="rank-row" style={{
                     background: isLeader
@@ -309,7 +322,7 @@ export default function RankingGrupo() {
                       : isMe ? 'rgba(212,167,44,0.06)' : undefined,
                     borderLeft: isLeader ? '3px solid var(--gold)' : undefined,
                   }}>
-                    <span className="rank-pos">{i < 3 ? medals[i] : `${i + 1}º`}</span>
+                    <span className="rank-pos">{posLabel}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Avatar name={r.name} color={r.color} size={34} />
                       <div>
@@ -392,13 +405,20 @@ export default function RankingGrupo() {
               <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
                 🏅 Melhor da Rodada {lastRound}
               </p>
-              {roundStats.map((r, i) => (
+              {roundStats.map((r, i) => {
+                // Posição compartilhada no melhor da rodada
+                let roundPos = 1;
+                for (let j = 0; j < i; j++) {
+                  if (roundStats[j].pts !== r.pts) roundPos = j + 2;
+                }
+                const roundPosLabel = roundPos <= 3 ? ['🥇','🥈','🥉'][roundPos - 1] : `${roundPos}º`;
+                return (
                 <div key={r.user_id} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '10px 0',
                   borderTop: i > 0 ? '1px solid var(--line)' : 'none'
                 }}>
-                  <span style={{ fontSize: 20 }}>{['🥇', '🥈', '🥉'][i]}</span>
+                  <span style={{ fontSize: 20 }}>{roundPosLabel}</span>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
                   <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>
                     {r.name}
@@ -408,7 +428,7 @@ export default function RankingGrupo() {
                     +{r.pts} pts
                   </span>
                 </div>
-              ))}
+              );})}
             </div>
           )}
 

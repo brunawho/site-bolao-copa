@@ -21,9 +21,11 @@ export default function Grupos() {
   const [saving, setSaving]       = useState(false);
   const [err, setErr]             = useState('');
   const [toast, setToast]         = useState('');
-  const [copyFrom, setCopyFrom]   = useState<string | null>(null);
-  const [copying, setCopying]     = useState(false);
-  const [userId, setUserId]       = useState<string | null>(null);
+  const [showMirror, setShowMirror] = useState(false);
+  const [mirrorFrom, setMirrorFrom] = useState<string>('');
+  const [mirrorTo, setMirrorTo]     = useState<string>('');
+  const [copying, setCopying]       = useState(false);
+  const [userId, setUserId]         = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -119,54 +121,44 @@ export default function Grupos() {
     load();
   }
 
-  async function copiarPalpites(fromGroupId: string) {
-    if (!userId) return;
+  async function espelharPalpites() {
+    if (!userId || !mirrorFrom || !mirrorTo) return;
     setCopying(true);
 
-    // Busca o group_member_id do usuário no grupo origem
     const { data: fromMember } = await supabase
       .from('group_members').select('id')
-      .eq('group_id', fromGroupId).eq('user_id', userId).maybeSingle();
+      .eq('group_id', mirrorFrom).eq('user_id', userId).maybeSingle();
     if (!fromMember) { setCopying(false); showToast('❌ Você não é membro do grupo origem'); return; }
 
-    // Busca todos os palpites do grupo origem
+    const { data: toMember } = await supabase
+      .from('group_members').select('id')
+      .eq('group_id', mirrorTo).eq('user_id', userId).maybeSingle();
+    if (!toMember) { setCopying(false); showToast('❌ Você não é membro do grupo destino'); return; }
+
     const { data: sourceGuesses } = await supabase
       .from('guesses').select('*').eq('group_member_id', fromMember.id);
     if (!sourceGuesses?.length) { setCopying(false); showToast('❌ Nenhum palpite encontrado no grupo origem'); return; }
 
-    // Busca os outros grupos do usuário (exceto o origem)
-    const otherGroups = groups.filter(g => g.id !== fromGroupId);
-    if (!otherGroups.length) { setCopying(false); showToast('❌ Sem outros grupos para copiar'); return; }
-
     let totalCopied = 0;
+    for (const guess of sourceGuesses) {
+      const { data: existing } = await supabase
+        .from('guesses').select('id')
+        .eq('group_member_id', toMember.id).eq('match_id', guess.match_id).maybeSingle();
+      if (existing) continue;
 
-    for (const group of otherGroups) {
-      const { data: toMember } = await supabase
-        .from('group_members').select('id')
-        .eq('group_id', group.id).eq('user_id', userId).maybeSingle();
-      if (!toMember) continue;
-
-      for (const guess of sourceGuesses) {
-        // Verifica se já existe palpite para esse jogo nesse grupo
-        const { data: existing } = await supabase
-          .from('guesses').select('id')
-          .eq('group_member_id', toMember.id).eq('match_id', guess.match_id).maybeSingle();
-        if (existing) continue; // Não sobrescreve palpites existentes
-
-        await supabase.from('guesses').insert({
-          group_member_id: toMember.id,
-          match_id: guess.match_id,
-          guess_a: guess.guess_a,
-          guess_b: guess.guess_b,
-          guess_penalty_winner: guess.guess_penalty_winner,
-        });
-        totalCopied++;
-      }
+      await supabase.from('guesses').insert({
+        group_member_id: toMember.id,
+        match_id: guess.match_id,
+        guess_a: guess.guess_a,
+        guess_b: guess.guess_b,
+        guess_penalty_winner: guess.guess_penalty_winner,
+      });
+      totalCopied++;
     }
 
     setCopying(false);
-    setCopyFrom(null);
-    showToast(`✅ ${totalCopied} palpites copiados para ${otherGroups.length} grupo${otherGroups.length > 1 ? 's' : ''}!`);
+    setShowMirror(false);
+    showToast(`✅ ${totalCopied} palpites espelhados com sucesso!`);
   }
 
   function showToast(msg: string) {
@@ -207,51 +199,73 @@ export default function Grupos() {
         </div>
       ) : (
         groups.map(g => (
-          <div key={g.id} className="card" style={{ marginBottom: 12 }}>
+          <Link key={g.id} href={`/grupo/${g.id}/palpites`} className="card"
+            style={{ display: 'block', textDecoration: 'none', color: 'inherit', cursor: 'pointer', marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Link href={`/grupo/${g.id}/palpites`}
-                style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+              <div>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{g.name}</h3>
                 <p style={{ fontSize: 12, color: 'var(--muted)' }}>
                   Código: <strong style={{ color: 'var(--gold)', fontFamily: 'monospace', letterSpacing: 2 }}>{g.invite_code}</strong>
                 </p>
-              </Link>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <Link href={`/grupo/${g.id}/palpites`} style={{ color: 'var(--muted)', fontSize: 20, textDecoration: 'none' }}>›</Link>
-                {groups.length > 1 && (
-                  <button onClick={() => setCopyFrom(copyFrom === g.id ? null : g.id)}
-                    title="Copiar palpites deste grupo"
-                    style={{
-                      background: copyFrom === g.id ? 'var(--gold)' : 'var(--bg-soft)',
-                      border: '1px solid var(--line)', borderRadius: 8,
-                      padding: '4px 8px', fontSize: 12, cursor: 'pointer',
-                      color: copyFrom === g.id ? '#1a1a1a' : 'var(--muted)'
-                    }}>📋</button>
-                )}
               </div>
+              <span style={{ color: 'var(--muted)', fontSize: 20 }}>›</span>
             </div>
-
-            {/* Painel de copiar */}
-            {copyFrom === g.id && (
-              <div style={{ marginTop: 12, padding: '12px', background: 'var(--bg-soft)', borderRadius: 10, borderTop: '1px solid var(--line)' }}>
-                <p style={{ fontSize: 13, marginBottom: 10, color: 'var(--text)' }}>
-                  Copiar palpites de <strong style={{ color: 'var(--gold)' }}>{g.name}</strong> para os outros {groups.length - 1} grupo{groups.length - 1 > 1 ? 's' : ''}?
-                </p>
-                <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
-                  ⚠️ Palpites já existentes não serão sobrescritos.
-                </p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-ghost" onClick={() => setCopyFrom(null)} style={{ flex: 1 }}>
-                    Cancelar
-                  </button>
-                  <button className="btn" onClick={() => copiarPalpites(g.id)} disabled={copying} style={{ flex: 1 }}>
-                    {copying ? 'Copiando...' : 'Confirmar'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          </Link>
         ))
+      )}
+
+      {/* BOTÃO ESPELHAR PALPITES */}
+      {groups.length > 1 && (
+        <button className="btn btn-ghost" onClick={() => { setShowMirror(true); setMirrorFrom(''); setMirrorTo(''); }}
+          style={{ marginBottom: 16 }}>
+          📋 Espelhar palpites
+        </button>
+      )}
+
+      {/* MODAL ESPELHAR */}
+      {showMirror && (
+        <div className="card" style={{ marginBottom: 16, border: '1px solid var(--gold)' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: 'var(--gold)' }}>
+            📋 Espelhar palpites
+          </h3>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+            Copia todos os palpites de um grupo para outro. Palpites já existentes não são sobrescritos.
+          </p>
+
+          <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+            De qual grupo?
+          </label>
+          <select className="input" value={mirrorFrom}
+            onChange={e => { setMirrorFrom(e.target.value); setMirrorTo(''); }}
+            style={{ marginBottom: 12 }}>
+            <option value="">Selecione o grupo origem...</option>
+            {groups.map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+
+          <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+            Para qual grupo?
+          </label>
+          <select className="input" value={mirrorTo}
+            onChange={e => setMirrorTo(e.target.value)}
+            style={{ marginBottom: 16 }}>
+            <option value="">Selecione o grupo destino...</option>
+            {groups.filter(g => g.id !== mirrorFrom).map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost" onClick={() => setShowMirror(false)} style={{ flex: 1 }}>
+              Cancelar
+            </button>
+            <button className="btn" disabled={!mirrorFrom || !mirrorTo || copying}
+              onClick={espelharPalpites} style={{ flex: 1 }}>
+              {copying ? 'Espelhando...' : 'Espelhar'}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Formulário criar/entrar */}
