@@ -28,7 +28,12 @@ export async function GET(req: Request) {
   }
 
   try {
-    const res = await fetch(`${FD_API}/competitions/WC/matches`, {
+    // Janela de 3 dias atrás até 3 dias à frente
+    const now      = new Date();
+    const dateFrom = new Date(now.getTime() - 86400000 * 3).toISOString().slice(0, 10);
+    const dateTo   = new Date(now.getTime() + 86400000 * 3).toISOString().slice(0, 10);
+
+    const res = await fetch(`${FD_API}/competitions/WC/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`, {
       headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY! }
     });
     if (!res.ok) throw new Error(`error ${res.status}`);
@@ -87,7 +92,7 @@ export async function GET(req: Request) {
       }
     }
 
-    return NextResponse.json({ competition: 'WC', inserted, updated, total: matches.length });
+    return NextResponse.json({ competition: 'WC', inserted, updated, total: matches.length, dateFrom, dateTo });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
