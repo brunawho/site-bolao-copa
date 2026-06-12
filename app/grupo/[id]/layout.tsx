@@ -64,7 +64,6 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
     { href: `/grupo/${groupId}/ranking`,     label: 'Ranking',   icon: '📊', badge: 0 },
     { href: `/grupo/${groupId}/meus-pontos`, label: 'Meus pts',  icon: '⭐', badge: 0 },
     { href: `/grupo/${groupId}/faq`,         label: 'Regras',    icon: '📖', badge: 0 },
-    { href: `/grupo/${groupId}/perfil`,      label: 'Perfil',    icon: '👤', badge: 0 },
     ...(wcEnded ? [{ href: `/grupo/${groupId}/encerramento`, label: 'Final', icon: '🏆', badge: 0 }] : []),
   ];
 
@@ -81,6 +80,9 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
           ← Grupos
         </Link>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>{groupName}</span>
+        <Link href={`/grupo/${groupId}/perfil`} style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 20 }}>
+          👤
+        </Link>
       </div>
 
       {children}

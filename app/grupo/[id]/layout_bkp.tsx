@@ -11,6 +11,7 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
   const groupId  = String(params.id);
   const [groupName, setGroupName]   = useState('');
   const [loading, setLoading]       = useState(true);
+  const [wcEnded, setWcEnded]       = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
@@ -63,6 +64,8 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
     { href: `/grupo/${groupId}/ranking`,     label: 'Ranking',   icon: '📊', badge: 0 },
     { href: `/grupo/${groupId}/meus-pontos`, label: 'Meus pts',  icon: '⭐', badge: 0 },
     { href: `/grupo/${groupId}/faq`,         label: 'Regras',    icon: '📖', badge: 0 },
+    { href: `/grupo/${groupId}/perfil`,      label: 'Perfil',    icon: '👤', badge: 0 },
+    ...(wcEnded ? [{ href: `/grupo/${groupId}/encerramento`, label: 'Final', icon: '🏆', badge: 0 }] : []),
   ];
 
   return (
