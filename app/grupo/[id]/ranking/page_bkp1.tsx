@@ -119,11 +119,13 @@ export default function RankingGrupo() {
 
   // Calcula posições compartilhadas (empate = mesma posição)
   const rankingWithPos = memberStats.map((r, i) => {
-    // Conta quantos membros têm pontuação estritamente maior
-    const pos = memberStats.filter(other =>
-      other.grand_total > r.grand_total ||
-      (other.grand_total === r.grand_total && other.exact_hits > r.exact_hits)
-    ).length + 1;
+    let pos = 1;
+    for (let j = 0; j < i; j++) {
+      const prev = memberStats[j];
+      if (prev.grand_total !== r.grand_total || prev.exact_hits !== r.exact_hits) {
+        pos = j + 2;
+      }
+    }
     return { ...r, pos };
   });
 
@@ -404,7 +406,11 @@ export default function RankingGrupo() {
                 🏅 Melhor da Rodada {lastRound}
               </p>
               {roundStats.map((r, i) => {
-                const roundPos = roundStats.filter(other => other.pts > r.pts).length + 1;
+                // Posição compartilhada no melhor da rodada
+                let roundPos = 1;
+                for (let j = 0; j < i; j++) {
+                  if (roundStats[j].pts !== r.pts) roundPos = j + 2;
+                }
                 const roundPosLabel = roundPos <= 3 ? ['🥇','🥈','🥉'][roundPos - 1] : `${roundPos}º`;
                 return (
                 <div key={r.user_id} style={{
