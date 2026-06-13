@@ -312,10 +312,26 @@ export default function PalpitesGrupo() {
       });
 
     setSaving(true);
-    const { error } = await supabase.from('guesses').insert(toInsert);
+    let saved = 0;
+    let lastError = '';
+    for (const guess of toInsert) {
+      const { error } = await supabase.from('guesses').insert(guess);
+      if (error) {
+        if (error.message.includes('duplicate') || error.message.includes('unique')) continue; // já existe
+        lastError = error.message;
+      } else {
+        saved++;
+      }
+    }
     setSaving(false); setConfirmDay(null);
-    if (error) { alert('Erro: ' + error.message); return; }
-    showToast(`${toInsert.length} palpite(s) salvo(s)! ✅`);
+    if (lastError && saved === 0) { alert('Erro: ' + lastError); return; }
+    if (saved > 0) showToast(`${saved} palpite(s) salvo(s)! ✅`);
+
+    // Marca jogos salvos para highlight
+    const savedIds = new Set(toInsert.map(g => g.match_id));
+    setSavedRecently(new Set(savedIds));
+    setTimeout(() => setSavedRecently(new Set()), 2500);
+
     setDraft({});
     load(memberId);
   }

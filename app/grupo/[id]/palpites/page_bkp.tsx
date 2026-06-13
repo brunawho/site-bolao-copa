@@ -201,6 +201,17 @@ function toPT(name: string): string {
   return TEAM_TRANSLATIONS[name] || name;
 }
 
+function timeUntil(matchDate: string): string | null {
+  const diff = new Date(matchDate).getTime() - Date.now();
+  if (diff <= 0) return null;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (h > 24) return null;
+  if (h > 0) return `Fecha em ${h}h ${m}min`;
+  if (m > 0) return `Fecha em ${m}min`;
+  return 'Fechando agora';
+}
+
 export default function PalpitesGrupo() {
   const params  = useParams();
   const groupId = String(params.id);
@@ -219,6 +230,7 @@ export default function PalpitesGrupo() {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
   const [view, setView]     = useState<'palpites' | 'chaveamento'>('palpites');
+  const [savedRecently, setSavedRecently] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -350,6 +362,14 @@ export default function PalpitesGrupo() {
 
   // Modal day matches
   const confirmDayMatches = confirmDay ? byDay[confirmDay] ?? [] : [];
+
+  useEffect(() => {
+    const handleUnload = () => {
+      sessionStorage.setItem(`scroll-palpites-${groupId}`, String(window.scrollY));
+    };
+    window.addEventListener('pagehide', handleUnload);
+    return () => window.removeEventListener('pagehide', handleUnload);
+  }, [groupId]);
 
   return (
     <main className="app">
