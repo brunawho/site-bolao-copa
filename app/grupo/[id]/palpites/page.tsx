@@ -413,7 +413,10 @@ export default function PalpitesGrupo() {
               Confirmar palpites?
             </h2>
             <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 8, textAlign: 'center' }}>
-              Você vai salvar <strong style={{ color: 'var(--gold)' }}>{palpitesDoDia(confirmDayMatches)} palpite(s)</strong>.
+              Você vai salvar <strong style={{ color: 'var(--gold)' }}>{confirmDayMatches.filter(m => {
+                const d = draft[m.id];
+                return !myGuesses[m.id] && !jogoComecou(m.match_date) && d?.a !== undefined && d?.a !== '' && d?.b !== undefined && d?.b !== '';
+              }).length} palpite(s)</strong>.
             </p>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, textAlign: 'center', marginBottom: 20 }}>
               Depois de salvar, <strong style={{ color: 'var(--danger)' }}>não dá pra editar</strong>.
