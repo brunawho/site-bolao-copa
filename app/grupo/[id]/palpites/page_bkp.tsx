@@ -315,8 +315,14 @@ export default function PalpitesGrupo() {
         return effectiveD !== undefined && effectiveD.a !== '' && effectiveD.b !== '';
       })
       .map(m => {
-        const saved = myGuesses[m.id];
-        const v = draft[m.id] || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' } : { a: '', b: '', pen: '' });
+        const savedGuess = myGuesses[m.id];
+        const draftVal = draft[m.id];
+        // Usa draft se foi modificado (a ou b diferentes do salvo), senão usa saved
+        const v = (draftVal && (draftVal.a !== '' || draftVal.b !== ''))
+          ? draftVal
+          : savedGuess
+            ? { a: String(savedGuess.guess_a), b: String(savedGuess.guess_b), pen: savedGuess.guess_penalty_winner || '' }
+            : { a: '', b: '', pen: '' };
         return {
           group_member_id: memberId,
           match_id: m.id,
@@ -604,7 +610,13 @@ export default function PalpitesGrupo() {
                     const started = jogoComecou(m.match_date);
                     const blocked = started; // bloqueia sempre após início, independente de ter palpite
                     const editing = saved && !started; // tem palpite mas jogo não começou = pode editar
-                    const d       = draft[m.id] || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' } : { a: '', b: '', pen: '' });
+                    // Prioriza draft se foi modificado, senão usa valores salvos
+                    const draftVal = draft[m.id];
+                    const d = (draftVal && (draftVal.a !== '' || draftVal.b !== ''))
+                      ? draftVal
+                      : saved
+                        ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' }
+                        : { a: '', b: '', pen: '' };
                     const pts     = previewPts(m.id, m);
                     const isDraw  = saved
                       ? saved.guess_a === saved.guess_b
