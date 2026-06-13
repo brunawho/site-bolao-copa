@@ -634,13 +634,13 @@ export default function PalpitesGrupo() {
                           </div>
                           <div className="score-row">
                             <input className="score-input" inputMode="numeric"
-                              value={saved ? String(saved.guess_a) : d.a}
+                              value={draft[m.id]?.a !== undefined ? draft[m.id].a : saved ? String(saved.guess_a) : d.a}
                               onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
                               disabled={blocked}
                               style={{ opacity: blocked ? 0.4 : 1 }} />
                             <span className="vs">x</span>
                             <input className="score-input" inputMode="numeric"
-                              value={saved ? String(saved.guess_b) : d.b}
+                              value={draft[m.id]?.b !== undefined ? draft[m.id].b : saved ? String(saved.guess_b) : d.b}
                               onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
                               disabled={blocked}
                               style={{ opacity: blocked ? 0.4 : 1 }} />
