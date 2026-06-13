@@ -391,7 +391,7 @@ export default function PalpitesGrupo() {
 
   useEffect(() => {
     const handleUnload = () => {
-      sessionStorage.setItem(`scroll-palpites-${groupId}`, String(window.scrollY));
+      if (typeof window !== 'undefined') sessionStorage.setItem(`scroll-palpites-${groupId}`, String(window.scrollY));
     };
     window.addEventListener('pagehide', handleUnload);
     return () => window.removeEventListener('pagehide', handleUnload);
@@ -453,8 +453,9 @@ export default function PalpitesGrupo() {
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {comps.map(comp => {
-            const total    = compMap[comp].length;
-            const palpitados = compMap[comp].filter(m => myGuesses[m.id]).length;
+            const compMatches = compMap[comp] ?? [];
+            const total      = compMatches.length;
+            const palpitados = compMatches.filter(m => myGuesses[m.id]).length;
             const isSelected = selectedComp === comp;
             return (
               <button key={comp} onClick={() => {
