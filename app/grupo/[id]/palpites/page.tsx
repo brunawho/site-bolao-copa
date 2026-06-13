@@ -459,7 +459,7 @@ export default function PalpitesGrupo() {
         background: 'rgba(227,93,93,0.10)', border: '1px solid var(--danger)',
         borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 13, lineHeight: 1.5
       }}>
-        🚫 Palpite enviado <strong style={{ color: 'var(--danger)' }}>não pode ser editado</strong> e não é permitido palpitar após o início do jogo.
+        ⚡ Palpites podem ser <strong style={{ color: 'var(--gold)' }}>editados até o início do jogo</strong>. Após o apito, ficam bloqueados.
       </div>
 
       {/* MENU DE CAMPEONATOS */}
@@ -614,7 +614,7 @@ export default function PalpitesGrupo() {
                       <div key={m.id} style={{
                         padding: 16,
                         borderTop: i > 0 ? '1px solid var(--line)' : 'none',
-                        background: saved ? 'rgba(46,168,76,0.04)' : blocked ? 'rgba(227,93,93,0.04)' : 'var(--card)',
+                        background: saved && blocked ? 'rgba(46,168,76,0.04)' : saved && !blocked ? 'rgba(212,167,44,0.04)' : blocked ? 'rgba(227,93,93,0.04)' : 'var(--card)',
                       }}>
                         <div className="match-meta" style={{ marginBottom: 8 }}>
                           <span style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -636,13 +636,13 @@ export default function PalpitesGrupo() {
                             <input className="score-input" inputMode="numeric"
                               value={saved ? String(saved.guess_a) : d.a}
                               onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
-                              disabled={!!saved || blocked}
+                              disabled={blocked}
                               style={{ opacity: blocked ? 0.4 : 1 }} />
                             <span className="vs">x</span>
                             <input className="score-input" inputMode="numeric"
                               value={saved ? String(saved.guess_b) : d.b}
                               onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
-                              disabled={!!saved || blocked}
+                              disabled={blocked}
                               style={{ opacity: blocked ? 0.4 : 1 }} />
                           </div>
                           <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
@@ -677,8 +677,9 @@ export default function PalpitesGrupo() {
                         )}
 
                         <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          {saved    && <span className="locked-badge">🔒 Palpite enviado</span>}
-                          {blocked  && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ Jogo já iniciou</span>}
+                          {saved && !blocked && <span style={{ fontSize: 11, color: 'var(--gold)' }}>✏️ Editar até o início</span>}
+                          {saved && blocked  && <span className="locked-badge">🔒 Palpite enviado</span>}
+                          {!saved && blocked && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ Jogo já iniciou</span>}
                           {!saved && !blocked && <span />}
                           {pts !== null && <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>+{pts} pts</span>}
                         </div>
