@@ -291,10 +291,11 @@ export default function PalpitesGrupo() {
   }
 
   function palpitesDoDia(dayMatches: Match[]) {
-    return dayMatches.filter(m =>
-      !myGuesses[m.id] && !jogoComecou(m.match_date) &&
-      draft[m.id]?.a !== '' && draft[m.id]?.b !== ''
-    ).length;
+    return dayMatches.filter(m => {
+      const d = draft[m.id];
+      return !myGuesses[m.id] && !jogoComecou(m.match_date) &&
+        d !== undefined && d.a !== '' && d.a !== undefined && d.b !== '' && d.b !== undefined;
+    }).length;
   }
 
   async function confirmarSalvar(dayMatches: Match[]) {
@@ -302,9 +303,11 @@ export default function PalpitesGrupo() {
     const toInsert = dayMatches
       .filter(m => {
         const d = draft[m.id];
-        const hasA = d?.a !== undefined && d?.a !== '' && d?.a !== null;
-        const hasB = d?.b !== undefined && d?.b !== '' && d?.b !== null;
-        return !myGuesses[m.id] && !jogoComecou(m.match_date) && hasA && hasB;
+        return d !== undefined &&
+          !myGuesses[m.id] &&
+          !jogoComecou(m.match_date) &&
+          d.a !== undefined && d.a !== '' &&
+          d.b !== undefined && d.b !== '';
       })
       .map(m => {
         const v = draft[m.id];
@@ -415,7 +418,7 @@ export default function PalpitesGrupo() {
             <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 8, textAlign: 'center' }}>
               Você vai salvar <strong style={{ color: 'var(--gold)' }}>{confirmDayMatches.filter(m => {
                 const d = draft[m.id];
-                return !myGuesses[m.id] && !jogoComecou(m.match_date) && d?.a !== undefined && d?.a !== '' && d?.b !== undefined && d?.b !== '';
+                return d !== undefined && !myGuesses[m.id] && !jogoComecou(m.match_date) && d.a !== undefined && d.a !== '' && d.b !== undefined && d.b !== '';
               }).length} palpite(s)</strong>.
             </p>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, textAlign: 'center', marginBottom: 20 }}>
