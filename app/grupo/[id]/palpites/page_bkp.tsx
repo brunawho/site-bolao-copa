@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { supabase, type Match, type Guess, calcPoints } from '@/lib/supabase';
 
 type Draft = Record<string, { a: string; b: string; pen: 'A' | 'B' | '' }>;
@@ -214,6 +214,7 @@ function timeUntil(matchDate: string): string | null {
 
 export default function PalpitesGrupo() {
   const params  = useParams();
+  const router  = useRouter();
   const groupId = String(params.id);
 
   const [matches, setMatches]     = useState<Match[]>([]);
@@ -366,7 +367,7 @@ export default function PalpitesGrupo() {
     if (!compMap[comp]) compMap[comp] = [];
     compMap[comp].push(m);
   });
-  const comps = Object.keys(compMap).sort();
+  const comps = [...Object.keys(compMap).sort(), '⭐ Especiais'];
 
   // Filtra jogos do campeonato selecionado
   const allCompMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
@@ -457,6 +458,10 @@ export default function PalpitesGrupo() {
             const isSelected = selectedComp === comp;
             return (
               <button key={comp} onClick={() => {
+                if (comp === '⭐ Especiais') {
+                  router.push(`/grupo/${groupId}/apostas`);
+                  return;
+                }
                 setSelectedComp(isSelected ? null : comp);
                 setFilter('today');
                 setView('palpites');
