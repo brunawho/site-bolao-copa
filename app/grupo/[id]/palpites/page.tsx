@@ -222,7 +222,8 @@ export default function PalpitesGrupo() {
   const [memberId, setMemberId]   = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
   const [toast, setToast]         = useState('');
-  const [confirmDay, setConfirmDay] = useState<string | null>(null);
+  const [confirmDay, setConfirmDay]     = useState<string | null>(null);
+  const [confirmMatches, setConfirmMatches] = useState<Match[]>([]);
   const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
@@ -299,7 +300,12 @@ export default function PalpitesGrupo() {
   async function confirmarSalvar(dayMatches: Match[]) {
     if (!memberId) return;
     const toInsert = dayMatches
-      .filter(m => !myGuesses[m.id] && !jogoComecou(m.match_date) && draft[m.id]?.a !== '' && draft[m.id]?.b !== '')
+      .filter(m => {
+        const d = draft[m.id];
+        const hasA = d?.a !== undefined && d?.a !== '' && d?.a !== null;
+        const hasB = d?.b !== undefined && d?.b !== '' && d?.b !== null;
+        return !myGuesses[m.id] && !jogoComecou(m.match_date) && hasA && hasB;
+      })
       .map(m => {
         const v = draft[m.id];
         return {
@@ -323,7 +329,7 @@ export default function PalpitesGrupo() {
         saved++;
       }
     }
-    setSaving(false); setConfirmDay(null);
+    setSaving(false); setConfirmDay(null); setConfirmMatches([]);
     if (lastError && saved === 0) { alert('Erro: ' + lastError); return; }
     if (saved > 0) showToast(`${saved} palpite(s) salvo(s)! ✅`);
 
@@ -377,14 +383,7 @@ export default function PalpitesGrupo() {
   const days = Object.keys(byDay).sort();
 
   // Modal day matches
-  // Usa todos os jogos do campeonato (não só o filtro atual) para o modal de confirmação
-  const allByDay: Record<string, Match[]> = {};
-  allCompMatches.forEach(m => {
-    const day = toBrazilDay(m.match_date);
-    if (!allByDay[day]) allByDay[day] = [];
-    allByDay[day].push(m);
-  });
-  const confirmDayMatches = confirmDay ? (allByDay[confirmDay] ?? byDay[confirmDay] ?? []) : [];
+  const confirmDayMatches = confirmMatches;
 
   useEffect(() => {
     const handleUnload = () => {
@@ -421,7 +420,7 @@ export default function PalpitesGrupo() {
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" disabled={saving}
-                onClick={() => setConfirmDay(null)} style={{ flex: 1 }}>Cancelar</button>
+                onClick={() => { setConfirmDay(null); setConfirmMatches([]); }} style={{ flex: 1 }}>Cancelar</button>
               <button className="btn" disabled={saving}
                 onClick={() => confirmarSalvar(confirmDayMatches)} style={{ flex: 1 }}>
                 {saving ? 'Salvando...' : 'Confirmar'}
@@ -660,7 +659,10 @@ export default function PalpitesGrupo() {
 
                   {novos > 0 && (
                     <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderTop: '1px solid var(--line)' }}>
-                      <button className="btn" onClick={() => setConfirmDay(day)} disabled={saving}>
+                      <button className="btn" onClick={() => {
+                        setConfirmDay(day);
+                        setConfirmMatches(dayMatches);
+                      }} disabled={saving}>
                         Salvar palpites do dia ({novos})
                       </button>
                     </div>

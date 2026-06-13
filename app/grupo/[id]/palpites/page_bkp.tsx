@@ -377,7 +377,14 @@ export default function PalpitesGrupo() {
   const days = Object.keys(byDay).sort();
 
   // Modal day matches
-  const confirmDayMatches = confirmDay ? byDay[confirmDay] ?? [] : [];
+  // Usa todos os jogos do campeonato (não só o filtro atual) para o modal de confirmação
+  const allByDay: Record<string, Match[]> = {};
+  allCompMatches.forEach(m => {
+    const day = toBrazilDay(m.match_date);
+    if (!allByDay[day]) allByDay[day] = [];
+    allByDay[day].push(m);
+  });
+  const confirmDayMatches = confirmDay ? (allByDay[confirmDay] ?? byDay[confirmDay] ?? []) : [];
 
   useEffect(() => {
     const handleUnload = () => {
