@@ -387,7 +387,7 @@ export default function PalpitesGrupo() {
   const days = Object.keys(byDay).sort();
 
   // Modal day matches
-  const confirmDayMatches = confirmMatches;
+  const confirmDayMatches = confirmMatches ?? [];
 
   useEffect(() => {
     const handleUnload = () => {
@@ -544,7 +544,7 @@ export default function PalpitesGrupo() {
         <div className="empty">Nenhum jogo encontrado.</div>
       ) : (
         days.map(day => {
-          const dayMatches = byDay[day];
+          const dayMatches = byDay[day] ?? [];
           const expanded   = !!expandedDays[day];
           const today      = day === todayBrazil();
           const palpitados = dayMatches.filter(m => myGuesses[m.id]).length;

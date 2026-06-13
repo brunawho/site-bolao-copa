@@ -209,12 +209,19 @@ export default function FAQGrupo() {
       icon: '🔑', title: 'Grupos e convites',
       content: (
         <>
-          <ul style={{ paddingLeft: 16 }}>
+          <ul style={{ paddingLeft: 16, marginBottom: 12 }}>
             <li>Crie quantos grupos quiser na tela inicial</li>
             <li>Compartilhe o <strong style={{ color: 'var(--text)' }}>código de 6 letras</strong> ou o <strong style={{ color: 'var(--text)' }}>link de convite</strong></li>
             <li>Quem acessar o link pode criar conta e entrar direto no grupo</li>
             <li>Você pode participar de vários grupos ao mesmo tempo</li>
             <li>Cada grupo tem seu próprio ranking independente</li>
+          </ul>
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>📋 Espelhar palpites</p>
+          <ul style={{ paddingLeft: 16 }}>
+            <li>Na tela de grupos, clique em <strong style={{ color: 'var(--text)' }}>📋 Espelhar palpites</strong></li>
+            <li>Escolha o grupo de <strong style={{ color: 'var(--text)' }}>origem</strong> e o grupo de <strong style={{ color: 'var(--text)' }}>destino</strong></li>
+            <li>Todos os palpites do grupo origem são copiados para o destino</li>
+            <li>Palpites já existentes no destino <strong style={{ color: 'var(--text)' }}>não são sobrescritos</strong></li>
           </ul>
         </>
       )

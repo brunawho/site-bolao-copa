@@ -294,8 +294,12 @@ export default function PalpitesGrupo() {
   function palpitesDoDia(dayMatches: Match[]) {
     return dayMatches.filter(m => {
       const d = draft[m.id];
-      return !myGuesses[m.id] && !jogoComecou(m.match_date) &&
-        d !== undefined && d.a !== '' && d.a !== undefined && d.b !== '' && d.b !== undefined;
+      const saved = myGuesses[m.id];
+      const started = jogoComecou(m.match_date);
+      if (started) return false; // jogo já começou, não conta
+      // Novo palpite ou edição
+      const effectiveD = d || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' } : undefined);
+      return effectiveD !== undefined && effectiveD.a !== '' && effectiveD.b !== '';
     }).length;
   }
 
@@ -304,14 +308,15 @@ export default function PalpitesGrupo() {
     const toInsert = dayMatches
       .filter(m => {
         const d = draft[m.id];
-        return d !== undefined &&
-          !myGuesses[m.id] &&
-          !jogoComecou(m.match_date) &&
-          d.a !== undefined && d.a !== '' &&
-          d.b !== undefined && d.b !== '';
+        const started = jogoComecou(m.match_date);
+        if (started) return false;
+        const saved = myGuesses[m.id];
+        const effectiveD = d || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b) } : undefined);
+        return effectiveD !== undefined && effectiveD.a !== '' && effectiveD.b !== '';
       })
       .map(m => {
-        const v = draft[m.id];
+        const saved = myGuesses[m.id];
+        const v = draft[m.id] || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' } : { a: '', b: '', pen: '' });
         return {
           group_member_id: memberId,
           match_id: m.id,
@@ -325,9 +330,20 @@ export default function PalpitesGrupo() {
     let saved = 0;
     let lastError = '';
     for (const guess of toInsert) {
-      const { error } = await supabase.from('guesses').insert(guess);
+      const existingGuess = myGuesses[guess.match_id];
+      let error;
+      if (existingGuess) {
+        // Atualiza palpite existente
+        ({ error } = await supabase.from('guesses').update({
+          guess_a: guess.guess_a,
+          guess_b: guess.guess_b,
+          guess_penalty_winner: guess.guess_penalty_winner,
+        }).eq('id', existingGuess.id));
+      } else {
+        ({ error } = await supabase.from('guesses').insert(guess));
+      }
       if (error) {
-        if (error.message.includes('duplicate') || error.message.includes('unique')) continue; // já existe
+        if (error.message.includes('duplicate') || error.message.includes('unique')) continue;
         lastError = error.message;
       } else {
         saved++;
@@ -586,8 +602,9 @@ export default function PalpitesGrupo() {
                   {dayMatches.map((m, i) => {
                     const saved   = myGuesses[m.id];
                     const started = jogoComecou(m.match_date);
-                    const blocked = !saved && started;
-                    const d       = draft[m.id] || { a: '', b: '', pen: '' };
+                    const blocked = started; // bloqueia sempre após início, independente de ter palpite
+                    const editing = saved && !started; // tem palpite mas jogo não começou = pode editar
+                    const d       = draft[m.id] || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' } : { a: '', b: '', pen: '' });
                     const pts     = previewPts(m.id, m);
                     const isDraw  = saved
                       ? saved.guess_a === saved.guess_b
