@@ -102,7 +102,7 @@ export default function GaleraGrupo() {
       setRanking(rankData || []);
 
       // Busca todos palpites de todos membros para visão por jogo
-      const allMemberIds = ms.map((m: any) => m.id);
+      const allMemberIds = (ms || []).map((m: any) => m.id);
       const { data: allGuessesData } = await supabase
         .from('guesses').select('*').in('group_member_id', allMemberIds);
 
