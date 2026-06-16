@@ -40,23 +40,13 @@ function Avatar({ name, color, size = 32 }: { name: string; color: string; size?
   );
 }
 
-
-
-type Member = { id: string; user_id: string; name: string };
-
 function toBrazilDay(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric', month: '2-digit', day: '2-digit'
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
   }).split('/').reverse().join('-');
 }
 
-function todayBrazil() {
-  return new Date().toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric', month: '2-digit', day: '2-digit'
-  }).split('/').reverse().join('-');
-}
+function todayBrazil() { return toBrazilDay(new Date().toISOString()); }
 
 function fmtDay(dateYMD: string) {
   const [y, m, d] = dateYMD.split('-').map(Number);
@@ -69,9 +59,14 @@ function jogoComecou(matchDate: string) {
   return new Date(matchDate) <= new Date();
 }
 
+const MEMBER_COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
+
+type Member = { id: string; user_id: string; name: string };
+
 export default function GaleraGrupo() {
-  const params = useParams();
+  const params  = useParams();
   const groupId = String(params.id);
+
   const [members, setMembers]       = useState<Member[]>([]);
   const [matches, setMatches]       = useState<Match[]>([]);
   const [selected, setSelected]     = useState<Member | null>(null);
@@ -79,28 +74,26 @@ export default function GaleraGrupo() {
   const [inviteCode, setInviteCode] = useState('');
   const [copied, setCopied]         = useState(false);
   const [myUserId, setMyUserId]     = useState<string | null>(null);
-  const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [filter, setFilter]         = useState<'upcoming' | 'today' | 'past'>('today');
+  const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [isCreator, setIsCreator]   = useState(false);
-  const [galeraMode, setGaleraMode] = useState<'pessoa' | 'jogo'>('pessoa');
-  const [allGuessesMap, setAllGuessesMap] = useState<Record<string, Record<string, any>>>({});
-  const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
   const [payment, setPayment]       = useState({ id: '', entry_value: 0, prize_1st: 60, prize_2nd: 30, prize_3rd: 10, prize_locked: false });
   const [memberPayments, setMemberPayments] = useState<Record<string, boolean>>({});
   const [savingConfig, setSavingConfig] = useState(false);
   const [configTab, setConfigTab]   = useState<'pagamentos' | 'premio'>('pagamentos');
   const [ranking, setRanking]       = useState<{ name: string; total_points: number }[]>([]);
-  const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
+  const [galeraMode, setGaleraMode] = useState<'pessoa' | 'jogo'>('pessoa');
+  const [allGuessesMap, setAllGuessesMap] = useState<Record<string, Record<string, any>>>({});
+  const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
-      setMyUserId(session.session?.user.id || null);
-
-      const { data: g } = await supabase
-        .from('groups').select('invite_code').eq('id', groupId).maybeSingle();
-      setInviteCode(g?.invite_code || '');
+      if (!session.session) return;
+      const userId = session.session.user.id;
+      setMyUserId(userId);
 
       const { data: ms } = await supabase
         .from('group_members').select('id, user_id').eq('group_id', groupId);
@@ -108,45 +101,39 @@ export default function GaleraGrupo() {
       if (ms?.length) {
         const { data: profiles } = await supabase.from('profiles').select('id, name');
         const list: Member[] = (ms || []).map((m: any) => ({
-          id: m.id,
-          user_id: m.user_id,
+          id: m.id, user_id: m.user_id,
           name: profiles?.find((p: any) => p.id === m.user_id)?.name || 'Sem nome'
         })).sort((a, b) => a.name.localeCompare(b.name));
         setMembers(list);
+
+        const colorMap: Record<string, string> = {};
+        list.forEach((m, i) => { colorMap[m.user_id] = MEMBER_COLORS[i % MEMBER_COLORS.length]; });
+        setMemberColors(colorMap);
       }
+
+      const { data: g } = await supabase.from('groups').select('invite_code, created_by').eq('id', groupId).maybeSingle();
+      setInviteCode(g?.invite_code || '');
+      setIsCreator(g?.created_by === userId);
 
       const { data: mt } = await supabase.from('matches').select('*').order('match_date');
       setMatches(mt || []);
 
-      // Verifica se é criador
-      const { data: group } = await supabase
-        .from('groups').select('created_by').eq('id', groupId).maybeSingle();
+      const { data: group } = await supabase.from('groups').select('created_by').eq('id', groupId).maybeSingle();
       setIsCreator(group?.created_by === session.session?.user.id);
 
-      // Busca config de pagamento
-      const { data: payData } = await supabase
-        .from('group_payments').select('*').eq('group_id', groupId).maybeSingle();
+      const { data: payData } = await supabase.from('group_payments').select('*').eq('group_id', groupId).maybeSingle();
       if (payData) setPayment(payData);
 
-      // Busca status de pagamentos
-      const { data: memberPays } = await supabase
-        .from('member_payments').select('user_id, paid').eq('group_id', groupId);
+      const { data: memberPays } = await supabase.from('member_payments').select('user_id, paid').eq('group_id', groupId);
       const payMap: Record<string, boolean> = {};
       (memberPays || []).forEach((p: any) => { payMap[p.user_id] = p.paid; });
       setMemberPayments(payMap);
 
-      // Ranking
-      const { data: rankData } = await supabase
-        .from('ranking').select('name, total_points').eq('group_id', groupId)
-        .order('total_points', { ascending: false });
+      const { data: rankData } = await supabase.from('ranking').select('name, total_points').eq('group_id', groupId).order('total_points', { ascending: false });
       setRanking(rankData || []);
 
-      // Busca todos palpites de todos membros para visão por jogo
       const allMemberIds = (ms || []).map((m: any) => m.id);
-      const { data: allGuessesData } = await supabase
-        .from('guesses').select('*').in('group_member_id', allMemberIds);
-
-      // Monta mapa: match_id -> { member_id -> guess }
+      const { data: allGuessesData } = await supabase.from('guesses').select('*').in('group_member_id', allMemberIds);
       const guessMap: Record<string, Record<string, any>> = {};
       (allGuessesData || []).forEach((g: any) => {
         if (!guessMap[g.match_id]) guessMap[g.match_id] = {};
@@ -154,7 +141,6 @@ export default function GaleraGrupo() {
       });
       setAllGuessesMap(guessMap);
 
-      // Expande hoje por padrão
       setExpandedDays({ [todayBrazil()]: true });
     })();
   }, [groupId]);
@@ -163,8 +149,8 @@ export default function GaleraGrupo() {
     setSelected(m);
     setFilter('today');
     setExpandedDays({ [todayBrazil()]: true });
-    const { data } = await supabase.from('guesses').select('*').eq('group_member_id', m.id);
-    setGuesses(data || []);
+    const { data: gs } = await supabase.from('guesses').select('*').eq('group_member_id', m.id);
+    setGuesses(gs || []);
   }
 
   function toggleDay(day: string) {
@@ -178,7 +164,6 @@ export default function GaleraGrupo() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // Agrupa por dia no timezone Brasil
   function groupByDay(ms: Match[]) {
     const byDay: Record<string, Match[]> = {};
     ms.forEach(m => {
@@ -191,8 +176,6 @@ export default function GaleraGrupo() {
 
   async function savePaymentConfig(lockPrize = false) {
     setSavingConfig(true);
-    const total = payment.prize_1st + payment.prize_2nd + payment.prize_3rd;
-    if (total !== 100) { alert('A soma das % deve ser 100%'); setSavingConfig(false); return; }
     if (payment.id) {
       await supabase.from('group_payments').update({
         entry_value: payment.entry_value,
@@ -215,8 +198,7 @@ export default function GaleraGrupo() {
   }
 
   async function togglePaid(userId: string, currentPaid: boolean) {
-    const { data: existing } = await supabase
-      .from('member_payments').select('id').eq('group_id', groupId).eq('user_id', userId).maybeSingle();
+    const { data: existing } = await supabase.from('member_payments').select('id').eq('group_id', groupId).eq('user_id', userId).maybeSingle();
     if (existing) {
       await supabase.from('member_payments').update({
         paid: !currentPaid, paid_at: !currentPaid ? new Date().toISOString() : null
@@ -229,12 +211,13 @@ export default function GaleraGrupo() {
     setMemberPayments(mp => ({ ...mp, [userId]: !currentPaid }));
   }
 
+  // ====== VISÃO DETALHE DE PESSOA ======
   if (selected) {
     const byMatch: Record<string, Guess> = {};
     guesses.forEach(g => { byMatch[g.match_id] = g; });
     const isMe = selected.user_id === myUserId;
-    const now = new Date();
     const todayStr = todayBrazil();
+
     const filteredMatches = matches.filter(m => {
       const day = toBrazilDay(m.match_date);
       if (filter === 'today')    return day === todayStr;
@@ -242,8 +225,11 @@ export default function GaleraGrupo() {
       if (filter === 'upcoming') return day > todayStr;
       return true;
     });
+
     const byDay = groupByDay(filteredMatches);
     const days = Object.keys(byDay).sort();
+    if (filter === 'past') days.reverse();
+
     const todayCount    = matches.filter(m => toBrazilDay(m.match_date) === todayStr).length;
     const pastCount     = matches.filter(m => toBrazilDay(m.match_date) < todayStr).length;
     const upcomingCount = matches.filter(m => toBrazilDay(m.match_date) > todayStr).length;
@@ -274,7 +260,7 @@ export default function GaleraGrupo() {
               setFilter(f.key);
               setExpandedDays(f.key === 'today' ? { [todayBrazil()]: true } : {});
             }} style={{
-              flex: 1, padding: '8px 4px', borderRadius: 10, border: '1px solid',
+              flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
               borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
               background: filter === f.key ? 'var(--gold)' : 'var(--card)',
               color: filter === f.key ? '#1a1a1a' : 'var(--text)',
@@ -287,52 +273,31 @@ export default function GaleraGrupo() {
           ))}
         </div>
 
-        {days.length === 0 && <div className="empty">Nenhum jogo neste período.</div>}
-
         {days.map(day => {
-          const expanded = !!expandedDays[day];
-          const dayMatches = byDay[day];
-          const palpitados = dayMatches.filter(m => byMatch[m.id]).length;
-          const isToday = day === todayBrazil();
+          const dayMatches = byDay[day] ?? [];
+          const expanded   = !!expandedDays[day];
+          const isToday    = day === todayStr;
 
           return (
             <div key={day} style={{ marginBottom: 8 }}>
               <button onClick={() => toggleDay(day)} style={{
-                width: '100%',
-                background: expanded ? 'var(--card)' : 'var(--bg-soft)',
+                width: '100%', background: expanded ? 'var(--card)' : 'var(--bg-soft)',
                 border: `1px solid ${isToday ? 'var(--gold)' : 'var(--line)'}`,
                 borderRadius: expanded ? '14px 14px 0 0' : 14,
-                padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
+                padding: '12px 16px', cursor: 'pointer', color: 'var(--text)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {isToday && <span style={{
-                    background: 'var(--gold)', color: '#1a1a1a',
-                    fontSize: 10, fontWeight: 700, padding: '2px 8px',
-                    borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.08em'
-                  }}>Hoje</span>}
-                  <span style={{
-                    fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
-                    letterSpacing: '0.08em', color: isToday ? 'var(--gold)' : 'var(--text)'
-                  }}>
-                    {fmtDay(day)}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{palpitados}/{dayMatches.length} ✓</span>
-                  <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
-                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  {isToday ? '⚡ Hoje' : fmtDay(day)}
+                </span>
+                <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
               </button>
 
               {expanded && (
-                <div style={{
-                  border: `1px solid ${isToday ? 'var(--gold)' : 'var(--line)'}`,
-                  borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden'
-                }}>
+                <div style={{ border: '1px solid var(--line)', borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
                   {dayMatches.map((m, i) => {
                     const g = byMatch[m.id];
-                    const started = jogoComecou(m.match_date);
-                    const oculto = !isMe && !started;
+                    const oculto = !isMe && !jogoComecou(m.match_date);
 
                     return (
                       <div key={m.id} style={{
@@ -340,13 +305,8 @@ export default function GaleraGrupo() {
                         borderTop: i > 0 ? '1px solid var(--line)' : 'none',
                         background: 'var(--card)'
                       }}>
-                        <div className="match-meta" style={{ marginBottom: 8 }}>
-                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>{m.phase}</span>
-                          <span style={{ fontSize: 12 }}>
-                            {new Date(m.match_date).toLocaleTimeString('pt-BR', {
-                              timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
-                            })}
-                          </span>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
+                          {m.phase.split('·').slice(1).join('·').trim() || m.phase}
                         </div>
 
                         <div className="match">
@@ -354,30 +314,20 @@ export default function GaleraGrupo() {
                           <div className="score-row">
                             {oculto ? (
                               <div style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                gap: 8, padding: '8px 12px',
-                                background: 'var(--bg-soft)', borderRadius: 12,
-                                border: '1px solid var(--line)'
+                                display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center'
                               }}>
-                                <span style={{ fontSize: 16 }}>🔒</span>
-                                <span style={{ fontSize: 10, color: 'var(--muted)' }}>Aguardando</span>
+                                <div className="score-input" style={{ background: 'var(--bg-soft)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>?</div>
+                                <span style={{ color: 'var(--muted)', fontSize: 12 }}>x</span>
+                                <div className="score-input" style={{ background: 'var(--bg-soft)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>?</div>
+                              </div>
+                            ) : g ? (
+                              <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
+                                <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{g.guess_a}</div>
+                                <span style={{ color: 'var(--muted)', fontSize: 12 }}>x</span>
+                                <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{g.guess_b}</div>
                               </div>
                             ) : (
-                              <>
-                                <div className="score-input" style={{
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  opacity: g ? 1 : 0.3
-                                }}>
-                                  {g ? g.guess_a : '–'}
-                                </div>
-                                <span className="vs">x</span>
-                                <div className="score-input" style={{
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  opacity: g ? 1 : 0.3
-                                }}>
-                                  {g ? g.guess_b : '–'}
-                                </div>
-                              </>
+                              <span style={{ fontSize: 12, color: 'var(--muted)' }}>—</span>
                             )}
                           </div>
                           <div className="team team-b">{toPT(m.team_b)}</div>
@@ -401,11 +351,13 @@ export default function GaleraGrupo() {
     );
   }
 
+  // ====== TELA PRINCIPAL DA GALERA ======
   return (
     <main className="app">
       <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>A Galera</h1>
       <p className="subtitle" style={{ marginBottom: 16 }}>Toque em alguém pra ver os palpites.</p>
 
+      {/* Card de convite + caixinha */}
       {inviteCode && (
         <div className="card" style={{ marginBottom: 20, background: 'rgba(212,167,44,0.08)' }}>
           <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
@@ -426,8 +378,216 @@ export default function GaleraGrupo() {
         </div>
       )}
 
-      {/* TOGGLE MODO */}
-      {members.length > 0 && !selected && (
+      {/* Conteúdo da caixinha */}
+      {showConfig && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          {/* Resumo financeiro */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)' }}>
+                R$ {(Object.values(memberPayments).filter(Boolean).length * payment.entry_value).toFixed(0)}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#2ea84c' }}>
+                {Object.values(memberPayments).filter(Boolean).length}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--danger)' }}>
+                {members.length - Object.values(memberPayments).filter(Boolean).length}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
+            </div>
+          </div>
+
+          {/* Abas */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {(['pagamentos', 'premio'] as const).map(tab => (
+              <button key={tab} onClick={() => setConfigTab(tab)} style={{
+                flex: 1, padding: '8px', borderRadius: 10, border: '1px solid',
+                borderColor: configTab === tab ? 'var(--gold)' : 'var(--line)',
+                background: configTab === tab ? 'var(--gold)' : 'var(--bg-soft)',
+                color: configTab === tab ? '#1a1a1a' : 'var(--text)',
+                fontWeight: configTab === tab ? 700 : 400, fontSize: 12, cursor: 'pointer'
+              }}>
+                {tab === 'pagamentos' ? '💰 Pagamentos' : '🏆 Prêmio'}
+              </button>
+            ))}
+          </div>
+
+          {configTab === 'pagamentos' && (
+            <>
+              {isCreator && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
+                  <input className="input" type="number" min="0"
+                    value={payment.entry_value}
+                    onChange={e => setPayment(p => ({ ...p, entry_value: Number(e.target.value) }))} />
+                  <button className="btn" style={{ marginTop: 8 }} onClick={() => savePaymentConfig()} disabled={savingConfig}>
+                    {savingConfig ? '...' : 'Salvar valor'}
+                  </button>
+                </div>
+              )}
+              {!isCreator && payment.entry_value > 0 && (
+                <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 10, fontSize: 13 }}>
+                  Valor da entrada: <strong style={{ color: 'var(--gold)' }}>R$ {payment.entry_value.toFixed(2)}</strong>
+                </div>
+              )}
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
+                {members.map(m => (
+                  <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
+                    {isCreator ? (
+                      <button onClick={() => togglePaid(m.user_id, memberPayments[m.user_id] || false)} style={{
+                        padding: '6px 12px', borderRadius: 8, border: '1px solid',
+                        borderColor: memberPayments[m.user_id] ? '#2ea84c' : 'var(--line)',
+                        background: memberPayments[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
+                        color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--muted)',
+                        fontSize: 12, cursor: 'pointer', fontWeight: 600
+                      }}>
+                        {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
+                      </button>
+                    ) : (
+                      <span style={{
+                        padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--danger)',
+                      }}>
+                        {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {configTab === 'premio' && (
+            <>
+              {isCreator && !payment.prize_locked && (() => {
+                const total = Object.values(memberPayments).filter(Boolean).length * payment.entry_value;
+                const max2  = 100 - payment.prize_1st;
+                const prize3 = Math.max(0, max2 - payment.prize_2nd);
+
+                return (
+                  <>
+                    <style>{`
+                      .prize-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; }
+                      .prize-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid #1a1a1a; }
+                    `}</style>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>🥇 1º lugar</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_1st}%</span>
+                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_1st / 100).toFixed(2)}</span>}
+                        </div>
+                      </div>
+                      <input type="range" className="prize-slider" min="0" max="100" step="1"
+                        value={payment.prize_1st}
+                        style={{ background: `linear-gradient(to right, var(--gold) ${payment.prize_1st}%, var(--line) ${payment.prize_1st}%)` }}
+                        onChange={e => {
+                          const v1 = Number(e.target.value);
+                          const remaining = 100 - v1;
+                          const v2 = Math.min(payment.prize_2nd, remaining);
+                          const v3 = remaining - v2;
+                          setPayment(p => ({ ...p, prize_1st: v1, prize_2nd: v2, prize_3rd: Math.max(0, v3) }));
+                        }} />
+                    </div>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>🥈 2º lugar</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_2nd}%</span>
+                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_2nd / 100).toFixed(2)}</span>}
+                        </div>
+                      </div>
+                      <input type="range" className="prize-slider" min="0" max={max2} step="1"
+                        value={payment.prize_2nd}
+                        style={{ background: `linear-gradient(to right, var(--gold) ${max2 > 0 ? (payment.prize_2nd / max2 * 100) : 0}%, var(--line) ${max2 > 0 ? (payment.prize_2nd / max2 * 100) : 0}%)` }}
+                        onChange={e => {
+                          const v2 = Number(e.target.value);
+                          setPayment(p => ({ ...p, prize_2nd: v2, prize_3rd: Math.max(0, max2 - v2) }));
+                        }} />
+                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Disponível: {max2}%</div>
+                    </div>
+
+                    <div style={{ marginBottom: 16, padding: '12px', background: 'var(--bg-soft)', borderRadius: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>🥉 3º lugar</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{prize3}%</span>
+                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * prize3 / 100).toFixed(2)}</span>}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Calculado automaticamente</div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                      <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
+                        Salvar rascunho
+                      </button>
+                      <button className="btn" style={{ background: '#2ea84c' }}
+                        onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
+                        disabled={savingConfig}>
+                        🔒 Confirmar e bloquear
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
+
+              {(payment.prize_locked || !isCreator) && (
+                <div style={{ marginBottom: 12 }}>
+                  {payment.prize_locked && (
+                    <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 12, color: '#2ea84c', marginBottom: 12 }}>
+                      🔒 Distribuição confirmada
+                    </div>
+                  )}
+                  {[
+                    { label: '🥇 1º lugar', pct: payment.prize_1st },
+                    { label: '🥈 2º lugar', pct: payment.prize_2nd },
+                    { label: '🥉 3º lugar', pct: payment.prize_3rd },
+                  ].map(f => (
+                    <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
+                      <span>{f.label} — {f.pct}%</span>
+                      <span style={{ color: 'var(--gold)', fontWeight: 700 }}>
+                        R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * f.pct / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {ranking.length > 0 && (
+                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Projeção atual:</p>
+                  {[
+                    { pos: 0, pct: payment.prize_1st },
+                    { pos: 1, pct: payment.prize_2nd },
+                    { pos: 2, pct: payment.prize_3rd },
+                  ].map(({ pos, pct }) => ranking[pos] && (
+                    <div key={pos} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 13 }}>{['🥇','🥈','🥉'][pos]} {ranking[pos].name}</span>
+                      <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>
+                        R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * pct / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Toggle modo */}
+      {members.length > 0 && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <button onClick={() => setGaleraMode('pessoa')} style={{
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
@@ -448,237 +608,8 @@ export default function GaleraGrupo() {
 
       {members.length === 0 && <div className="empty">Ninguém entrou ainda.</div>}
 
-      {showConfig && (
-          <div className="card" style={{ marginTop: 8 }}>
-            {/* Resumo financeiro */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)' }}>
-                  R$ {(Object.values(memberPayments).filter(Boolean).length * payment.entry_value).toFixed(0)}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
-              </div>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#2ea84c' }}>
-                  {Object.values(memberPayments).filter(Boolean).length}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
-              </div>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--danger)' }}>
-                  {members.length - Object.values(memberPayments).filter(Boolean).length}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
-              </div>
-            </div>
-
-            {/* Abas */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {(['pagamentos', 'premio'] as const).map(tab => (
-                <button key={tab} onClick={() => setConfigTab(tab)} style={{
-                  flex: 1, padding: '8px', borderRadius: 10, border: '1px solid',
-                  borderColor: configTab === tab ? 'var(--gold)' : 'var(--line)',
-                  background: configTab === tab ? 'var(--gold)' : 'var(--bg-soft)',
-                  color: configTab === tab ? '#1a1a1a' : 'var(--text)',
-                  fontWeight: configTab === tab ? 700 : 400, fontSize: 12, cursor: 'pointer'
-                }}>
-                  {tab === 'pagamentos' ? '💰 Pagamentos' : '🏆 Prêmio'}
-                </button>
-              ))}
-            </div>
-
-            {configTab === 'pagamentos' && (
-              <>
-                {/* Valor da entrada — só criador edita */}
-                {isCreator && (
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
-                    <input className="input" type="number" min="0"
-                      value={payment.entry_value}
-                      onChange={e => setPayment(p => ({ ...p, entry_value: Number(e.target.value) }))} />
-                    <button className="btn" style={{ marginTop: 8 }} onClick={() => savePaymentConfig()} disabled={savingConfig}>
-                      {savingConfig ? '...' : 'Salvar valor'}
-                    </button>
-                  </div>
-                )}
-                {!isCreator && payment.entry_value > 0 && (
-                  <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 10, fontSize: 13 }}>
-                    Valor da entrada: <strong style={{ color: 'var(--gold)' }}>R$ {payment.entry_value.toFixed(2)}</strong>
-                  </div>
-                )}
-
-                {/* Status de pagamento */}
-                <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                  <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
-                  {members.map(m => (
-                    <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
-                      {isCreator ? (
-                        <button onClick={() => togglePaid(m.user_id, memberPayments[m.user_id] || false)} style={{
-                          padding: '6px 12px', borderRadius: 8, border: '1px solid',
-                          borderColor: memberPayments[m.user_id] ? '#2ea84c' : 'var(--line)',
-                          background: memberPayments[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
-                          color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--muted)',
-                          fontSize: 12, cursor: 'pointer', fontWeight: 600
-                        }}>
-                          {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
-                        </button>
-                      ) : (
-                        <span style={{
-                          padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                          color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--danger)',
-                        }}>
-                          {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {configTab === 'premio' && (
-              <>
-                {/* Distribuição com sliders encadeados — só criador edita */}
-                {isCreator && !payment.prize_locked && (() => {
-                  const total = Object.values(memberPayments).filter(Boolean).length * payment.entry_value;
-                  const max2 = 100 - payment.prize_1st;
-                  const max3 = max2 - payment.prize_2nd;
-                  const prize3 = max3 < 0 ? 0 : max3;
-
-                  return (
-                    <>
-                      <style>{`
-                        .prize-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; }
-                        .prize-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid #1a1a1a; }
-                        .prize-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid #1a1a1a; }
-                      `}</style>
-
-                      {/* 1º lugar */}
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700 }}>🥇 1º lugar</span>
-                          <div style={{ textAlign: 'right' }}>
-                            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_1st}%</span>
-                            {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_1st / 100).toFixed(2)}</span>}
-                          </div>
-                        </div>
-                        <input type="range" className="prize-slider" min="0" max="100" step="1"
-                          value={payment.prize_1st}
-                          style={{ background: `linear-gradient(to right, var(--gold) ${payment.prize_1st}%, var(--line) ${payment.prize_1st}%)` }}
-                          onChange={e => {
-                            const v1 = Number(e.target.value);
-                            const remaining = 100 - v1;
-                            const v2 = Math.min(payment.prize_2nd, remaining);
-                            const v3 = remaining - v2;
-                            const v3final = v3 < 0 ? 0 : v3;
-                            setPayment(p => ({ ...p, prize_1st: v1, prize_2nd: v2, prize_3rd: v3final }));
-                          }} />
-                      </div>
-
-                      {/* 2º lugar */}
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700 }}>🥈 2º lugar</span>
-                          <div style={{ textAlign: 'right' }}>
-                            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_2nd}%</span>
-                            {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_2nd / 100).toFixed(2)}</span>}
-                          </div>
-                        </div>
-                        <input type="range" className="prize-slider" min="0" max={max2} step="1"
-                          value={payment.prize_2nd}
-                          style={{ background: `linear-gradient(to right, var(--gold) ${max2 > 0 ? (payment.prize_2nd / max2 * 100) : 0}%, var(--line) ${max2 > 0 ? (payment.prize_2nd / max2 * 100) : 0}%)` }}
-                          onChange={e => {
-                            const v2 = Number(e.target.value);
-                            const v3 = max2 - v2;
-                            setPayment(p => ({ ...p, prize_2nd: v2, prize_3rd: v3 < 0 ? 0 : v3 }));
-                          }} />
-                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Disponível: {max2}%</div>
-                      </div>
-
-                      {/* 3º lugar — calculado automaticamente */}
-                      <div style={{ marginBottom: 16, padding: '12px', background: 'var(--bg-soft)', borderRadius: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 13, fontWeight: 700 }}>🥉 3º lugar</span>
-                          <div style={{ textAlign: 'right' }}>
-                            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{prize3}%</span>
-                            {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * prize3 / 100).toFixed(2)}</span>}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Calculado automaticamente (sobra do 2º)</div>
-                      </div>
-
-                      {/* Verificação */}
-                      <div style={{
-                        padding: '8px 12px', borderRadius: 10, marginBottom: 12, textAlign: 'center', fontSize: 13,
-                        background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', color: '#2ea84c'
-                      }}>
-                        Total: {payment.prize_1st + payment.prize_2nd + prize3}% ✅
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                        <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
-                          Salvar rascunho
-                        </button>
-                        <button className="btn" style={{ background: '#2ea84c' }}
-                          onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
-                          disabled={savingConfig}>
-                          🔒 Confirmar e bloquear
-                        </button>
-                      </div>
-                    </>
-                  );
-                })()}
-
-                {/* Visualização da distribuição para todos */}
-                {(payment.prize_locked || !isCreator) && (
-                  <div style={{ marginBottom: 12 }}>
-                    {payment.prize_locked && (
-                      <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 12, color: '#2ea84c', marginBottom: 12 }}>
-                        🔒 Distribuição confirmada
-                      </div>
-                    )}
-                    {[
-                      { label: '🥇 1º lugar', pct: payment.prize_1st },
-                      { label: '🥈 2º lugar', pct: payment.prize_2nd },
-                      { label: '🥉 3º lugar', pct: payment.prize_3rd },
-                    ].map(f => (
-                      <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-                        <span>{f.label} — {f.pct}%</span>
-                        <span style={{ color: 'var(--gold)', fontWeight: 700 }}>
-                          R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * f.pct / 100).toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Projeção com ranking */}
-                {ranking.length > 0 && (
-                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                    <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Projeção atual:</p>
-                    {[
-                      { pos: 0, pct: payment.prize_1st },
-                      { pos: 1, pct: payment.prize_2nd },
-                      { pos: 2, pct: payment.prize_3rd },
-                    ].map(({ pos, pct }) => ranking[pos] && (
-                      <div key={pos} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <span style={{ fontSize: 13 }}>{['🥇','🥈','🥉'][pos]} {ranking[pos].name}</span>
-                        <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>
-                          R$ {((Object.values(memberPayments).filter(Boolean).length * payment.entry_value) * pct / 100).toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* VISÃO POR JOGO */}
-      {galeraMode === 'jogo' && !selected && (() => {
+      {/* Visão por jogo */}
+      {galeraMode === 'jogo' && (() => {
         const now = new Date();
         const startedMatches = matches
           .filter(m => new Date(m.match_date) <= now)
@@ -693,12 +624,12 @@ export default function GaleraGrupo() {
             {startedMatches.map(m => {
               const guessesForMatch = allGuessesMap[m.id] || {};
               const isFinished = m.score_a !== null;
+              const isExpanded = expandedMatch === m.id;
 
               return (
                 <div key={m.id} className="card" style={{ marginBottom: 12, padding: 0 }}>
-                  {/* Header do jogo — clicável */}
-                  <div onClick={() => setExpandedMatch(expandedMatch === m.id ? null : m.id)}
-                    style={{ padding: '12px 16px', borderBottom: expandedMatch === m.id ? '1px solid var(--line)' : 'none', cursor: 'pointer' }}>
+                  <div onClick={() => setExpandedMatch(isExpanded ? null : m.id)}
+                    style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: isExpanded ? '1px solid var(--line)' : 'none' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontSize: 11, color: 'var(--muted)' }}>
                         {m.phase.split('·').slice(1).join('·').trim() || m.phase}
@@ -722,14 +653,13 @@ export default function GaleraGrupo() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8, fontSize: 11, color: 'var(--muted)', gap: 6 }}>
                       <span>{Object.keys(guessesForMatch).length}/{members.length} palpites</span>
-                      <span>{expandedMatch === m.id ? '▲' : '▼'}</span>
+                      <span>{isExpanded ? '▲' : '▼'}</span>
                     </div>
                   </div>
 
-                  {/* Palpites dos membros — só mostra se expandido */}
-                  {expandedMatch === m.id && members.map((member, i) => {
+                  {isExpanded && members.map((member, i) => {
                     const memberGuess = Object.values(guessesForMatch).find((g: any) =>
-                      members.find(mb => mb.id === g.group_member_id && mb.user_id === member.user_id)
+                      member.id === g.group_member_id
                     ) as any;
 
                     return (
@@ -743,7 +673,7 @@ export default function GaleraGrupo() {
                           <span style={{ fontSize: 13, fontWeight: 600 }}>{member.name}</span>
                         </div>
                         {memberGuess ? (
-                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: 'var(--text)' }}>
+                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18 }}>
                             {memberGuess.guess_a} x {memberGuess.guess_b}
                             {m.is_knockout && memberGuess.guess_a === memberGuess.guess_b && memberGuess.guess_penalty_winner && (
                               <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>
@@ -764,18 +694,23 @@ export default function GaleraGrupo() {
         );
       })()}
 
-      {/* VISÃO POR PESSOA */}
-      {(galeraMode === 'pessoa' || selected) && (
+      {/* Visão por pessoa */}
+      {galeraMode === 'pessoa' && (
         <div className="card" style={{ padding: 0 }}>
-        {members.map(m => (
-          <div key={m.id} className="person-item" onClick={() => open(m)}>
-            <span style={{ fontWeight: 600 }}>
-              {m.name} {m.user_id === myUserId && <span style={{ fontSize: 11, color: 'var(--gold)' }}>(você)</span>}
-            </span>
-            <span className="chevron">›</span>
-          </div>
-        ))}
-      </div>
+          {members.map((m, i) => (
+            <div key={m.id} className="person-item"
+              style={{ borderTop: i > 0 ? '1px solid var(--line)' : 'none' }}
+              onClick={() => open(m)}>
+              <Avatar name={m.name} color={memberColors[m.user_id] || '#d4a72c'} size={36} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{m.name}
+                  {m.user_id === myUserId && <span style={{ fontSize: 11, color: 'var(--gold)', marginLeft: 6 }}>← você</span>}
+                </div>
+              </div>
+              <span className="chevron">›</span>
+            </div>
+          ))}
+        </div>
       )}
 
       <div style={{ height: 100 }} />
