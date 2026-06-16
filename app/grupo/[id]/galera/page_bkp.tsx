@@ -3,6 +3,45 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase, type Match, type Guess } from '@/lib/supabase';
 
+const TEAM_TRANSLATIONS: Record<string, string> = {
+  'Algeria': 'Argélia', 'Argentina': 'Argentina', 'Australia': 'Austrália',
+  'Austria': 'Áustria', 'Belgium': 'Bélgica', 'Bosnia-Herzegovina': 'Bósnia-Herzegovina',
+  'Brazil': 'Brasil', 'Canada': 'Canadá', 'Cape Verde Islands': 'Cabo Verde',
+  'Colombia': 'Colômbia', 'Congo DR': 'Congo', 'Croatia': 'Croácia',
+  'Curaçao': 'Curaçao', 'Czechia': 'República Tcheca', 'Ecuador': 'Equador',
+  'Egypt': 'Egito', 'England': 'Inglaterra', 'France': 'França',
+  'Germany': 'Alemanha', 'Ghana': 'Gana', 'Haiti': 'Haiti',
+  'Iran': 'Irã', 'Iraq': 'Iraque', 'Ivory Coast': 'Costa do Marfim',
+  'Japan': 'Japão', 'Jordan': 'Jordânia', 'Mexico': 'México',
+  'Morocco': 'Marrocos', 'Netherlands': 'Holanda', 'New Zealand': 'Nova Zelândia',
+  'Norway': 'Noruega', 'Panama': 'Panamá', 'Paraguay': 'Paraguai',
+  'Portugal': 'Portugal', 'Qatar': 'Catar', 'Saudi Arabia': 'Arábia Saudita',
+  'Scotland': 'Escócia', 'Senegal': 'Senegal', 'South Africa': 'África do Sul',
+  'South Korea': 'Coreia do Sul', 'Spain': 'Espanha', 'Sweden': 'Suécia',
+  'Switzerland': 'Suíça', 'Tunisia': 'Tunísia', 'Turkey': 'Turquia',
+  'United States': 'Estados Unidos', 'Uruguay': 'Uruguai', 'Uzbekistan': 'Uzbequistão',
+};
+
+function toPT(name: string): string {
+  return TEAM_TRANSLATIONS[name] || name;
+}
+
+function Avatar({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: `${color}30`, border: `2px solid ${color}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, fontSize: size * 0.4, fontWeight: 700, color
+    }}>
+      {initial}
+    </div>
+  );
+}
+
+
+
 type Member = { id: string; user_id: string; name: string };
 
 function toBrazilDay(iso: string) {
@@ -43,6 +82,8 @@ export default function GaleraGrupo() {
   const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [isCreator, setIsCreator]   = useState(false);
+  const [galeraMode, setGaleraMode] = useState<'pessoa' | 'jogo'>('pessoa');
+  const [allGuessesMap, setAllGuessesMap] = useState<Record<string, Record<string, any>>>({});
   const [showConfig, setShowConfig] = useState(false);
   const [payment, setPayment]       = useState({ id: '', entry_value: 0, prize_1st: 60, prize_2nd: 30, prize_3rd: 10, prize_locked: false });
   const [memberPayments, setMemberPayments] = useState<Record<string, boolean>>({});
@@ -98,6 +139,19 @@ export default function GaleraGrupo() {
         .from('ranking').select('name, total_points').eq('group_id', groupId)
         .order('total_points', { ascending: false });
       setRanking(rankData || []);
+
+      // Busca todos palpites de todos membros para visão por jogo
+      const allMemberIds = (ms || []).map((m: any) => m.id);
+      const { data: allGuessesData } = await supabase
+        .from('guesses').select('*').in('group_member_id', allMemberIds);
+
+      // Monta mapa: match_id -> { member_id -> guess }
+      const guessMap: Record<string, Record<string, any>> = {};
+      (allGuessesData || []).forEach((g: any) => {
+        if (!guessMap[g.match_id]) guessMap[g.match_id] = {};
+        guessMap[g.match_id][g.group_member_id] = g;
+      });
+      setAllGuessesMap(guessMap);
 
       // Expande hoje por padrão
       setExpandedDays({ [todayBrazil()]: true });
@@ -295,7 +349,7 @@ export default function GaleraGrupo() {
                         </div>
 
                         <div className="match">
-                          <div className="team team-a">{m.team_a}</div>
+                          <div className="team team-a">{toPT(m.team_a)}</div>
                           <div className="score-row">
                             {oculto ? (
                               <div style={{
@@ -325,7 +379,7 @@ export default function GaleraGrupo() {
                               </>
                             )}
                           </div>
-                          <div className="team team-b">{m.team_b}</div>
+                          <div className="team team-b">{toPT(m.team_b)}</div>
                         </div>
 
                         {!oculto && !g && (
@@ -365,6 +419,26 @@ export default function GaleraGrupo() {
           <button className="btn btn-ghost" onClick={copyInvite} style={{ width: '100%', padding: '10px', fontSize: 12 }}>
             {copied ? '✅ Link copiado!' : '🔗 Copiar link de convite'}
           </button>
+        </div>
+      )}
+
+      {/* TOGGLE MODO */}
+      {members.length > 0 && !selected && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button onClick={() => setGaleraMode('pessoa')} style={{
+            flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
+            borderColor: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--line)',
+            background: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--card)',
+            color: galeraMode === 'pessoa' ? '#1a1a1a' : 'var(--text)',
+            fontWeight: galeraMode === 'pessoa' ? 700 : 400, fontSize: 13, cursor: 'pointer'
+          }}>👥 Por pessoa</button>
+          <button onClick={() => setGaleraMode('jogo')} style={{
+            flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
+            borderColor: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--line)',
+            background: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--card)',
+            color: galeraMode === 'jogo' ? '#1a1a1a' : 'var(--text)',
+            fontWeight: galeraMode === 'jogo' ? 700 : 400, fontSize: 13, cursor: 'pointer'
+          }}>⚽ Por jogo</button>
         </div>
       )}
 
@@ -605,7 +679,91 @@ export default function GaleraGrupo() {
         )}
       </div>
 
-      <div className="card" style={{ padding: 0 }}>
+      {/* VISÃO POR JOGO */}
+      {galeraMode === 'jogo' && !selected && (() => {
+        const now = new Date();
+        const startedMatches = matches
+          .filter(m => new Date(m.match_date) <= now)
+          .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
+
+        if (startedMatches.length === 0) {
+          return <div className="empty">Nenhum jogo iniciado ainda.</div>;
+        }
+
+        return (
+          <div>
+            {startedMatches.map(m => {
+              const guessesForMatch = allGuessesMap[m.id] || {};
+              const isFinished = m.score_a !== null;
+
+              return (
+                <div key={m.id} className="card" style={{ marginBottom: 12, padding: 0 }}>
+                  {/* Header do jogo */}
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                        {m.phase.split('·').slice(1).join('·').trim() || m.phase}
+                      </span>
+                      <span style={{ fontSize: 11, color: isFinished ? '#2ea84c' : 'var(--gold)', fontWeight: 700 }}>
+                        {isFinished ? '✅ Finalizado' : '🔴 Em andamento'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center' }}>
+                      <span style={{ textAlign: 'right', fontWeight: 700, fontSize: 14 }}>{toPT(m.team_a)}</span>
+                      <div style={{ textAlign: 'center' }}>
+                        {isFinished ? (
+                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>
+                            {m.score_a} x {m.score_b}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 13, color: 'var(--muted)' }}>vs</span>
+                        )}
+                      </div>
+                      <span style={{ textAlign: 'left', fontWeight: 700, fontSize: 14 }}>{toPT(m.team_b)}</span>
+                    </div>
+                  </div>
+
+                  {/* Palpites dos membros */}
+                  {members.map((member, i) => {
+                    const memberGuess = Object.values(guessesForMatch).find((g: any) =>
+                      members.find(mb => mb.id === g.group_member_id && mb.user_id === member.user_id)
+                    ) as any;
+
+                    return (
+                      <div key={member.id} style={{
+                        padding: '10px 16px',
+                        borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Avatar name={member.name} color={memberColors[member.user_id] || '#d4a72c'} size={28} />
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>{member.name}</span>
+                        </div>
+                        {memberGuess ? (
+                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: 'var(--text)' }}>
+                            {memberGuess.guess_a} x {memberGuess.guess_b}
+                            {m.is_knockout && memberGuess.guess_a === memberGuess.guess_b && memberGuess.guess_penalty_winner && (
+                              <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>
+                                (pên: {memberGuess.guess_penalty_winner === 'A' ? toPT(m.team_a) : toPT(m.team_b)})
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--muted)' }}>— sem palpite</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {/* VISÃO POR PESSOA */}
+      {(galeraMode === 'pessoa' || selected) && (
+        <div className="card" style={{ padding: 0 }}>
         {members.map(m => (
           <div key={m.id} className="person-item" onClick={() => open(m)}>
             <span style={{ fontWeight: 600 }}>
@@ -615,6 +773,7 @@ export default function GaleraGrupo() {
           </div>
         ))}
       </div>
+      )}
 
       <div style={{ height: 100 }} />
     </main>
