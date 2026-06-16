@@ -724,7 +724,7 @@ export default function GaleraGrupo() {
 
       {/* VISÃO POR PESSOA */}
       {(galeraMode === 'pessoa' || selected) && (
-      <div className="card" style={{ padding: 0 }}>
+        <div className="card" style={{ padding: 0 }}>
         {members.map(m => (
           <div key={m.id} className="person-item" onClick={() => open(m)}>
             <span style={{ fontWeight: 600 }}>
@@ -734,6 +734,7 @@ export default function GaleraGrupo() {
           </div>
         ))}
       </div>
+      )}
 
       <div style={{ height: 100 }} />
     </main>
