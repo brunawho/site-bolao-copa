@@ -420,6 +420,9 @@ export default function GaleraGrupo() {
           <button className="btn btn-ghost" onClick={copyInvite} style={{ width: '100%', padding: '10px', fontSize: 12 }}>
             {copied ? '✅ Link copiado!' : '🔗 Copiar link de convite'}
           </button>
+          <button onClick={() => setShowConfig(s => !s)} className="btn btn-ghost" style={{ width: '100%', marginTop: 8, fontSize: 12 }}>
+            {showConfig ? '▲ Ocultar caixinha' : '💰 Caixinha do grupo'}
+          </button>
         </div>
       )}
 
@@ -445,13 +448,7 @@ export default function GaleraGrupo() {
 
       {members.length === 0 && <div className="empty">Ninguém entrou ainda.</div>}
 
-      {/* CAIXINHA — visível para todos, editável só pelo criador */}
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => setShowConfig(s => !s)} className="btn btn-ghost">
-          {showConfig ? '▲ Ocultar caixinha' : '💰 Caixinha do grupo'}
-        </button>
-
-        {showConfig && (
+      {showConfig && (
           <div className="card" style={{ marginTop: 8 }}>
             {/* Resumo financeiro */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>

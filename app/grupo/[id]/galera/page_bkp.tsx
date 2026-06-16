@@ -84,6 +84,7 @@ export default function GaleraGrupo() {
   const [isCreator, setIsCreator]   = useState(false);
   const [galeraMode, setGaleraMode] = useState<'pessoa' | 'jogo'>('pessoa');
   const [allGuessesMap, setAllGuessesMap] = useState<Record<string, Record<string, any>>>({});
+  const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
   const [payment, setPayment]       = useState({ id: '', entry_value: 0, prize_1st: 60, prize_2nd: 30, prize_3rd: 10, prize_locked: false });
   const [memberPayments, setMemberPayments] = useState<Record<string, boolean>>({});
@@ -698,8 +699,9 @@ export default function GaleraGrupo() {
 
               return (
                 <div key={m.id} className="card" style={{ marginBottom: 12, padding: 0 }}>
-                  {/* Header do jogo */}
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
+                  {/* Header do jogo — clicável */}
+                  <div onClick={() => setExpandedMatch(expandedMatch === m.id ? null : m.id)}
+                    style={{ padding: '12px 16px', borderBottom: expandedMatch === m.id ? '1px solid var(--line)' : 'none', cursor: 'pointer' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontSize: 11, color: 'var(--muted)' }}>
                         {m.phase.split('·').slice(1).join('·').trim() || m.phase}
@@ -721,10 +723,14 @@ export default function GaleraGrupo() {
                       </div>
                       <span style={{ textAlign: 'left', fontWeight: 700, fontSize: 14 }}>{toPT(m.team_b)}</span>
                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8, fontSize: 11, color: 'var(--muted)', gap: 6 }}>
+                      <span>{Object.keys(guessesForMatch).length}/{members.length} palpites</span>
+                      <span>{expandedMatch === m.id ? '▲' : '▼'}</span>
+                    </div>
                   </div>
 
-                  {/* Palpites dos membros */}
-                  {members.map((member, i) => {
+                  {/* Palpites dos membros — só mostra se expandido */}
+                  {expandedMatch === m.id && members.map((member, i) => {
                     const memberGuess = Object.values(guessesForMatch).find((g: any) =>
                       members.find(mb => mb.id === g.group_member_id && mb.user_id === member.user_id)
                     ) as any;
