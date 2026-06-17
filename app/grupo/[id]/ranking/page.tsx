@@ -54,6 +54,8 @@ export default function RankingGrupo() {
   const [myUserId, setMyUserId]       = useState<string | null>(null);
   const [showChart, setShowChart]     = useState(false);
   const [rankTab, setRankTab]         = useState<'geral' | 'selecoes'>('geral');
+  const [liveMatch, setLiveMatch]     = useState<Match | null>(null);
+  const [liveGuesses, setLiveGuesses] = useState<Record<string, Guess>>({});
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -307,6 +309,20 @@ export default function RankingGrupo() {
             }}>🌍 Seleções</button>
           </div>
 
+          {/* Jogo em andamento */}
+          {liveMatch && (
+            <div style={{
+              padding: '10px 14px', marginBottom: 12, borderRadius: 12,
+              background: 'rgba(248,113,113,0.1)', border: '1px solid #f87171',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <span style={{ fontSize: 11, color: '#f87171', fontWeight: 700 }}>🔴 Em andamento</span>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>
+                {liveMatch.team_a} vs {liveMatch.team_b}
+              </span>
+            </div>
+          )}
+
           {rankTab === 'geral' ? (
             <div className="card" style={{ padding: 0, marginBottom: 16 }}>
               {rankingWithPos.map((r, i) => {
@@ -341,6 +357,24 @@ export default function RankingGrupo() {
                         </div>
                       </div>
                     </div>
+                    {/* Palpite do jogo em andamento */}
+                    {liveMatch && (
+                      <div style={{ textAlign: 'center', minWidth: 64 }}>
+                        {(() => {
+                          const g = liveGuesses[r.id];
+                          return g ? (
+                            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, color: 'var(--gold)', lineHeight: 1 }}>
+                              {g.guess_a}x{g.guess_b}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 11, color: 'var(--muted)' }}>—</div>
+                          );
+                        })()}
+                        <div style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          palpite
+                        </div>
+                      </div>
+                    )}
                     <div style={{ textAlign: 'right' }}>
                       <span className="rank-points" style={{ color: isLeader ? 'var(--gold)' : undefined }}>{r.grand_total}</span>
                       {r.special_pts > 0 && (
