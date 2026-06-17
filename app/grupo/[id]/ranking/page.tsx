@@ -54,8 +54,8 @@ export default function RankingGrupo() {
   const [myUserId, setMyUserId]       = useState<string | null>(null);
   const [showChart, setShowChart]     = useState(false);
   const [rankTab, setRankTab]         = useState<'geral' | 'selecoes'>('geral');
-  const [liveMatch, setLiveMatch]     = useState<Match | null>(null);
-  const [liveGuesses, setLiveGuesses] = useState<Record<string, Guess>>({});
+  const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
+  const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -84,23 +84,25 @@ export default function RankingGrupo() {
         .from('guesses').select('*').in('group_member_id', memberIds);
       setAllGuesses(guessData || []);
 
-      // Jogo em andamento (começou mas sem placar)
+      // Jogos em andamento (começaram mas sem placar)
       const { data: allMatchData } = await supabase
         .from('matches').select('*')
         .is('score_a', null)
         .lte('match_date', new Date().toISOString())
-        .order('match_date', { ascending: false })
-        .limit(1);
-      const live = allMatchData?.[0] || null;
-      setLiveMatch(live);
+        .order('match_date', { ascending: true });
+      const lives = allMatchData || [];
+      setLiveMatches(lives);
 
-      if (live) {
-        const { data: liveG } = await supabase
-          .from('guesses').select('*')
-          .eq('match_id', live.id)
-          .in('group_member_id', memberIds);
-        const liveMap: Record<string, Guess> = {};
-        (liveG || []).forEach((g: any) => { liveMap[g.group_member_id] = g; });
+      if (lives.length > 0) {
+        const liveMap: Record<string, Record<string, Guess>> = {};
+        for (const live of lives) {
+          const { data: liveG } = await supabase
+            .from('guesses').select('*')
+            .eq('match_id', live.id)
+            .in('group_member_id', memberIds);
+          liveMap[live.id] = {};
+          (liveG || []).forEach((g: any) => { liveMap[live.id][g.group_member_id] = g; });
+        }
         setLiveGuesses(liveMap);
       }
 
@@ -329,17 +331,27 @@ export default function RankingGrupo() {
             }}>🌍 Seleções</button>
           </div>
 
-          {/* Jogo em andamento */}
-          {liveMatch && (
-            <div style={{
-              padding: '10px 14px', marginBottom: 12, borderRadius: 12,
-              background: 'rgba(248,113,113,0.1)', border: '1px solid #f87171',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-              <span style={{ fontSize: 11, color: '#f87171', fontWeight: 700 }}>🔴 Em andamento</span>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>
-                {liveMatch.team_a} vs {liveMatch.team_b}
-              </span>
+          {/* Jogos em andamento */}
+          {liveMatches.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              {liveMatches.map((m, idx) => {
+                const color = ['#f87171','#60a5fa','#34d399','#fb923c','#a78bfa'][idx % 5];
+                return (
+                  <div key={m.id} style={{
+                    padding: '8px 14px', marginBottom: 6, borderRadius: 10,
+                    background: `${color}15`, border: `1px solid ${color}`,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, color, fontWeight: 700 }}>Em andamento</span>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700 }}>
+                      {m.team_a} vs {m.team_b}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -382,14 +394,22 @@ export default function RankingGrupo() {
                       {r.special_pts > 0 && (
                         <div style={{ fontSize: 10, color: 'var(--gold)' }}>{r.total_points} + {r.special_pts}</div>
                       )}
-                      {liveMatch && (() => {
-                        const g = liveGuesses[r.id];
-                        return (
-                          <div style={{ fontSize: 11, color: g ? '#f87171' : 'var(--muted)', marginTop: 2, fontWeight: g ? 700 : 400 }}>
-                            {g ? `🔴 ${g.guess_a}x${g.guess_b}` : '🔴 —'}
-                          </div>
-                        );
-                      })()}
+                      {liveMatches.length > 0 && (
+                        <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {liveMatches.map((lm, idx) => {
+                            const color = ['#f87171','#60a5fa','#34d399','#fb923c','#a78bfa'][idx % 5];
+                            const g = liveGuesses[lm.id]?.[r.id];
+                            return (
+                              <div key={lm.id} style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                                <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                                <span style={{ fontSize: 11, color: g ? color : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
+                                  {g ? `${g.guess_a}x${g.guess_b}` : '—'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
