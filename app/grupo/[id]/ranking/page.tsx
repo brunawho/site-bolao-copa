@@ -377,29 +377,19 @@ export default function RankingGrupo() {
                         </div>
                       </div>
                     </div>
-                    {/* Palpite do jogo em andamento */}
-                    {liveMatch && (
-                      <div style={{ textAlign: 'center', minWidth: 64 }}>
-                        {(() => {
-                          const g = liveGuesses[r.id];
-                          return g ? (
-                            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, color: 'var(--gold)', lineHeight: 1 }}>
-                              {g.guess_a}x{g.guess_b}
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: 11, color: 'var(--muted)' }}>—</div>
-                          );
-                        })()}
-                        <div style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          palpite
-                        </div>
-                      </div>
-                    )}
                     <div style={{ textAlign: 'right' }}>
                       <span className="rank-points" style={{ color: isLeader ? 'var(--gold)' : undefined }}>{r.grand_total}</span>
                       {r.special_pts > 0 && (
                         <div style={{ fontSize: 10, color: 'var(--gold)' }}>{r.total_points} + {r.special_pts}</div>
                       )}
+                      {liveMatch && (() => {
+                        const g = liveGuesses[r.id];
+                        return (
+                          <div style={{ fontSize: 11, color: g ? '#f87171' : 'var(--muted)', marginTop: 2, fontWeight: g ? 700 : 400 }}>
+                            {g ? `🔴 ${g.guess_a}x${g.guess_b}` : '🔴 —'}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 );
