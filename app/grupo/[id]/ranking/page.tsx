@@ -39,6 +39,47 @@ function Avatar({ name, color, size = 32 }: { name: string; color: string; size?
   );
 }
 
+
+const FLAG_CODES: Record<string, string> = {
+  'Algeria': 'dz', 'Argentina': 'ar', 'Australia': 'au', 'Austria': 'at',
+  'Belgium': 'be', 'Bosnia-Herzegovina': 'ba', 'Brazil': 'br', 'Canada': 'ca',
+  'Cape Verde Islands': 'cv', 'Colombia': 'co', 'Congo DR': 'cd', 'Croatia': 'hr',
+  'Curaçao': 'cw', 'Czechia': 'cz', 'Ecuador': 'ec', 'Egypt': 'eg',
+  'England': 'gb-eng', 'France': 'fr', 'Germany': 'de', 'Ghana': 'gh',
+  'Haiti': 'ht', 'Iran': 'ir', 'Iraq': 'iq', 'Ivory Coast': 'ci',
+  'Japan': 'jp', 'Jordan': 'jo', 'Mexico': 'mx', 'Morocco': 'ma',
+  'Netherlands': 'nl', 'New Zealand': 'nz', 'Norway': 'no', 'Panama': 'pa',
+  'Paraguay': 'py', 'Portugal': 'pt', 'Qatar': 'qa', 'Saudi Arabia': 'sa',
+  'Scotland': 'gb-sct', 'Senegal': 'sn', 'South Africa': 'za', 'South Korea': 'kr',
+  'Spain': 'es', 'Sweden': 'se', 'Switzerland': 'ch', 'Tunisia': 'tn',
+  'Turkey': 'tr', 'United States': 'us', 'Uruguay': 'uy', 'Uzbekistan': 'uz',
+};
+
+const TEAM_TRANSLATIONS: Record<string, string> = {
+  'Algeria': 'Argélia', 'Argentina': 'Argentina', 'Australia': 'Austrália',
+  'Austria': 'Áustria', 'Belgium': 'Bélgica', 'Bosnia-Herzegovina': 'Bósnia-Herzegovina',
+  'Brazil': 'Brasil', 'Canada': 'Canadá', 'Cape Verde Islands': 'Cabo Verde',
+  'Colombia': 'Colômbia', 'Congo DR': 'Congo', 'Croatia': 'Croácia',
+  'Curaçao': 'Curaçao', 'Czechia': 'República Tcheca', 'Ecuador': 'Equador',
+  'Egypt': 'Egito', 'England': 'Inglaterra', 'France': 'França',
+  'Germany': 'Alemanha', 'Ghana': 'Gana', 'Haiti': 'Haiti',
+  'Iran': 'Irã', 'Iraq': 'Iraque', 'Ivory Coast': 'Costa do Marfim',
+  'Japan': 'Japão', 'Jordan': 'Jordânia', 'Mexico': 'México',
+  'Morocco': 'Marrocos', 'Netherlands': 'Holanda', 'New Zealand': 'Nova Zelândia',
+  'Norway': 'Noruega', 'Panama': 'Panamá', 'Paraguay': 'Paraguai',
+  'Portugal': 'Portugal', 'Qatar': 'Catar', 'Saudi Arabia': 'Arábia Saudita',
+  'Scotland': 'Escócia', 'Senegal': 'Senegal', 'South Africa': 'África do Sul',
+  'South Korea': 'Coreia do Sul', 'Spain': 'Espanha', 'Sweden': 'Suécia',
+  'Switzerland': 'Suíça', 'Tunisia': 'Tunísia', 'Turkey': 'Turquia',
+  'United States': 'Estados Unidos', 'Uruguay': 'Uruguai', 'Uzbekistan': 'Uzbequistão',
+};
+
+function toPT(name: string): string { return TEAM_TRANSLATIONS[name] || name; }
+function getFlag(team: string): string | null {
+  const code = FLAG_CODES[team];
+  return code ? `https://flagcdn.com/w20/${code}.png` : null;
+}
+
 const medals = ['🥇', '🥈', '🥉'];
 
 export default function RankingGrupo() {
@@ -343,12 +384,15 @@ export default function RankingGrupo() {
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, color, fontWeight: 700 }}>Em andamento</span>
+                      <span style={{ fontSize: 11, color, fontWeight: 700 }}>🔴 Em andamento</span>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700 }}>
-                      {m.team_a} vs {m.team_b}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {getFlag(m.team_a) && <img src={getFlag(m.team_a)!} alt="" style={{ width: 18, height: 13, objectFit: 'contain' }} />}
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>{toPT(m.team_a)}</span>
+                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>vs</span>
+                      {getFlag(m.team_b) && <img src={getFlag(m.team_b)!} alt="" style={{ width: 18, height: 13, objectFit: 'contain' }} />}
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>{toPT(m.team_b)}</span>
+                    </div>
                   </div>
                 );
               })}
@@ -401,10 +445,15 @@ export default function RankingGrupo() {
                             const g = liveGuesses[lm.id]?.[r.id];
                             return (
                               <div key={lm.id} style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                                <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                                <span style={{ fontSize: 11, color: g ? color : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
-                                  {g ? `${g.guess_a}x${g.guess_b}` : '—'}
+                                {getFlag(lm.team_a) && <img src={getFlag(lm.team_a)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain', flexShrink: 0 }} />}
+                                <span style={{ fontSize: 11, color: g ? 'var(--text)' : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
+                                  {g ? g.guess_a : '—'}
                                 </span>
+                                <span style={{ fontSize: 10, color: 'var(--muted)' }}>x</span>
+                                <span style={{ fontSize: 11, color: g ? 'var(--text)' : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
+                                  {g ? g.guess_b : '—'}
+                                </span>
+                                {getFlag(lm.team_b) && <img src={getFlag(lm.team_b)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain', flexShrink: 0 }} />}
                               </div>
                             );
                           })}
