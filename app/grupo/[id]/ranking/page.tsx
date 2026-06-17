@@ -84,6 +84,26 @@ export default function RankingGrupo() {
         .from('guesses').select('*').in('group_member_id', memberIds);
       setAllGuesses(guessData || []);
 
+      // Jogo em andamento (começou mas sem placar)
+      const { data: allMatchData } = await supabase
+        .from('matches').select('*')
+        .is('score_a', null)
+        .lte('match_date', new Date().toISOString())
+        .order('match_date', { ascending: false })
+        .limit(1);
+      const live = allMatchData?.[0] || null;
+      setLiveMatch(live);
+
+      if (live) {
+        const { data: liveG } = await supabase
+          .from('guesses').select('*')
+          .eq('match_id', live.id)
+          .in('group_member_id', memberIds);
+        const liveMap: Record<string, Guess> = {};
+        (liveG || []).forEach((g: any) => { liveMap[g.group_member_id] = g; });
+        setLiveGuesses(liveMap);
+      }
+
       const { data: bets } = await supabase
         .from('special_bets').select('*').in('group_member_id', memberIds);
       setSpecialBets(bets || []);
