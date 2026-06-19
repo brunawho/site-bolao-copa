@@ -27,7 +27,8 @@ function fmtDay(dateYMD: string) {
 }
 
 function jogoComecou(matchDate: string) {
-  return new Date(matchDate) <= new Date();
+  // Considera iniciado após 10 minutos do horário oficial
+  return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
 }
 
 // Extrai o nome do campeonato da fase

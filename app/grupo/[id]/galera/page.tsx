@@ -56,7 +56,8 @@ function fmtDay(dateYMD: string) {
 }
 
 function jogoComecou(matchDate: string) {
-  return new Date(matchDate) <= new Date();
+  // Considera iniciado após 10 minutos do horário oficial
+  return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
 }
 
 const MEMBER_COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];

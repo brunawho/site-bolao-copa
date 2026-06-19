@@ -126,11 +126,12 @@ export default function RankingGrupo() {
         .from('guesses').select('*').in('group_member_id', memberIds);
       setAllGuesses(guessData || []);
 
-      // Jogos em andamento (começaram mas sem placar)
+      // Jogos em andamento — só após 10 minutos do início
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { data: allMatchData } = await supabase
         .from('matches').select('*')
         .is('score_a', null)
-        .lte('match_date', new Date().toISOString())
+        .lte('match_date', tenMinutesAgo)
         .order('match_date', { ascending: true });
       const lives = allMatchData || [];
       setLiveMatches(lives);
