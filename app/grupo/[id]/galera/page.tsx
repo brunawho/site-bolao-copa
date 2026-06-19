@@ -56,7 +56,12 @@ function fmtDay(dateYMD: string) {
 }
 
 function jogoComecou(matchDate: string) {
-  // Considera iniciado após 10 minutos do horário oficial
+  // Bloqueio de edição: exato no horário do jogo
+  return new Date(matchDate) <= new Date();
+}
+
+function palpitesRevelados(matchDate: string) {
+  // Revelação dos palpites: 10 minutos após o início
   return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
 }
 
@@ -298,7 +303,7 @@ export default function GaleraGrupo() {
                 <div style={{ border: '1px solid var(--line)', borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
                   {dayMatches.map((m, i) => {
                     const g = byMatch[m.id];
-                    const oculto = !isMe && !jogoComecou(m.match_date);
+                    const oculto = !isMe && !palpitesRevelados(m.match_date);
 
                     return (
                       <div key={m.id} style={{

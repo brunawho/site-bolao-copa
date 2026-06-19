@@ -27,7 +27,12 @@ function fmtDay(dateYMD: string) {
 }
 
 function jogoComecou(matchDate: string) {
-  // Considera iniciado após 10 minutos do horário oficial
+  // Bloqueio de edição: exato no horário do jogo
+  return new Date(matchDate) <= new Date();
+}
+
+function palpitesRevelados(matchDate: string) {
+  // Revelação dos palpites: 10 minutos após o início
   return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
 }
 
