@@ -690,7 +690,7 @@ export default function PalpitesGrupo() {
                             </p>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                               {(['A', 'B'] as const).map(side => {
-                                const isSelected = saved ? saved.guess_penalty_winner === side : d.pen === side;
+                                const isSelected = (saved as Guess | undefined)?.guess_penalty_winner === side || (!saved && d.pen === side);
                                 return (
                                   <button key={side} onClick={() => !saved && setPen(m.id, isSelected ? '' : side)}
                                     style={{
