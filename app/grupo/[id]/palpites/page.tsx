@@ -627,7 +627,7 @@ export default function PalpitesGrupo() {
                   borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden'
                 }}>
                   {dayMatches.map((m, i) => {
-                    const saved   = myGuesses[m.id];
+                    const saved   = myGuesses[m.id] as Guess | undefined;
                     const started = jogoComecou(m.match_date);
                     const blocked = !!saved || started; // bloqueia se já palpitou OU jogo começou
                     // Prioriza draft se foi modificado, senão usa valores salvos
