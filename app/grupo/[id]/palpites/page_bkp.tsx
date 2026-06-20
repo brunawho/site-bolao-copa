@@ -27,7 +27,13 @@ function fmtDay(dateYMD: string) {
 }
 
 function jogoComecou(matchDate: string) {
+  // Bloqueio de edição: exato no horário do jogo
   return new Date(matchDate) <= new Date();
+}
+
+function palpitesRevelados(matchDate: string) {
+  // Revelação dos palpites: 10 minutos após o início
+  return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
 }
 
 // Extrai o nome do campeonato da fase
@@ -439,10 +445,25 @@ export default function PalpitesGrupo() {
               Confirmar palpites?
             </h2>
             <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 8, textAlign: 'center' }}>
-              Você vai salvar <strong style={{ color: 'var(--gold)' }}>{confirmDayMatches.filter(m => {
-                const d = draft[m.id];
-                return d !== undefined && !myGuesses[m.id] && !jogoComecou(m.match_date) && d.a !== undefined && d.a !== '' && d.b !== undefined && d.b !== '';
-              }).length} palpite(s)</strong>.
+              {(() => {
+                const novosCount = confirmDayMatches.filter(m => {
+                  const draftVal = draft[m.id];
+                  const savedG = myGuesses[m.id];
+                  const started = jogoComecou(m.match_date);
+                  if (started) return false;
+                  const hasNew = draftVal && draftVal.a !== '' && draftVal.b !== '';
+                  const hasSaved = !!savedG;
+                  return hasNew || hasSaved;
+                }).length;
+                const editCount = confirmDayMatches.filter(m => {
+                  const draftVal = draft[m.id];
+                  return myGuesses[m.id] && draftVal && draftVal.a !== '' && draftVal.b !== '' && !jogoComecou(m.match_date);
+                }).length;
+                const newCount = novosCount - editCount;
+                if (editCount > 0 && newCount > 0) return <>Você vai salvar <strong style={{ color: 'var(--gold)' }}>{newCount} novo(s)</strong> e editar <strong style={{ color: 'var(--gold)' }}>{editCount} palpite(s)</strong>.</>;
+                if (editCount > 0) return <>Você vai editar <strong style={{ color: 'var(--gold)' }}>{editCount} palpite(s)</strong>.</>;
+                return <>Você vai salvar <strong style={{ color: 'var(--gold)' }}>{newCount} palpite(s)</strong>.</>;
+              })()}
             </p>
             <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, textAlign: 'center', marginBottom: 20 }}>
               Depois de salvar, <strong style={{ color: 'var(--danger)' }}>não dá pra editar</strong>.

@@ -629,8 +629,7 @@ export default function PalpitesGrupo() {
                   {dayMatches.map((m, i) => {
                     const saved   = myGuesses[m.id];
                     const started = jogoComecou(m.match_date);
-                    const blocked = started; // bloqueia sempre após início, independente de ter palpite
-                    const editing = saved && !started; // tem palpite mas jogo não começou = pode editar
+                    const blocked = !!saved || started; // bloqueia se já palpitou OU jogo começou
                     // Prioriza draft se foi modificado, senão usa valores salvos
                     const draftVal = draft[m.id];
                     const d = (draftVal && (draftVal.a !== '' || draftVal.b !== ''))
@@ -647,7 +646,7 @@ export default function PalpitesGrupo() {
                       <div key={m.id} style={{
                         padding: 16,
                         borderTop: i > 0 ? '1px solid var(--line)' : 'none',
-                        background: saved && blocked ? 'rgba(46,168,76,0.04)' : saved && !blocked ? 'rgba(212,167,44,0.04)' : blocked ? 'rgba(227,93,93,0.04)' : 'var(--card)',
+                        background: saved ? 'rgba(46,168,76,0.04)' : blocked ? 'rgba(227,93,93,0.04)' : 'var(--card)',
                       }}>
                         <div className="match-meta" style={{ marginBottom: 8 }}>
                           <span style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -669,13 +668,13 @@ export default function PalpitesGrupo() {
                             <input className="score-input" inputMode="numeric"
                               value={draft[m.id]?.a !== undefined ? draft[m.id].a : saved ? String(saved.guess_a) : d.a}
                               onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
-                              disabled={blocked}
+                              disabled={!!saved || blocked}
                               style={{ opacity: blocked ? 0.4 : 1 }} />
                             <span className="vs">x</span>
                             <input className="score-input" inputMode="numeric"
                               value={draft[m.id]?.b !== undefined ? draft[m.id].b : saved ? String(saved.guess_b) : d.b}
                               onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
-                              disabled={blocked}
+                              disabled={!!saved || blocked}
                               style={{ opacity: blocked ? 0.4 : 1 }} />
                           </div>
                           <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
@@ -710,8 +709,7 @@ export default function PalpitesGrupo() {
                         )}
 
                         <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          {saved && !blocked && <span style={{ fontSize: 11, color: 'var(--gold)' }}>✏️ Editar até o início</span>}
-                          {saved && blocked  && <span className="locked-badge">🔒 Palpite enviado</span>}
+                          {saved && <span className="locked-badge">🔒 Palpite enviado</span>}
                           {!saved && blocked && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ Jogo já iniciou</span>}
                           {!saved && !blocked && <span />}
                           {pts !== null && <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>+{pts} pts</span>}
