@@ -665,17 +665,39 @@ export default function PalpitesGrupo() {
                             <Crest name={m.team_a} crests={crests} />
                           </div>
                           <div className="score-row">
-                            <input className="score-input" inputMode="numeric"
+                            <select
                               value={draft[m.id]?.a !== undefined ? draft[m.id].a : saved ? String(saved.guess_a) : d.a}
                               onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
                               disabled={!!saved || blocked}
-                              style={{ opacity: blocked ? 0.4 : 1 }} />
+                              style={{
+                                width: 52, height: 44, borderRadius: 10, border: '1px solid var(--line)',
+                                background: 'var(--bg-soft)', color: 'var(--text)',
+                                fontSize: 18, fontWeight: 700, textAlign: 'center',
+                                opacity: (!!saved || blocked) ? 0.5 : 1, cursor: (!!saved || blocked) ? 'not-allowed' : 'pointer',
+                                appearance: 'none', WebkitAppearance: 'none'
+                              }}>
+                              <option value="">-</option>
+                              {Array.from({ length: 16 }, (_, i) => (
+                                <option key={i} value={String(i)}>{i}</option>
+                              ))}
+                            </select>
                             <span className="vs">x</span>
-                            <input className="score-input" inputMode="numeric"
+                            <select
                               value={draft[m.id]?.b !== undefined ? draft[m.id].b : saved ? String(saved.guess_b) : d.b}
                               onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
                               disabled={!!saved || blocked}
-                              style={{ opacity: blocked ? 0.4 : 1 }} />
+                              style={{
+                                width: 52, height: 44, borderRadius: 10, border: '1px solid var(--line)',
+                                background: 'var(--bg-soft)', color: 'var(--text)',
+                                fontSize: 18, fontWeight: 700, textAlign: 'center',
+                                opacity: (!!saved || blocked) ? 0.5 : 1, cursor: (!!saved || blocked) ? 'not-allowed' : 'pointer',
+                                appearance: 'none', WebkitAppearance: 'none'
+                              }}>
+                              <option value="">-</option>
+                              {Array.from({ length: 16 }, (_, i) => (
+                                <option key={i} value={String(i)}>{i}</option>
+                              ))}
+                            </select>
                           </div>
                           <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
                             <Crest name={m.team_b} crests={crests} />
