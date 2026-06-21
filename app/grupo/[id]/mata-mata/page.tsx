@@ -66,6 +66,8 @@ export default function MataMataPage() {
   const [finalPick, setFinalPick]   = useState<FinalPick | null>(null);
   const [saving, setSaving]         = useState(false);
   const [toast, setToast]           = useState('');
+  const [finalA, setFinalA]         = useState<string | number>('');
+  const [finalB, setFinalB]         = useState<string | number>('');
   const COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
 
   useEffect(() => {
@@ -96,6 +98,7 @@ export default function MataMataPage() {
 
       const { data: fp } = await supabase.from('final_score_pick').select('*').eq('group_member_id', member.id).maybeSingle();
       setFinalPick(fp || null);
+      if (fp) { setFinalA(fp.guess_a); setFinalB(fp.guess_b); }
 
 
 
@@ -193,9 +196,6 @@ export default function MataMataPage() {
             const blocked = phaseBlocked(phase.key);
             const myKP = knockoutPicks.filter(p => p.phase === phase.key).map(p => p.team);
             const myCP = championPicks.find(p => p.phase === phase.key)?.champion || '';
-            const [finalA, setFinalA] = useState(finalPick?.guess_a ?? '');
-            const [finalB, setFinalB] = useState(finalPick?.guess_b ?? '');
-
             if (!teams.length) return null;
 
             return (
