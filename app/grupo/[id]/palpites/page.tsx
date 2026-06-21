@@ -234,7 +234,7 @@ export default function PalpitesGrupo() {
   const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
-  const [selectedComp, setSelectedComp] = useState<string | null>(null);
+  const [selectedComp, setSelectedComp] = useState<string | null>('Copa do Mundo');
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
   const [view, setView]     = useState<'palpites' | 'chaveamento'>('palpites');
