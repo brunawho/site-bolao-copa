@@ -86,26 +86,52 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
 
       {children}
 
-      <nav className="nav" style={{ justifyContent: 'space-around' }}>
-        {navItems.map(it => (
-          <Link key={it.href} href={it.href} className={pathname === it.href ? 'active' : ''}
-            style={{ fontSize: 9, position: 'relative' }}>
-            <span className="nav-icon" style={{ fontSize: 16, position: 'relative', display: 'inline-block' }}>
-              {it.icon}
-              {it.badge > 0 && (
-                <span style={{
-                  position: 'absolute', top: -4, right: -6,
-                  background: 'var(--danger)', color: '#fff',
-                  borderRadius: '50%', width: 14, height: 14,
-                  fontSize: 9, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  lineHeight: 1
-                }}>{it.badge}</span>
-              )}
-            </span>
-            {it.label}
-          </Link>
-        ))}
+      <nav className="nav" style={{ justifyContent: 'space-around', padding: '6px 4px' }}>
+        {navItems.map(it => {
+          const itemFontSize = navItems.length > 5 ? 8 : 9;
+          const iconSize     = navItems.length > 5 ? 18 : 20;
+          const isActive     = pathname === it.href;
+          return (
+            <Link key={it.href} href={it.href}
+              className={isActive ? 'active' : ''}
+              style={{
+                fontSize: itemFontSize,
+                position: 'relative',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+                minWidth: 0,
+                padding: '2px 2px',
+                textAlign: 'center',
+                color: isActive ? 'var(--gold)' : 'var(--muted)',
+                textDecoration: 'none',
+                fontWeight: isActive ? 700 : 400,
+              }}>
+              <span style={{ fontSize: iconSize, position: 'relative', display: 'inline-block', lineHeight: 1 }}>
+                {it.icon}
+                {it.badge > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -4, right: -6,
+                    background: 'var(--danger)', color: '#fff',
+                    borderRadius: '50%', width: 14, height: 14,
+                    fontSize: 9, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1
+                  }}>{it.badge}</span>
+                )}
+              </span>
+              <span style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+                display: 'block',
+              }}>{it.label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </>
   );

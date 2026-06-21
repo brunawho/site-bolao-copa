@@ -5,9 +5,10 @@ type Section = {
   icon: string;
   title: string;
   content: React.ReactNode;
+  badge?: string;
 };
 
-function Accordion({ icon, title, content }: Section) {
+function Accordion({ icon, title, content, badge }: Section) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ marginBottom: 8 }}>
@@ -18,7 +19,14 @@ function Accordion({ icon, title, content }: Section) {
         padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center'
       }}>
-        <span style={{ fontWeight: 700, fontSize: 14 }}>{icon} {title}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>{icon} {title}</span>
+          {badge && (
+            <span style={{ fontSize: 10, background: 'rgba(212,167,44,0.2)', color: 'var(--gold)', padding: '2px 8px', borderRadius: 20, fontWeight: 700, whiteSpace: 'nowrap' }}>
+              {badge}
+            </span>
+          )}
+        </div>
         <span style={{ color: 'var(--muted)', fontSize: 14 }}>{open ? '▲' : '▼'}</span>
       </button>
       {open && (
@@ -45,8 +53,9 @@ export default function FAQGrupo() {
             <li>Preencha o placar que você acha que vai acontecer</li>
             <li>Clique em <strong style={{ color: 'var(--text)' }}>Salvar palpites do dia</strong> antes do jogo começar</li>
             <li>No mata-mata, se chutar empate escolha quem avança nos pênaltis</li>
-            <li>Palpites <strong style={{ color: 'var(--danger)' }}>não podem ser editados</strong> após salvar</li>
-            <li>Não é permitido palpitar após o início do jogo</li>
+            <li>Palpites podem ser <strong style={{ color: 'var(--gold)' }}>editados</strong> até o início do jogo</li>
+            <li>Após o apito inicial, o palpite fica <strong style={{ color: 'var(--danger)' }}>bloqueado</strong></li>
+            <li>Os palpites dos outros jogadores ficam <strong style={{ color: 'var(--text)' }}>ocultos por 10 minutos</strong> após o início do jogo</li>
           </ul>
         </>
       )
@@ -92,12 +101,14 @@ export default function FAQGrupo() {
                 [6, 'Empate exato, pênaltis errado', 'Chutou 1-1, terminou 1-1, errou pênaltis'],
                 [6, 'Empate (sem exato) + pênaltis certo', 'Chutou 0-0, terminou 2-2, acertou quem avança'],
                 [3, 'Empate sem exato e pênaltis errado', 'Chutou 0-0, terminou 2-2, errou pênaltis'],
-                [3, 'Chutou vitória, time se classificou nos pênaltis', 'Chutou 2-1 pro Brasil, terminou 1-1, Brasil avançou nos pênaltis'],
+                [3, 'Chutou vitória, time se classificou nos pênaltis', 'Chutou 2-1 pro Brasil, terminou 1-1, Brasil avançou'],
               ].map(([pts, rule, ex]) => (
                 <tr key={String(rule)} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)', width: 36 }}>{pts}</td>
-                  <td style={{ padding: '8px 8px', fontSize: 13 }}>{rule}</td>
-                  <td style={{ padding: '8px 0', fontSize: 11, color: 'var(--muted)' }}>{ex}</td>
+                  <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
+                  <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                    <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{rule}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{ex}</div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -112,7 +123,7 @@ export default function FAQGrupo() {
       icon: '🌟', title: 'Apostas Especiais da Copa',
       content: (
         <>
-          <p style={{ marginBottom: 10 }}>Na aba <strong style={{ color: 'var(--text)' }}>Especiais</strong>, faça suas apostas antes do prazo: <strong style={{ color: 'var(--gold)' }}>11/06 às 16h</strong> (horário de Brasília).</p>
+          <p style={{ marginBottom: 10 }}>Na aba <strong style={{ color: 'var(--text)' }}>Palpites → ⭐ Especiais</strong>, faça suas apostas antes do prazo: <strong style={{ color: 'var(--gold)' }}>11/06 às 16h</strong> (horário de Brasília).</p>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
             <tbody>
               {[
@@ -122,9 +133,11 @@ export default function FAQGrupo() {
                 [15, '⚽ Artilheiro', 'Acertar o artilheiro da Copa'],
               ].map(([pts, label, desc]) => (
                 <tr key={String(label)} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)', width: 36 }}>{pts}</td>
-                  <td style={{ padding: '8px 8px', fontSize: 13, color: 'var(--text)' }}>{label}</td>
-                  <td style={{ padding: '8px 0', fontSize: 11 }}>{desc}</td>
+                  <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
+                  <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                    <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{desc}</div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -138,20 +151,67 @@ export default function FAQGrupo() {
       )
     },
     {
+      icon: '🥊', title: 'Mata-Mata', badge: 'Disponível a partir de 27/06',
+      content: (
+        <>
+          <p style={{ marginBottom: 12 }}>Na aba <strong style={{ color: 'var(--text)' }}>Palpites → 🥊 Mata-Mata</strong> você encontra 3 tipos de aposta especial para o mata-mata da Copa:</p>
+
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>1️⃣ Quem avança?</p>
+          <p style={{ marginBottom: 12 }}>Antes de cada fase, escolha quais times você acha que vão passar. Cada acerto vale pontos — quanto mais difícil a fase, mais pontos.</p>
+
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>2️⃣ Quem vai ser campeão?</p>
+          <p style={{ marginBottom: 6 }}>Aposte no campeão antes das Oitavas. Quanto antes acertar, mais pontos! A cada nova fase você pode <strong style={{ color: 'var(--text)' }}>Manter</strong> ou <strong style={{ color: 'var(--text)' }}>Trocar</strong>:</p>
+          <ul style={{ paddingLeft: 16, marginBottom: 6 }}>
+            <li><strong style={{ color: 'var(--text)' }}>Manter</strong> → continua com o mesmo time e mantém os pontos da fase em que apostou</li>
+            <li><strong style={{ color: 'var(--text)' }}>Trocar</strong> → muda para outro time, mas os pontos valem pela fase atual (menor)</li>
+          </ul>
+          <p style={{ marginBottom: 12, fontSize: 12, fontStyle: 'italic' }}>Ex: apostou Brasil nas Oitavas e manteve → 15 pts. Trocou para França nas Quartas → 10 pts.</p>
+
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>3️⃣ Placar da Final</p>
+          <p style={{ marginBottom: 12 }}>Aposte no placar exato da grande final. Bônus de <strong style={{ color: 'var(--gold)' }}>+20 pts</strong> se acertar!</p>
+
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <tbody>
+              {[
+                ['3', 'Acertar quem avança nas Oitavas'],
+                ['5', 'Acertar quem avança nas Quartas'],
+                ['8', 'Acertar quem avança na Semi'],
+                ['15', 'Campeão apostado antes das Oitavas'],
+                ['10', 'Campeão apostado antes das Quartas'],
+                ['5', 'Campeão apostado antes da Semi'],
+                ['+20', 'Placar exato da Final (bônus)'],
+              ].map(([pts, rule]) => (
+                <tr key={rule} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 40, verticalAlign: 'middle' }}>{pts}</td>
+                  <td style={{ padding: '8px 0', fontSize: 13, color: 'var(--text)' }}>{rule}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
+            ⚠️ Palpites bloqueiam automaticamente quando o primeiro jogo de cada fase começa.
+          </p>
+        </>
+      )
+    },
+    {
       icon: '📊', title: 'Ranking',
       content: (
         <>
-          <p style={{ marginBottom: 8 }}>O ranking tem duas abas:</p>
+          <p style={{ marginBottom: 8 }}>O ranking tem três abas:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
-            <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais. O líder tem <strong style={{ color: 'var(--gold)' }}>👑 coroa animada</strong> e destaque dourado.</li>
-            <li><strong style={{ color: 'var(--text)' }}>🌍 Seleções</strong> — quais seleções da Copa geraram mais pontos pro grupo (soma de todos os palpites corretos envolvendo cada time)</li>
+            <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais + mata-mata. O líder tem 👑 coroa animada.</li>
+            <li><strong style={{ color: 'var(--text)' }}>🌍 Seleções</strong> — ranking de quais seleções geraram mais pontos pro grupo</li>
+            <li><strong style={{ color: 'var(--text)' }}>📋 Resultados</strong> — placares de todos os jogos com filtro Passados/Hoje/Próximos</li>
           </ul>
           <p style={{ marginBottom: 8 }}>Abaixo da tabela:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
-            <li><strong style={{ color: 'var(--text)' }}>📊 Gráfico de evolução</strong> — linhas coloridas mostrando pontos acumulados por rodada de cada participante</li>
-            <li><strong style={{ color: 'var(--text)' }}>🏅 Melhor da rodada</strong> — top 3 de quem mais pontuou na última rodada disputada</li>
+            <li><strong style={{ color: 'var(--text)' }}>📊 Gráfico de evolução</strong> — linhas coloridas mostrando pontos acumulados por rodada</li>
+            <li><strong style={{ color: 'var(--text)' }}>🏅 Melhor da rodada</strong> — top 3 de quem mais pontuou na última rodada</li>
+            <li><strong style={{ color: 'var(--text)' }}>🔴 Jogos em andamento</strong> — palpite de cada pessoa para o jogo ao vivo (visível 10min após início)</li>
           </ul>
-          <p>Em caso de empate em pontos, quem tiver mais <strong style={{ color: 'var(--text)' }}>acertos de placar exato</strong> fica na frente.</p>
+          <p>Clique em qualquer pessoa no ranking para ver o histórico de jogos em que ela pontuou.</p>
+          <p style={{ marginTop: 6 }}>Em caso de empate em pontos, quem tiver mais <strong style={{ color: 'var(--text)' }}>acertos de placar exato</strong> fica na frente.</p>
         </>
       )
     },
@@ -165,6 +225,7 @@ export default function FAQGrupo() {
             <li>Jogos agrupados por dia (colapsáveis)</li>
             <li>Cada jogo mostra o placar real, seu palpite e quantos pontos ganhou</li>
             <li>Badges coloridos: 🎯 Exato · ✅ Vencedor · ⚡ Parcial · ❌ Erro</li>
+            <li>Atualização automática a cada 3 minutos</li>
           </ul>
         </>
       )
@@ -175,18 +236,18 @@ export default function FAQGrupo() {
         <>
           <p style={{ marginBottom: 8 }}>Na aba <strong style={{ color: 'var(--text)' }}>Galera</strong> você vê os palpites de todos do grupo.</p>
           <ul style={{ paddingLeft: 16, marginBottom: 12 }}>
-            <li>Toque em alguém para ver os palpites</li>
-            <li>Filtre por <strong style={{ color: 'var(--text)' }}>Passados · Hoje · Próximos</strong></li>
-            <li>Palpites ficam <strong style={{ color: 'var(--text)' }}>ocultos</strong> até o jogo começar</li>
-            <li>Compartilhe o código ou link de convite para convidar mais pessoas</li>
+            <li>Toggle <strong style={{ color: 'var(--text)' }}>👥 Por pessoa</strong> ou <strong style={{ color: 'var(--text)' }}>⚽ Por jogo</strong></li>
+            <li>Toque em alguém para ver os palpites com filtro Passados/Hoje/Próximos</li>
+            <li>Palpites ficam <strong style={{ color: 'var(--text)' }}>ocultos</strong> até 10 minutos após o jogo começar</li>
+            <li>A partir de <strong style={{ color: 'var(--gold)' }}>27/06</strong> — botão <strong style={{ color: 'var(--text)' }}>🌟 Ver apostas especiais</strong> mostra as apostas especiais e de mata-mata de cada pessoa</li>
           </ul>
-          <p style={{ marginBottom: 8, fontWeight: 700, color: 'var(--text)' }}>💰 Caixinha do grupo</p>
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>💰 Caixinha do grupo</p>
           <ul style={{ paddingLeft: 16 }}>
             <li>Clique em <strong style={{ color: 'var(--text)' }}>💰 Caixinha do grupo</strong> para ver o status financeiro</li>
             <li>Mostra quanto foi arrecadado, quem pagou e quem está pendente</li>
-            <li>Aba <strong style={{ color: 'var(--text)' }}>🏆 Prêmio</strong> mostra a distribuição e a projeção de quem vai ganhar baseada no ranking atual</li>
-            <li>O <strong style={{ color: 'var(--text)' }}>criador do grupo</strong> pode definir o valor da entrada, marcar pagamentos e configurar a divisão do prêmio com sliders</li>
-            <li>A distribuição pode ser <strong style={{ color: 'var(--text)' }}>bloqueada</strong> pelo criador — após confirmada não pode ser alterada</li>
+            <li>Aba <strong style={{ color: 'var(--text)' }}>🏆 Prêmio</strong> mostra a distribuição e projeção baseada no ranking atual</li>
+            <li>O <strong style={{ color: 'var(--text)' }}>criador do grupo</strong> pode definir o valor, marcar pagamentos e configurar a divisão com sliders</li>
+            <li>A distribuição pode ser <strong style={{ color: 'var(--text)' }}>bloqueada</strong> — após confirmada não pode ser alterada</li>
           </ul>
         </>
       )
@@ -195,7 +256,7 @@ export default function FAQGrupo() {
       icon: '🗺️', title: 'Chaveamento da Copa',
       content: (
         <>
-          <p style={{ marginBottom: 8 }}>Na aba <strong style={{ color: 'var(--text)' }}>Palpites</strong>, selecione <strong style={{ color: 'var(--gold)' }}>Copa do Mundo</strong> e clique em <strong style={{ color: 'var(--text)' }}>🗺️ Chaveamento</strong>.</p>
+          <p style={{ marginBottom: 8 }}>Na aba <strong style={{ color: 'var(--text)' }}>Palpites → Copa do Mundo → 🗺️ Chaveamento</strong>.</p>
           <ul style={{ paddingLeft: 16 }}>
             <li>Mostra o bracket completo do mata-mata</li>
             <li>Placar real em dourado (quando disponível)</li>
@@ -220,8 +281,22 @@ export default function FAQGrupo() {
           <ul style={{ paddingLeft: 16 }}>
             <li>Na tela de grupos, clique em <strong style={{ color: 'var(--text)' }}>📋 Espelhar palpites</strong></li>
             <li>Escolha o grupo de <strong style={{ color: 'var(--text)' }}>origem</strong> e o grupo de <strong style={{ color: 'var(--text)' }}>destino</strong></li>
-            <li>Todos os palpites do grupo origem são copiados para o destino</li>
-            <li>Palpites já existentes no destino <strong style={{ color: 'var(--text)' }}>não são sobrescritos</strong></li>
+            <li>Apenas palpites de <strong style={{ color: 'var(--text)' }}>jogos futuros</strong> são copiados</li>
+            <li>Palpites já existentes no destino não são sobrescritos</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      icon: '👤', title: 'Perfil',
+      content: (
+        <>
+          <p style={{ marginBottom: 8 }}>Acesse seu perfil pelo ícone <strong style={{ color: 'var(--text)' }}>👤</strong> no canto superior direito de qualquer tela do grupo.</p>
+          <ul style={{ paddingLeft: 16 }}>
+            <li>Editar nome de usuário</li>
+            <li>Ver estatísticas gerais (% de acerto, total de pontos, exatos, vencedores)</li>
+            <li>Redefinir senha</li>
+            <li>Sair da conta</li>
           </ul>
         </>
       )
@@ -229,7 +304,7 @@ export default function FAQGrupo() {
     {
       icon: '🔒', title: 'Redefinir senha',
       content: (
-        <p>Na tela de login, clique em <strong style={{ color: 'var(--text)' }}>Esqueci minha senha</strong>. Um email será enviado com o link para criar uma nova senha.</p>
+        <p>Na tela de login, clique em <strong style={{ color: 'var(--text)' }}>Esqueci minha senha</strong>. Um email será enviado com o link para criar uma nova senha. Também disponível no <strong style={{ color: 'var(--text)' }}>Perfil</strong>.</p>
       )
     },
   ];

@@ -241,12 +241,12 @@ export default function FAQGrupo() {
 
       {/* Aviso principal */}
       <div style={{
-        background: 'rgba(227,93,93,0.12)', border: '2px solid var(--danger)',
+        background: 'rgba(212,167,44,0.1)', border: '2px solid var(--gold)',
         borderRadius: 16, padding: 16, marginBottom: 20
       }}>
-        <div style={{ fontSize: 24, textAlign: 'center', marginBottom: 8 }}>🚫</div>
+        <div style={{ fontSize: 24, textAlign: 'center', marginBottom: 8 }}>⚡</div>
         <p style={{ fontSize: 13, textAlign: 'center', lineHeight: 1.6 }}>
-          Palpite enviado <strong style={{ color: 'var(--danger)' }}>não pode ser editado</strong> e não é permitido palpitar após o início do jogo.
+          Palpites podem ser <strong style={{ color: 'var(--gold)' }}>editados até o início do jogo</strong>. Após o apito inicial, ficam bloqueados.
         </p>
       </div>
 
