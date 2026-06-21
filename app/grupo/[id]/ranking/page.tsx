@@ -95,6 +95,9 @@ export default function RankingGrupo() {
   const [myUserId, setMyUserId]       = useState<string | null>(null);
   const [showChart, setShowChart]     = useState(false);
   const [rankTab, setRankTab]         = useState<'geral' | 'selecoes'>('geral');
+  const [knockoutPicks, setKnockoutPicks] = useState<any[]>([]);
+  const [championPicks, setChampionPicks] = useState<any[]>([]);
+  const [finalPicks, setFinalPicks]       = useState<any[]>([]);
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<typeof memberStats[0] | null>(null);
@@ -152,6 +155,14 @@ export default function RankingGrupo() {
       const { data: bets } = await supabase
         .from('special_bets').select('*').in('group_member_id', memberIds);
       setSpecialBets(bets || []);
+
+      // Palpites do mata-mata
+      const { data: kpData } = await supabase.from('knockout_picks').select('*').in('group_member_id', memberIds);
+      setKnockoutPicks(kpData || []);
+      const { data: cpData } = await supabase.from('phase_champion_picks').select('*').in('group_member_id', memberIds);
+      setChampionPicks(cpData || []);
+      const { data: fpData } = await supabase.from('final_score_pick').select('*').in('group_member_id', memberIds);
+      setFinalPicks(fpData || []);
 
       const { data: res } = await supabase.from('special_results').select('*').maybeSingle();
       setSpecialResult(res || null);

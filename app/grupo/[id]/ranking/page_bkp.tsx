@@ -39,6 +39,47 @@ function Avatar({ name, color, size = 32 }: { name: string; color: string; size?
   );
 }
 
+
+const FLAG_CODES: Record<string, string> = {
+  'Algeria': 'dz', 'Argentina': 'ar', 'Australia': 'au', 'Austria': 'at',
+  'Belgium': 'be', 'Bosnia-Herzegovina': 'ba', 'Brazil': 'br', 'Canada': 'ca',
+  'Cape Verde Islands': 'cv', 'Colombia': 'co', 'Congo DR': 'cd', 'Croatia': 'hr',
+  'Curaçao': 'cw', 'Czechia': 'cz', 'Ecuador': 'ec', 'Egypt': 'eg',
+  'England': 'gb-eng', 'France': 'fr', 'Germany': 'de', 'Ghana': 'gh',
+  'Haiti': 'ht', 'Iran': 'ir', 'Iraq': 'iq', 'Ivory Coast': 'ci',
+  'Japan': 'jp', 'Jordan': 'jo', 'Mexico': 'mx', 'Morocco': 'ma',
+  'Netherlands': 'nl', 'New Zealand': 'nz', 'Norway': 'no', 'Panama': 'pa',
+  'Paraguay': 'py', 'Portugal': 'pt', 'Qatar': 'qa', 'Saudi Arabia': 'sa',
+  'Scotland': 'gb-sct', 'Senegal': 'sn', 'South Africa': 'za', 'South Korea': 'kr',
+  'Spain': 'es', 'Sweden': 'se', 'Switzerland': 'ch', 'Tunisia': 'tn',
+  'Turkey': 'tr', 'United States': 'us', 'Uruguay': 'uy', 'Uzbekistan': 'uz',
+};
+
+const TEAM_TRANSLATIONS: Record<string, string> = {
+  'Algeria': 'Argélia', 'Argentina': 'Argentina', 'Australia': 'Austrália',
+  'Austria': 'Áustria', 'Belgium': 'Bélgica', 'Bosnia-Herzegovina': 'Bósnia-Herzegovina',
+  'Brazil': 'Brasil', 'Canada': 'Canadá', 'Cape Verde Islands': 'Cabo Verde',
+  'Colombia': 'Colômbia', 'Congo DR': 'Congo', 'Croatia': 'Croácia',
+  'Curaçao': 'Curaçao', 'Czechia': 'República Tcheca', 'Ecuador': 'Equador',
+  'Egypt': 'Egito', 'England': 'Inglaterra', 'France': 'França',
+  'Germany': 'Alemanha', 'Ghana': 'Gana', 'Haiti': 'Haiti',
+  'Iran': 'Irã', 'Iraq': 'Iraque', 'Ivory Coast': 'Costa do Marfim',
+  'Japan': 'Japão', 'Jordan': 'Jordânia', 'Mexico': 'México',
+  'Morocco': 'Marrocos', 'Netherlands': 'Holanda', 'New Zealand': 'Nova Zelândia',
+  'Norway': 'Noruega', 'Panama': 'Panamá', 'Paraguay': 'Paraguai',
+  'Portugal': 'Portugal', 'Qatar': 'Catar', 'Saudi Arabia': 'Arábia Saudita',
+  'Scotland': 'Escócia', 'Senegal': 'Senegal', 'South Africa': 'África do Sul',
+  'South Korea': 'Coreia do Sul', 'Spain': 'Espanha', 'Sweden': 'Suécia',
+  'Switzerland': 'Suíça', 'Tunisia': 'Tunísia', 'Turkey': 'Turquia',
+  'United States': 'Estados Unidos', 'Uruguay': 'Uruguai', 'Uzbekistan': 'Uzbequistão',
+};
+
+function toPT(name: string): string { return TEAM_TRANSLATIONS[name] || name; }
+function getFlag(team: string): string | null {
+  const code = FLAG_CODES[team];
+  return code ? `https://flagcdn.com/w20/${code}.png` : null;
+}
+
 const medals = ['🥇', '🥈', '🥉'];
 
 export default function RankingGrupo() {
@@ -54,6 +95,9 @@ export default function RankingGrupo() {
   const [myUserId, setMyUserId]       = useState<string | null>(null);
   const [showChart, setShowChart]     = useState(false);
   const [rankTab, setRankTab]         = useState<'geral' | 'selecoes'>('geral');
+  const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
+  const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
+  const [drilldown, setDrilldown]       = useState<typeof memberStats[0] | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -81,6 +125,29 @@ export default function RankingGrupo() {
       const { data: guessData } = await supabase
         .from('guesses').select('*').in('group_member_id', memberIds);
       setAllGuesses(guessData || []);
+
+      // Jogos em andamento — só após 10 minutos do início
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: allMatchData } = await supabase
+        .from('matches').select('*')
+        .is('score_a', null)
+        .lte('match_date', tenMinutesAgo)
+        .order('match_date', { ascending: true });
+      const lives = allMatchData || [];
+      setLiveMatches(lives);
+
+      if (lives.length > 0) {
+        const liveMap: Record<string, Record<string, Guess>> = {};
+        for (const live of lives) {
+          const { data: liveG } = await supabase
+            .from('guesses').select('*')
+            .eq('match_id', live.id)
+            .in('group_member_id', memberIds);
+          liveMap[live.id] = {};
+          (liveG || []).forEach((g: any) => { liveMap[live.id][g.group_member_id] = g; });
+        }
+        setLiveGuesses(liveMap);
+      }
 
       const { data: bets } = await supabase
         .from('special_bets').select('*').in('group_member_id', memberIds);
@@ -307,6 +374,33 @@ export default function RankingGrupo() {
             }}>🌍 Seleções</button>
           </div>
 
+          {/* Jogos em andamento */}
+          {liveMatches.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              {liveMatches.map((m, idx) => {
+                const color = ['#f87171','#60a5fa','#34d399','#fb923c','#a78bfa'][idx % 5];
+                return (
+                  <div key={m.id} style={{
+                    padding: '8px 14px', marginBottom: 6, borderRadius: 10,
+                    background: `${color}15`, border: `1px solid ${color}`,
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 11, color, fontWeight: 700 }}>🔴 Em andamento</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {getFlag(m.team_a) && <img src={getFlag(m.team_a)!} alt="" style={{ width: 18, height: 13, objectFit: 'contain' }} />}
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>{toPT(m.team_a)}</span>
+                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>vs</span>
+                      {getFlag(m.team_b) && <img src={getFlag(m.team_b)!} alt="" style={{ width: 18, height: 13, objectFit: 'contain' }} />}
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>{toPT(m.team_b)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {rankTab === 'geral' ? (
             <div className="card" style={{ padding: 0, marginBottom: 16 }}>
               {rankingWithPos.map((r, i) => {
@@ -314,12 +408,15 @@ export default function RankingGrupo() {
                 const isLeader = r.pos === 1;
                 const posLabel = r.pos <= 3 ? medals[r.pos - 1] : `${r.pos}º`;
                 return (
-                  <div key={r.id} className="rank-row" style={{
-                    background: isLeader
-                      ? 'rgba(212,167,44,0.12)'
-                      : isMe ? 'rgba(212,167,44,0.06)' : undefined,
-                    borderLeft: isLeader ? '3px solid var(--gold)' : undefined,
-                  }}>
+                  <div key={r.id} className="rank-row"
+                    onClick={() => setDrilldown(r)}
+                    style={{
+                      background: isLeader
+                        ? 'rgba(212,167,44,0.12)'
+                        : isMe ? 'rgba(212,167,44,0.06)' : undefined,
+                      borderLeft: isLeader ? '3px solid var(--gold)' : undefined,
+                      cursor: 'pointer',
+                    }}>
                     <span className="rank-pos">{posLabel}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Avatar name={r.name} color={r.color} size={34} />
@@ -345,6 +442,27 @@ export default function RankingGrupo() {
                       <span className="rank-points" style={{ color: isLeader ? 'var(--gold)' : undefined }}>{r.grand_total}</span>
                       {r.special_pts > 0 && (
                         <div style={{ fontSize: 10, color: 'var(--gold)' }}>{r.total_points} + {r.special_pts}</div>
+                      )}
+                      {liveMatches.length > 0 && (
+                        <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {liveMatches.map((lm, idx) => {
+                            const color = ['#f87171','#60a5fa','#34d399','#fb923c','#a78bfa'][idx % 5];
+                            const g = liveGuesses[lm.id]?.[r.id];
+                            return (
+                              <div key={lm.id} style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                                {getFlag(lm.team_a) && <img src={getFlag(lm.team_a)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain', flexShrink: 0 }} />}
+                                <span style={{ fontSize: 11, color: g ? 'var(--text)' : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
+                                  {g ? g.guess_a : '—'}
+                                </span>
+                                <span style={{ fontSize: 10, color: 'var(--muted)' }}>x</span>
+                                <span style={{ fontSize: 11, color: g ? 'var(--text)' : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
+                                  {g ? g.guess_b : '—'}
+                                </span>
+                                {getFlag(lm.team_b) && <img src={getFlag(lm.team_b)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain', flexShrink: 0 }} />}
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -434,11 +552,103 @@ export default function RankingGrupo() {
         </>
       )}
       <style>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
+
+      {/* MODAL DRILLDOWN */}
+      {drilldown && (() => {
+        const member = drilldown;
+        const guessByMatch: Record<string, Guess> = {};
+        allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
+
+        const scoredMatches = matches.map(m => {
+          const g = guessByMatch[m.id];
+          if (!g) return null;
+          const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+          if (pts === 0) return null;
+          return { m, g, pts };
+        }).filter(Boolean) as { m: Match; g: Guess; pts: number }[];
+
+        scoredMatches.sort((a, b) => new Date(b.m.match_date).getTime() - new Date(a.m.match_date).getTime());
+
+        const ptsBadge = (pts: number) => {
+          if (pts >= 9) return { label: '🏆 Exato + pên', color: '#2ea84c' };
+          if (pts >= 6) return { label: '🎯 Exato', color: '#2ea84c' };
+          if (pts === 4) return { label: '⚡ Vencedor+', color: 'var(--gold)' };
+          if (pts === 3) return { label: '✅ Vencedor', color: 'var(--gold)' };
+          return { label: '〰️ Parcial', color: '#8ba9ff' };
+        };
+
+        return (
+          <div onClick={() => setDrilldown(null)} style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+            zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: 'var(--card)', borderRadius: '20px 20px 0 0',
+              width: '100%', maxWidth: 480, maxHeight: '80vh',
+              overflow: 'hidden', display: 'flex', flexDirection: 'column',
+              animation: 'fadeIn 0.25s ease'
+            }}>
+              {/* Header */}
+              <div style={{ padding: '20px 20px 12px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    background: `${member.color}30`, border: `2px solid ${member.color}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, fontWeight: 700, color: member.color
+                  }}>{member.name.charAt(0).toUpperCase()}</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{member.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      {scoredMatches.length} acerto{scoredMatches.length !== 1 ? 's' : ''} · {member.grand_total} pts total
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => setDrilldown(null)} style={{
+                  background: 'var(--bg-soft)', border: 'none', borderRadius: '50%',
+                  width: 32, height: 32, fontSize: 16, cursor: 'pointer', color: 'var(--muted)'
+                }}>✕</button>
+              </div>
+
+              {/* Lista de jogos */}
+              <div style={{ overflowY: 'auto', flex: 1, padding: '12px 0' }}>
+                {scoredMatches.length === 0 ? (
+                  <div className="empty">Nenhum ponto ainda.</div>
+                ) : scoredMatches.map(({ m, g, pts }) => {
+                  const badge = ptsBadge(pts);
+                  return (
+                    <div key={m.id} style={{
+                      padding: '12px 20px',
+                      borderBottom: '1px solid var(--line)',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>
+                          {new Date(m.match_date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>
+                          {toPT(m.team_a)} {m.score_a} x {m.score_b} {toPT(m.team_b)}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                          Palpite: {g.guess_a} x {g.guess_b}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: badge.color, lineHeight: 1 }}>+{pts}</div>
+                        <div style={{ fontSize: 10, color: badge.color, fontWeight: 700 }}>{badge.label}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <div style={{ height: 100 }} />
     </main>
   );
