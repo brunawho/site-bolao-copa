@@ -205,9 +205,9 @@ export default function RankingGrupo() {
         .order('match_date');
       setMatches(matchData || []);
 
-      const { data: allMatchData } = await supabase
+      const { data: allMatchesData } = await supabase
         .from('matches').select('*').order('match_date');
-      setAllMatches(allMatchData || []);
+      setAllMatches(allMatchesData || []);
 
       const memberIds = ms.map((m: any) => m.id);
       const { data: guessData } = await supabase
