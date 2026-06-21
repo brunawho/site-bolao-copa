@@ -168,6 +168,7 @@ export default function RankingGrupo() {
 
   const [members, setMembers]         = useState<Member[]>([]);
   const [matches, setMatches]         = useState<Match[]>([]);
+  const [allMatches, setAllMatches]   = useState<Match[]>([]);
   const [allGuesses, setAllGuesses]   = useState<Guess[]>([]);
   const [specialBets, setSpecialBets] = useState<SpecialBet[]>([]);
   const [specialResult, setSpecialResult] = useState<SpecialResult | null>(null);
@@ -203,6 +204,10 @@ export default function RankingGrupo() {
         .from('matches').select('*').not('score_a', 'is', null).not('score_b', 'is', null)
         .order('match_date');
       setMatches(matchData || []);
+
+      const { data: allMatchData } = await supabase
+        .from('matches').select('*').order('match_date');
+      setAllMatches(allMatchData || []);
 
       const memberIds = ms.map((m: any) => m.id);
       const { data: guessData } = await supabase
@@ -491,7 +496,9 @@ export default function RankingGrupo() {
             </div>
           )}
 
-          {rankTab === 'geral' ? (
+          {rankTab === 'resultados' ? (
+            <ResultadosInline matches={allMatches} />
+          ) : rankTab === 'geral' ? (
             <div className="card" style={{ padding: 0, marginBottom: 16 }}>
               {rankingWithPos.map((r, i) => {
                 const isMe = r.user_id === myUserId;
