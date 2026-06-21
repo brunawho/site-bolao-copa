@@ -395,7 +395,8 @@ export default function PalpitesGrupo() {
     if (!compMap[comp]) compMap[comp] = [];
     compMap[comp].push(m);
   });
-  const comps = [...Object.keys(compMap).sort(), '⭐ Especiais'];
+  const showMataMata = new Date() >= new Date('2026-06-27T00:00:00-03:00');
+  const comps = [...Object.keys(compMap).sort(), '⭐ Especiais', ...(showMataMata ? ['🥊 Mata-Mata'] : [])];
 
   // Filtra jogos do campeonato selecionado
   const allCompMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
@@ -504,6 +505,10 @@ export default function PalpitesGrupo() {
               <button key={comp} onClick={() => {
                 if (comp === '⭐ Especiais') {
                   router.push(`/grupo/${groupId}/apostas`);
+                  return;
+                }
+                if (comp === '🥊 Mata-Mata') {
+                  router.push(`/grupo/${groupId}/mata-mata`);
                   return;
                 }
                 setSelectedComp(isSelected ? null : comp);

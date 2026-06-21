@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { supabase, calcPoints, type Match, type Guess } from '@/lib/supabase';
 
 type Member = { id: string; user_id: string; name: string };
@@ -82,6 +82,86 @@ function getFlag(team: string): string | null {
 
 const medals = ['🥇', '🥈', '🥉'];
 
+function ResultadosInline({ matches }: { matches: Match[] }) {
+  const [filter, setFilter] = useState<'past' | 'today' | 'upcoming'>('today');
+
+  function toBrazilDay(iso: string) {
+    return new Date(iso).toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).split('/').reverse().join('-');
+  }
+  const todayStr = toBrazilDay(new Date().toISOString());
+
+  const filtered = matches.filter(m => {
+    const day = toBrazilDay(m.match_date);
+    if (filter === 'today')    return day === todayStr;
+    if (filter === 'past')     return day < todayStr;
+    if (filter === 'upcoming') return day > todayStr;
+    return true;
+  }).sort((a, b) => filter === 'past'
+    ? new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
+    : new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+  );
+
+  const todayCount    = matches.filter(m => toBrazilDay(m.match_date) === todayStr).length;
+  const pastCount     = matches.filter(m => toBrazilDay(m.match_date) < todayStr).length;
+  const upcomingCount = matches.filter(m => toBrazilDay(m.match_date) > todayStr).length;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {([
+          { key: 'past',     label: '✅ Passados', count: pastCount },
+          { key: 'today',    label: '⚡ Hoje',     count: todayCount },
+          { key: 'upcoming', label: '⏳ Próximos', count: upcomingCount },
+        ] as const).map(f => (
+          <button key={f.key} onClick={() => setFilter(f.key)} style={{
+            flex: 1, padding: '7px 4px', borderRadius: 10, border: '1px solid',
+            borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
+            background: filter === f.key ? 'var(--gold)' : 'var(--card)',
+            color: filter === f.key ? '#1a1a1a' : 'var(--text)',
+            fontWeight: filter === f.key ? 700 : 400, fontSize: 10, cursor: 'pointer', lineHeight: 1.4
+          }}>
+            {f.label}<br /><span style={{ fontSize: 9, opacity: 0.8 }}>({f.count})</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="card" style={{ padding: 0 }}>
+        {filtered.length === 0 && <div className="empty">Nenhum jogo neste período.</div>}
+        {filtered.map((m, i) => {
+          const isFinished = m.score_a !== null;
+          const started    = new Date(m.match_date) <= new Date();
+          return (
+            <div key={m.id} style={{
+              padding: '12px 16px',
+              borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                  {m.phase.split('·').slice(1).join('·').trim()}
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 700,
+                  color: isFinished ? '#2ea84c' : started ? '#f87171' : 'var(--muted)' }}>
+                  {isFinished ? '✅ Finalizado' : started ? '🔴 Em andamento' : '⏳ Aguardando'}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 6 }}>
+                <span style={{ textAlign: 'right', fontWeight: 600, fontSize: 13 }}>{toPT(m.team_a)}</span>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: isFinished ? 'var(--gold)' : 'var(--muted)', textAlign: 'center', minWidth: 60 }}>
+                  {isFinished ? `${m.score_a} x ${m.score_b}` :
+                    new Date(m.match_date).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <span style={{ textAlign: 'left', fontWeight: 600, fontSize: 13 }}>{toPT(m.team_b)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function RankingGrupo() {
   const params  = useParams();
   const groupId = String(params.id);
@@ -94,7 +174,7 @@ export default function RankingGrupo() {
   const [loading, setLoading]         = useState(true);
   const [myUserId, setMyUserId]       = useState<string | null>(null);
   const [showChart, setShowChart]     = useState(false);
-  const [rankTab, setRankTab]         = useState<'geral' | 'selecoes'>('geral');
+  const [rankTab, setRankTab]         = useState<'geral' | 'selecoes' | 'resultados'>('geral');
   const [knockoutPicks, setKnockoutPicks] = useState<any[]>([]);
   const [championPicks, setChampionPicks] = useState<any[]>([]);
   const [finalPicks, setFinalPicks]       = useState<any[]>([]);
@@ -367,22 +447,21 @@ export default function RankingGrupo() {
         <div className="empty">Carregando...</div>
       ) : (
         <>
-          {/* Abas Geral / Seleções */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <button onClick={() => setRankTab('geral')} style={{
-              flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-              borderColor: rankTab === 'geral' ? 'var(--gold)' : 'var(--line)',
-              background: rankTab === 'geral' ? 'var(--gold)' : 'var(--card)',
-              color: rankTab === 'geral' ? '#1a1a1a' : 'var(--text)',
-              fontWeight: rankTab === 'geral' ? 700 : 400, fontSize: 13, cursor: 'pointer'
-            }}>🏆 Geral</button>
-            <button onClick={() => setRankTab('selecoes')} style={{
-              flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-              borderColor: rankTab === 'selecoes' ? 'var(--gold)' : 'var(--line)',
-              background: rankTab === 'selecoes' ? 'var(--gold)' : 'var(--card)',
-              color: rankTab === 'selecoes' ? '#1a1a1a' : 'var(--text)',
-              fontWeight: rankTab === 'selecoes' ? 700 : 400, fontSize: 13, cursor: 'pointer'
-            }}>🌍 Seleções</button>
+          {/* Abas Geral / Seleções / Resultados */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {([
+              { key: 'geral',      label: '🏆 Geral' },
+              { key: 'selecoes',   label: '🌍 Seleções' },
+              { key: 'resultados', label: '📋 Resultados' },
+            ] as const).map(tab => (
+              <button key={tab.key} onClick={() => setRankTab(tab.key)} style={{
+                flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
+                borderColor: rankTab === tab.key ? 'var(--gold)' : 'var(--line)',
+                background: rankTab === tab.key ? 'var(--gold)' : 'var(--card)',
+                color: rankTab === tab.key ? '#1a1a1a' : 'var(--text)',
+                fontWeight: rankTab === tab.key ? 700 : 400, fontSize: 11, cursor: 'pointer'
+              }}>{tab.label}</button>
+            ))}
           </div>
 
           {/* Jogos em andamento */}

@@ -627,10 +627,9 @@ export default function PalpitesGrupo() {
                   borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden'
                 }}>
                   {dayMatches.map((m, i) => {
-                    const saved   = myGuesses[m.id];
+                    const saved   = myGuesses[m.id] as Guess | undefined;
                     const started = jogoComecou(m.match_date);
-                    const blocked = started; // bloqueia sempre após início, independente de ter palpite
-                    const editing = saved && !started; // tem palpite mas jogo não começou = pode editar
+                    const blocked = started; // bloqueia apenas após início do jogo
                     // Prioriza draft se foi modificado, senão usa valores salvos
                     const draftVal = draft[m.id];
                     const d = (draftVal && (draftVal.a !== '' || draftVal.b !== ''))
@@ -670,13 +669,13 @@ export default function PalpitesGrupo() {
                               value={draft[m.id]?.a !== undefined ? draft[m.id].a : saved ? String(saved.guess_a) : d.a}
                               onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
                               disabled={blocked}
-                              style={{ opacity: blocked ? 0.4 : 1 }} />
+                              style={{ opacity: blocked ? 0.5 : 1 }} />
                             <span className="vs">x</span>
                             <input className="score-input" inputMode="numeric"
                               value={draft[m.id]?.b !== undefined ? draft[m.id].b : saved ? String(saved.guess_b) : d.b}
                               onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
                               disabled={blocked}
-                              style={{ opacity: blocked ? 0.4 : 1 }} />
+                              style={{ opacity: blocked ? 0.5 : 1 }} />
                           </div>
                           <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
                             <Crest name={m.team_b} crests={crests} />
@@ -691,7 +690,7 @@ export default function PalpitesGrupo() {
                             </p>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                               {(['A', 'B'] as const).map(side => {
-                                const isSelected = saved ? saved.guess_penalty_winner === side : d.pen === side;
+                                const isSelected = (saved as Guess | undefined)?.guess_penalty_winner === side || (!saved && d.pen === side);
                                 return (
                                   <button key={side} onClick={() => !saved && setPen(m.id, isSelected ? '' : side)}
                                     style={{
