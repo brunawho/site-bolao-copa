@@ -93,6 +93,10 @@ export default function GaleraGrupo() {
   const [galeraMode, setGaleraMode] = useState<'pessoa' | 'jogo'>('pessoa');
   const [allGuessesMap, setAllGuessesMap] = useState<Record<string, Record<string, any>>>({});
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
+  const [showSpecials, setShowSpecials]   = useState(false);
+  const [allSpecialBets, setAllSpecialBets] = useState<any[]>([]);
+  const [allKnockoutPicks, setAllKnockoutPicks] = useState<any[]>([]);
+  const [allChampionPicks, setAllChampionPicks] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -146,6 +150,19 @@ export default function GaleraGrupo() {
         guessMap[g.match_id][g.group_member_id] = g;
       });
       setAllGuessesMap(guessMap);
+
+      // Apostas especiais e mata-mata (visíveis após 27/06)
+      const after2706 = new Date() >= new Date('2026-06-27T00:00:00-03:00');
+      if (after2706) {
+        const { data: sbData } = await supabase.from('special_bets').select('*, group_members!inner(user_id)').in('group_member_id', allMemberIds);
+        setAllSpecialBets(sbData || []);
+
+        const { data: kpData } = await supabase.from('knockout_picks').select('*').in('group_member_id', allMemberIds);
+        setAllKnockoutPicks(kpData || []);
+
+        const { data: cpData } = await supabase.from('phase_champion_picks').select('*').in('group_member_id', allMemberIds);
+        setAllChampionPicks(cpData || []);
+      }
 
       setExpandedDays({ [todayBrazil()]: true });
     })();
@@ -352,6 +369,68 @@ export default function GaleraGrupo() {
             </div>
           );
         })}
+        {/* Apostas Especiais e Mata-Mata — visível após 27/06 */}
+        {new Date() >= new Date('2026-06-27T00:00:00-03:00') && (
+          <div style={{ marginTop: 8 }}>
+            <button onClick={() => setShowSpecials(s => !s)} className="btn btn-ghost" style={{ marginBottom: 8 }}>
+              {showSpecials ? '▲ Ocultar apostas especiais' : '🌟 Ver apostas especiais'}
+            </button>
+
+            {showSpecials && (() => {
+              const memberBet = allSpecialBets.find((b: any) => b.group_members?.user_id === selected.user_id);
+              const memberKP  = allKnockoutPicks.filter((p: any) => p.group_member_id === selected.id);
+              const memberCP  = allChampionPicks.filter((p: any) => p.group_member_id === selected.id);
+
+              return (
+                <div className="card" style={{ marginBottom: 12 }}>
+                  {/* Apostas especiais da Copa */}
+                  {memberBet && (
+                    <>
+                      <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 10 }}>🌟 Apostas Especiais</p>
+                      {[
+                        { label: '🥇 Campeão', value: memberBet.champion },
+                        { label: '🥈 Vice', value: memberBet.runner_up },
+                        { label: '🥉 3º lugar', value: memberBet.third_place },
+                        { label: '⚽ Artilheiro', value: memberBet.top_scorer },
+                      ].filter(f => f.value).map(f => (
+                        <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                          <span style={{ color: 'var(--muted)' }}>{f.label}</span>
+                          <span style={{ fontWeight: 700 }}>{f.value}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Palpites mata-mata */}
+                  {memberCP.length > 0 && (
+                    <>
+                      <div style={{ borderTop: '1px solid var(--line)', marginTop: 10, paddingTop: 10 }}>
+                        <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 10 }}>🥊 Campeão por fase</p>
+                        {memberCP.map((cp: any) => {
+                          const phaseLabel: Record<string, string> = {
+                            'ROUND_OF_16': 'Oitavas', 'QUARTER_FINALS': 'Quartas',
+                            'SEMI_FINALS': 'Semi', 'FINAL': 'Final'
+                          };
+                          return (
+                            <div key={cp.phase} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                              <span style={{ color: 'var(--muted)' }}>{phaseLabel[cp.phase] || cp.phase}</span>
+                              <span style={{ fontWeight: 700 }}>{toPT(cp.champion)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {!memberBet && memberCP.length === 0 && (
+                    <p style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center' }}>Sem apostas especiais</p>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         <div style={{ height: 100 }} />
       </main>
     );
