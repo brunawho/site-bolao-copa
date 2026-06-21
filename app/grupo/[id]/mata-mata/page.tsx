@@ -66,6 +66,7 @@ export default function MataMataPage() {
   const [finalPick, setFinalPick]   = useState<FinalPick | null>(null);
   const [saving, setSaving]         = useState(false);
   const [toast, setToast]           = useState('');
+  const [changingChampion, setChangingChampion] = useState<Record<string, boolean>>({});
   const [finalA, setFinalA]         = useState<string | number>('');
   const [finalB, setFinalB]         = useState<string | number>('');
   const COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
@@ -245,22 +246,80 @@ export default function MataMataPage() {
                     <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
                       Quem vai ser campeão? <span style={{ color: 'var(--gold)' }}>+{phase.championPts} pts</span>
                     </p>
-                    <select
-                      value={myCP}
-                      onChange={e => !blocked && saveChampionPick(phase.key, e.target.value)}
-                      disabled={blocked}
-                      style={{
-                        width: '100%', padding: '10px 12px', borderRadius: 10,
-                        border: `1px solid ${myCP ? 'var(--gold)' : 'var(--line)'}`,
-                        background: 'var(--bg-soft)', color: 'var(--text)',
-                        fontSize: 13, cursor: blocked ? 'not-allowed' : 'pointer',
-                        opacity: blocked ? 0.6 : 1, marginBottom: 6
+
+                    {/* Tem palpite e não está trocando */}
+                    {myCP && !changingChampion[phase.key] && (
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
+                          borderRadius: 10, background: 'rgba(212,167,44,0.1)', border: '1px solid var(--gold)',
+                          marginBottom: 8
+                        }}>
+                          {getFlag(myCP) && <img src={getFlag(myCP)!} alt="" style={{ width: 22, height: 15, objectFit: 'contain' }} />}
+                          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{toPT(myCP)}</span>
+                          <span style={{ fontSize: 11, color: 'var(--gold)' }}>+{phase.championPts} pts</span>
+                        </div>
+                        {!blocked && (
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button className="btn btn-ghost" style={{ flex: 1, fontSize: 12 }}
+                              onClick={() => saveChampionPick(phase.key, myCP)}>
+                              ✅ Manter {toPT(myCP)}
+                            </button>
+                            <button className="btn" style={{ flex: 1, fontSize: 12, background: 'var(--bg-soft)', color: 'var(--text)', border: '1px solid var(--line)' }}
+                              onClick={() => setChangingChampion(c => ({ ...c, [phase.key]: true }))}>
+                              🔄 Trocar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Sem palpite ou está trocando */}
+                    {(!myCP || changingChampion[phase.key]) && !blocked && (
+                      <div style={{ marginBottom: 8 }}>
+                        {changingChampion[phase.key] && myCP && (
+                          <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+                            Atual: <strong>{toPT(myCP)}</strong> — escolha outro:
+                          </p>
+                        )}
+                        <select
+                          defaultValue=""
+                          onChange={e => {
+                            if (!e.target.value) return;
+                            saveChampionPick(phase.key, e.target.value);
+                            setChangingChampion(c => ({ ...c, [phase.key]: false }));
+                          }}
+                          style={{
+                            width: '100%', padding: '10px 12px', borderRadius: 10,
+                            border: '1px solid var(--line)',
+                            background: 'var(--bg-soft)', color: 'var(--text)',
+                            fontSize: 13, cursor: 'pointer', marginBottom: 6
+                          }}>
+                          <option value="">Selecione o novo campeão...</option>
+                          {teams.map(team => (
+                            <option key={team} value={team}>{toPT(team)}</option>
+                          ))}
+                        </select>
+                        {changingChampion[phase.key] && (
+                          <button className="btn btn-ghost" style={{ width: '100%', fontSize: 12 }}
+                            onClick={() => setChangingChampion(c => ({ ...c, [phase.key]: false }))}>
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {blocked && myCP && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
+                        borderRadius: 10, background: 'rgba(212,167,44,0.1)', border: '1px solid var(--gold)',
+                        opacity: 0.7
                       }}>
-                      <option value="">Selecione o campeão...</option>
-                      {teams.map(team => (
-                        <option key={team} value={team}>{toPT(team)}</option>
-                      ))}
-                    </select>
+                        {getFlag(myCP) && <img src={getFlag(myCP)!} alt="" style={{ width: 22, height: 15, objectFit: 'contain' }} />}
+                        <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{toPT(myCP)}</span>
+                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>🔒 Bloqueado</span>
+                      </div>
+                    )}
                   </>
                 )}
 
