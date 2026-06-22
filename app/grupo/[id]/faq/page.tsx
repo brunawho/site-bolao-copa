@@ -151,28 +151,36 @@ export default function FAQGrupo() {
       )
     },
     {
-      icon: '🥊', title: 'Mata-Mata', badge: 'Disponível a partir de 27/06',
+      icon: '🥊', title: 'Mata-Mata', badge: 'A partir de 27/06',
       content: (
         <>
-          <p style={{ marginBottom: 12 }}>Na aba <strong style={{ color: 'var(--text)' }}>Palpites → 🥊 Mata-Mata</strong> você encontra 3 tipos de aposta especial para o mata-mata da Copa:</p>
-
-          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>1️⃣ Quem avança?</p>
-          <p style={{ marginBottom: 12 }}>Antes de cada fase, escolha quais times você acha que vão passar. Cada acerto vale pontos — quanto mais difícil a fase, mais pontos.</p>
-
-          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>2️⃣ Quem vai ser campeão?</p>
-          <p style={{ marginBottom: 6 }}>Aposte no campeão antes das Oitavas. Quanto antes acertar, mais pontos! A cada nova fase você pode <strong style={{ color: 'var(--text)' }}>Manter</strong> ou <strong style={{ color: 'var(--text)' }}>Trocar</strong>:</p>
-          <ul style={{ paddingLeft: 16, marginBottom: 6 }}>
-            <li><strong style={{ color: 'var(--text)' }}>Manter</strong> → continua com o mesmo time e mantém os pontos da fase em que apostou</li>
-            <li><strong style={{ color: 'var(--text)' }}>Trocar</strong> → muda para outro time, mas os pontos valem pela fase atual (menor)</li>
-          </ul>
-          <p style={{ marginBottom: 12, fontSize: 12, fontStyle: 'italic' }}>Ex: apostou Brasil nas Oitavas e manteve → 15 pts. Trocou para França nas Quartas → 10 pts.</p>
-
-          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>3️⃣ Placar da Final</p>
-          <p style={{ marginBottom: 12 }}>Aposte no placar exato da grande final. Bônus de <strong style={{ color: 'var(--gold)' }}>+20 pts</strong> se acertar!</p>
-
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <p style={{ marginBottom: 12 }}>No mata-mata da Copa, os <strong style={{ color: 'var(--text)' }}>pontos são multiplicados</strong> dependendo da fase:</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
             <tbody>
               {[
+                ['1.5x', 'Oitavas de Final'],
+                ['2x',   'Quartas de Final'],
+                ['2.5x', 'Semifinais e disputa do 3º lugar'],
+                ['3x',   'Final'],
+              ].map(([mult, phase]) => (
+                <tr key={phase} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 50, verticalAlign: 'middle' }}>{mult}</td>
+                  <td style={{ padding: '8px 0', fontSize: 13, color: 'var(--text)' }}>{phase}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 12, fontStyle: 'italic', marginBottom: 8 }}>
+            Exemplo: um placar exato na fase de grupos vale 6 pts. Na final, vale <strong style={{ color: 'var(--gold)' }}>18 pts</strong>!
+          </p>
+          <p style={{ fontSize: 13 }}>
+            A pontuação segue as mesmas regras dos jogos normais — o multiplicador é aplicado automaticamente. Os palpites de pênalti continuam funcionando normalmente.
+          </p>
+        </>
+      )
+    },
+    {
+    {[
                 ['3', 'Acertar quem avança nas Oitavas'],
                 ['5', 'Acertar quem avança nas Quartas'],
                 ['8', 'Acertar quem avança na Semi'],

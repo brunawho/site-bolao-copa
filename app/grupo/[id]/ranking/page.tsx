@@ -176,9 +176,6 @@ export default function RankingGrupo() {
   const [myUserId, setMyUserId]       = useState<string | null>(null);
   const [showChart, setShowChart]     = useState(false);
   const [rankTab, setRankTab]         = useState<'geral' | 'selecoes' | 'resultados'>('geral');
-  const [knockoutPicks, setKnockoutPicks] = useState<any[]>([]);
-  const [championPicks, setChampionPicks] = useState<any[]>([]);
-  const [finalPicks, setFinalPicks]       = useState<any[]>([]);
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<typeof memberStats[0] | null>(null);
@@ -241,13 +238,7 @@ export default function RankingGrupo() {
         .from('special_bets').select('*').in('group_member_id', memberIds);
       setSpecialBets(bets || []);
 
-      // Palpites do mata-mata
-      const { data: kpData } = await supabase.from('knockout_picks').select('*').in('group_member_id', memberIds);
-      setKnockoutPicks(kpData || []);
-      const { data: cpData } = await supabase.from('phase_champion_picks').select('*').in('group_member_id', memberIds);
-      setChampionPicks(cpData || []);
-      const { data: fpData } = await supabase.from('final_score_pick').select('*').in('group_member_id', memberIds);
-      setFinalPicks(fpData || []);
+
 
       const { data: res } = await supabase.from('special_results').select('*').maybeSingle();
       setSpecialResult(res || null);
@@ -265,7 +256,7 @@ export default function RankingGrupo() {
     matches.forEach(m => {
       const g = guessByMatch[m.id];
       if (!g) return;
-      const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+      const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
       totalPts += pts;
       if (pts >= 6 && g.guess_a === m.score_a && g.guess_b === m.score_b) exactHits++;
       if (pts === 3 || pts === 4) winnerHits++;
@@ -322,7 +313,7 @@ export default function RankingGrupo() {
         roundMatches.forEach(m => {
           const g = guessByMatch[m.id];
           if (!g) return;
-          accumulated += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+          accumulated += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
         });
         return accumulated;
       });
@@ -417,7 +408,7 @@ export default function RankingGrupo() {
     roundMatches.forEach(m => {
       const g = guessByMatch[m.id];
       if (!g) return;
-      pts += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+      pts += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
     });
     return { name: member.name, pts, color: member.color, user_id: member.user_id };
   }).filter(r => r.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
@@ -430,7 +421,7 @@ export default function RankingGrupo() {
     wcMatches.forEach(m => {
       allGuesses.filter(g => members.some(mb => mb.id === g.group_member_id)).forEach(g => {
         if (g.match_id !== m.id) return;
-        const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+        const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
         if (pts > 0) {
           teamPts[m.team_a] = (teamPts[m.team_a] ?? 0) + pts;
           teamPts[m.team_b] = (teamPts[m.team_b] ?? 0) + pts;
@@ -662,7 +653,7 @@ export default function RankingGrupo() {
         const scoredMatches = matches.map(m => {
           const g = guessByMatch[m.id];
           if (!g) return null;
-          const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+          const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
           if (pts === 0) return null;
           return { m, g, pts };
         }).filter(Boolean) as { m: Match; g: Guess; pts: number }[];

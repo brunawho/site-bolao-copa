@@ -48,10 +48,20 @@ export type RankingRow = {
   partial_hits: number;
   total_points: number;
 };
+export function getPhaseMultiplier(phase: string): number {
+  const upper = (phase || '').toUpperCase();
+  if (upper.includes('FINAL') && !upper.includes('SEMI') && !upper.includes('QUARTER') && !upper.includes('3RD') && !upper.includes('THIRD')) return 3;
+  if (upper.includes('SEMI') || upper.includes('3RD') || upper.includes('THIRD')) return 2.5;
+  if (upper.includes('QUARTER')) return 2;
+  if (upper.includes('ROUND_OF_16') || upper.includes('OITAVAS')) return 1.5;
+  return 1;
+}
+
 export function calcPoints(
   guess_a: number, guess_b: number, guess_pen: 'A' | 'B' | null,
   real_a: number,  real_b: number,  real_pen: 'A' | 'B' | null,
-  is_knockout: boolean
+  is_knockout: boolean,
+  phase?: string
 ): number {
   const guessSign = Math.sign(guess_a - guess_b);
   const realSign  = Math.sign(real_a  - real_b);
@@ -59,31 +69,37 @@ export function calcPoints(
   const isExact   = guess_a === real_a && guess_b === real_b;
   const guessIsDraw = guess_a === guess_b;
 
+  const multiplier = phase ? getPhaseMultiplier(phase) : 1;
+
+  function applyMult(pts: number): number {
+    return Math.round(pts * multiplier);
+  }
+
   if (!is_knockout) {
     // Placar exato
-    if (isExact) return 6;
+    if (isExact) return applyMult(6);
     // Empate real
     if (isDraw) {
-      if (guessIsDraw) return 3; // Chutou empate mas não exato
-      if (guess_a === real_a || guess_b === real_b) return 1; // Chutou vitória, gols de 1 time batem
+      if (guessIsDraw) return applyMult(3); // Chutou empate mas não exato
+      if (guess_a === real_a || guess_b === real_b) return applyMult(1); // Chutou vitória, gols de 1 time batem
       return 0;
     }
     // Vitória real
     if (guessSign === realSign) {
-      if (guess_a === real_a || guess_b === real_b) return 4; // Vencedor + gols de 1 time
-      return 3; // Só vencedor
+      if (guess_a === real_a || guess_b === real_b) return applyMult(4); // Vencedor + gols de 1 time
+      return applyMult(3); // Só vencedor
     }
-    if (guess_a === real_a || guess_b === real_b) return 1; // Gols de 1 time sem vencedor
+    if (guess_a === real_a || guess_b === real_b) return applyMult(1); // Gols de 1 time sem vencedor
     return 0;
   } else {
     // Mata-mata
     if (!isDraw) {
-      if (isExact) return 6;
+      if (isExact) return applyMult(6);
       if (guessSign === realSign) {
-        if (guess_a === real_a || guess_b === real_b) return 4;
-        return 3;
+        if (guess_a === real_a || guess_b === real_b) return applyMult(4);
+        return applyMult(3);
       }
-      if (guess_a === real_a || guess_b === real_b) return 1;
+      if (guess_a === real_a || guess_b === real_b) return applyMult(1);
       return 0;
     }
     // Empate no mata-mata (jogo foi pra pênaltis)
@@ -92,14 +108,14 @@ export function calcPoints(
       // Chutou vitória — verifica se acertou quem se classificou nos pênaltis
       // guessSign > 0 = chutou vitória do time A, guessSign < 0 = chutou vitória do time B
       const guessedWinner = guessSign > 0 ? 'A' : 'B';
-      if (real_pen !== null && guessedWinner === real_pen) return 3; // Acertou quem se classificou
-      if (guess_a === real_a || guess_b === real_b) return 1; // Gols de 1 time
+      if (real_pen !== null && guessedWinner === real_pen) return applyMult(3); // Acertou quem se classificou
+      if (guess_a === real_a || guess_b === real_b) return applyMult(1); // Gols de 1 time
       return 0;
     }
     // Chutou empate no mata-mata
-    if (isExact && penCorrect)  return 9;
-    if (isExact && !penCorrect) return 6;
-    if (!isExact && penCorrect) return 6;
-    return 3;
+    if (isExact && penCorrect)  return applyMult(9);
+    if (isExact && !penCorrect) return applyMult(6);
+    if (!isExact && penCorrect) return applyMult(6);
+    return applyMult(3);
   }
 }

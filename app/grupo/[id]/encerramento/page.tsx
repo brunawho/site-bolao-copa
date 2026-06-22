@@ -112,7 +112,7 @@ export default function EncerramentoPage() {
         (matches || []).forEach((m: any) => {
           const g = guessByMatch[m.id];
           if (!g) return;
-          const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a, m.score_b, m.penalty_winner, m.is_knockout);
+          const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a, m.score_b, m.penalty_winner, m.is_knockout, m.phase);
           totalPts += pts;
           if (pts >= 6 && g.guess_a === m.score_a && g.guess_b === m.score_b) exactHits++;
         });

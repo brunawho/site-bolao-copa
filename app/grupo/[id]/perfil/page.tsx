@@ -58,7 +58,7 @@ export default function PerfilPage() {
         const m = matchMap[g.match_id];
         if (!m || counted.has(g.match_id)) continue;
         counted.add(g.match_id);
-        const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+        const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
         total++;
         points += pts;
         if (pts >= 6 && g.guess_a === m.score_a && g.guess_b === m.score_b) exact++;
