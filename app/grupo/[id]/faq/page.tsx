@@ -64,26 +64,21 @@ export default function FAQGrupo() {
       icon: '🏆', title: 'Pontuação dos jogos',
       content: (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--line)' }}>
-              <th style={{ textAlign: 'left', padding: '6px 0', fontSize: 11, color: 'var(--muted)', width: 40 }}>Pts</th>
-              <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: 11, color: 'var(--muted)' }}>Regra</th>
-              <th style={{ textAlign: 'left', padding: '6px 0', fontSize: 11, color: 'var(--muted)' }}>Exemplo</th>
-            </tr>
-          </thead>
           <tbody>
             {[
-              [6, 'Placar exato', 'Chutou 2-1, terminou 2-1'],
-              [4, 'Vencedor + gols de 1 time', 'Chutou 2-0, terminou 2-1'],
-              [3, 'Só vencedor correto', 'Chutou 1-0, terminou 3-1'],
-              [3, 'Empate (sem exato)', 'Chutou 0-0, terminou 2-2'],
-              [1, 'Gols de 1 time (errou vencedor)', 'Chutou 2-1, terminou 0-1'],
-              [0, 'Errou tudo', 'Chutou 1-0, terminou 0-2'],
+              [6, 'Placar exato', 'Ex: chutou 2-1, terminou 2-1'],
+              [4, 'Vencedor + gols de 1 time', 'Ex: chutou 2-0, terminou 2-1'],
+              [3, 'Só vencedor correto', 'Ex: chutou 1-0, terminou 3-1'],
+              [3, 'Empate (sem exato)', 'Ex: chutou 0-0, terminou 2-2'],
+              [1, 'Gols de 1 time (errou vencedor)', 'Ex: chutou 2-1, terminou 0-1'],
+              [0, 'Errou tudo', 'Ex: chutou 1-0, terminou 0-2'],
             ].map(([pts, rule, ex]) => (
               <tr key={String(rule)} style={{ borderBottom: '1px solid var(--line)' }}>
-                <td style={{ padding: '8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)' }}>{pts}</td>
-                <td style={{ padding: '8px 8px', fontSize: 13 }}>{rule}</td>
-                <td style={{ padding: '8px 0', fontSize: 11, color: 'var(--muted)' }}>{ex}</td>
+                <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
+                <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                  <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{rule}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{ex}</div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -180,35 +175,12 @@ export default function FAQGrupo() {
       )
     },
     {
-    {[
-                ['3', 'Acertar quem avança nas Oitavas'],
-                ['5', 'Acertar quem avança nas Quartas'],
-                ['8', 'Acertar quem avança na Semi'],
-                ['15', 'Campeão apostado antes das Oitavas'],
-                ['10', 'Campeão apostado antes das Quartas'],
-                ['5', 'Campeão apostado antes da Semi'],
-                ['+20', 'Placar exato da Final (bônus)'],
-              ].map(([pts, rule]) => (
-                <tr key={rule} style={{ borderBottom: '1px solid var(--line)' }}>
-                  <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 40, verticalAlign: 'middle' }}>{pts}</td>
-                  <td style={{ padding: '8px 0', fontSize: 13, color: 'var(--text)' }}>{rule}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
-            ⚠️ Palpites bloqueiam automaticamente quando o primeiro jogo de cada fase começa.
-          </p>
-        </>
-      )
-    },
-    {
       icon: '📊', title: 'Ranking',
       content: (
         <>
           <p style={{ marginBottom: 8 }}>O ranking tem três abas:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
-            <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais + mata-mata. O líder tem 👑 coroa animada.</li>
+            <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais. O líder tem 👑 coroa animada.</li>
             <li><strong style={{ color: 'var(--text)' }}>🌍 Seleções</strong> — ranking de quais seleções geraram mais pontos pro grupo</li>
             <li><strong style={{ color: 'var(--text)' }}>📋 Resultados</strong> — placares de todos os jogos com filtro Passados/Hoje/Próximos</li>
           </ul>
@@ -247,7 +219,7 @@ export default function FAQGrupo() {
             <li>Toggle <strong style={{ color: 'var(--text)' }}>👥 Por pessoa</strong> ou <strong style={{ color: 'var(--text)' }}>⚽ Por jogo</strong></li>
             <li>Toque em alguém para ver os palpites com filtro Passados/Hoje/Próximos</li>
             <li>Palpites ficam <strong style={{ color: 'var(--text)' }}>ocultos</strong> até 10 minutos após o jogo começar</li>
-            <li>A partir de <strong style={{ color: 'var(--gold)' }}>27/06</strong> — botão <strong style={{ color: 'var(--text)' }}>🌟 Ver apostas especiais</strong> mostra as apostas especiais e de mata-mata de cada pessoa</li>
+            <li>A partir de <strong style={{ color: 'var(--gold)' }}>27/06</strong> — botão <strong style={{ color: 'var(--text)' }}>🌟 Ver apostas especiais</strong> mostra as apostas especiais de cada pessoa</li>
           </ul>
           <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>💰 Caixinha do grupo</p>
           <ul style={{ paddingLeft: 16 }}>
@@ -322,7 +294,6 @@ export default function FAQGrupo() {
       <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>Regras</h1>
       <p className="subtitle" style={{ marginBottom: 24 }}>Tudo que você precisa saber.</p>
 
-      {/* Aviso principal */}
       <div style={{
         background: 'rgba(212,167,44,0.1)', border: '2px solid var(--gold)',
         borderRadius: 16, padding: 16, marginBottom: 20
