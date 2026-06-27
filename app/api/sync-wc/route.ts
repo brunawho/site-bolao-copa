@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 
       // Busca por times exatos — sem depender de data pra evitar duplicatas por fuso
       const { data: existing } = await supabase
-        .from('matches').select('id, score_a, score_b, score_locked')
+        .from('matches').select('id, score_a, score_b, score_locked, is_knockout')
         .eq('team_a', homeTeam).eq('team_b', awayTeam)
         .maybeSingle();
 
