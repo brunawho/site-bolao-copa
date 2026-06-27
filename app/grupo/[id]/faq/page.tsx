@@ -52,7 +52,7 @@ export default function FAQGrupo() {
           <ul style={{ paddingLeft: 16, marginTop: 8 }}>
             <li>Preencha o placar que você acha que vai acontecer</li>
             <li>Clique em <strong style={{ color: 'var(--text)' }}>Salvar palpites do dia</strong> antes do jogo começar</li>
-            <li>No mata-mata, se chutar empate escolha quem avança nos pênaltis</li>
+            <li>No mata-mata, se chutar empate é <strong style={{ color: 'var(--gold)' }}>obrigatório</strong> escolher quem avança — o sistema bloqueia o salvar até você escolher</li>
             <li>Palpites podem ser <strong style={{ color: 'var(--gold)' }}>editados</strong> até o início do jogo</li>
             <li>Após o apito inicial, o palpite fica <strong style={{ color: 'var(--danger)' }}>bloqueado</strong></li>
             <li>Os palpites dos outros jogadores ficam <strong style={{ color: 'var(--text)' }}>ocultos por 10 minutos</strong> após o início do jogo</li>
@@ -146,13 +146,14 @@ export default function FAQGrupo() {
       )
     },
     {
-      icon: '🥊', title: 'Mata-Mata', badge: 'A partir de 27/06',
+      icon: '🥊', title: 'Mata-Mata', badge: 'A partir de 28/06',
       content: (
         <>
           <p style={{ marginBottom: 12 }}>No mata-mata da Copa, os <strong style={{ color: 'var(--text)' }}>pontos são multiplicados</strong> dependendo da fase:</p>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
             <tbody>
               {[
+                ['1x',   '16 Avos de Final'],
                 ['1.5x', 'Oitavas de Final'],
                 ['2x',   'Quartas de Final'],
                 ['2.5x', 'Semifinais e disputa do 3º lugar'],
@@ -182,7 +183,7 @@ export default function FAQGrupo() {
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
             <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais. O líder tem 👑 coroa animada.</li>
             <li><strong style={{ color: 'var(--text)' }}>🌍 Seleções</strong> — ranking de quais seleções geraram mais pontos pro grupo</li>
-            <li><strong style={{ color: 'var(--text)' }}>📋 Resultados</strong> — placares de todos os jogos com filtro Passados/Hoje/Próximos</li>
+            <li><strong style={{ color: 'var(--text)' }}>📋 Resultados</strong> — placares de todos os jogos com filtro Passados/Hoje/Próximos (dentro do Ranking)</li>
           </ul>
           <p style={{ marginBottom: 8 }}>Abaixo da tabela:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
@@ -219,7 +220,7 @@ export default function FAQGrupo() {
             <li>Toggle <strong style={{ color: 'var(--text)' }}>👥 Por pessoa</strong> ou <strong style={{ color: 'var(--text)' }}>⚽ Por jogo</strong></li>
             <li>Toque em alguém para ver os palpites com filtro Passados/Hoje/Próximos</li>
             <li>Palpites ficam <strong style={{ color: 'var(--text)' }}>ocultos</strong> até 10 minutos após o jogo começar</li>
-            <li>A partir de <strong style={{ color: 'var(--gold)' }}>27/06</strong> — botão <strong style={{ color: 'var(--text)' }}>🌟 Ver apostas especiais</strong> mostra as apostas especiais de cada pessoa</li>
+            <li>A partir de <strong style={{ color: 'var(--gold)' }}>28/06</strong> — botão <strong style={{ color: 'var(--text)' }}>🌟 Ver apostas especiais</strong> mostra as apostas especiais de cada pessoa</li>
           </ul>
           <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>💰 Caixinha do grupo</p>
           <ul style={{ paddingLeft: 16 }}>

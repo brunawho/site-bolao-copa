@@ -27,6 +27,7 @@ function fmtDay(dateYMD: string) {
 }
 
 function extractComp(phase: string): string {
+  if (phase.includes('LAST_32')) return '16 Avos';
   if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';

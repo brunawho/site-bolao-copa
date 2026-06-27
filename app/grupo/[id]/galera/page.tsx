@@ -152,7 +152,7 @@ export default function GaleraGrupo() {
       setAllGuessesMap(guessMap);
 
       // Apostas especiais e mata-mata (visíveis após 27/06)
-      const after2706 = new Date() >= new Date('2026-06-27T00:00:00-03:00');
+      const after2706 = new Date() >= new Date('2026-06-28T00:00:00-03:00');
       if (after2706) {
         const { data: sbData } = await supabase.from('special_bets').select('*, group_members!inner(user_id)').in('group_member_id', allMemberIds);
         setAllSpecialBets(sbData || []);
@@ -370,7 +370,7 @@ export default function GaleraGrupo() {
           );
         })}
         {/* Apostas Especiais e Mata-Mata — visível após 27/06 */}
-        {new Date() >= new Date('2026-06-27T00:00:00-03:00') && (
+        {new Date() >= new Date('2026-06-28T00:00:00-03:00') && (
           <div style={{ marginTop: 8 }}>
             <button onClick={() => setShowSpecials(s => !s)} className="btn btn-ghost" style={{ marginBottom: 8 }}>
               {showSpecials ? '▲ Ocultar apostas especiais' : '🌟 Ver apostas especiais'}
