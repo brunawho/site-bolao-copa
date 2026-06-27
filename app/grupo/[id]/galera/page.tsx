@@ -372,7 +372,7 @@ export default function GaleraGrupo() {
           );
         })}
         {/* Apostas Especiais e Mata-Mata — visível após 27/06 */}
-        {after2706 && (
+        {(() => { const bd = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); const [d,m,y] = bd.split('/').map(Number); return y > 2026 || (y===2026 && m>6) || (y===2026 && m===6 && d>=28); })() && (
           <div style={{ marginTop: 8 }}>
             <button onClick={() => setShowSpecials(s => !s)} className="btn btn-ghost" style={{ marginBottom: 8 }}>
               {showSpecials ? '▲ Ocultar apostas especiais' : '🌟 Ver apostas especiais'}
