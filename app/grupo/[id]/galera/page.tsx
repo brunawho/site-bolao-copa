@@ -151,11 +151,11 @@ export default function GaleraGrupo() {
       });
       setAllGuessesMap(guessMap);
 
-      // Apostas especiais e mata-mata (visíveis após 28/06 horário Brasília)
-      const brDate = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-      const [d, m, y] = brDate.split('/').map(Number);
-      const after2706 = y > 2026 || (y === 2026 && m > 6) || (y === 2026 && m === 6 && d >= 28);
-      if (after2706) {
+      // Apostas especiais e mata-mata (visíveis após 28/06)
+      const brDate2 = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+      const [dd, mm, yy] = brDate2.split('/').map(Number);
+      const showSpecialsAfter = yy > 2026 || (yy === 2026 && mm > 6) || (yy === 2026 && mm === 6 && dd >= 28);
+      if (showSpecialsAfter) {
         const { data: sbData } = await supabase.from('special_bets').select('*, group_members!inner(user_id)').in('group_member_id', allMemberIds);
         setAllSpecialBets(sbData || []);
 
