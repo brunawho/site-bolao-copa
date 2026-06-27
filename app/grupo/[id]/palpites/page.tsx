@@ -473,7 +473,20 @@ export default function PalpitesGrupo() {
               <button className="btn btn-ghost" disabled={saving}
                 onClick={() => { setConfirmDay(null); setConfirmMatches([]); setModalPens({}); }} style={{ flex: 1 }}>Cancelar</button>
               <button className="btn" disabled={saving}
-                onClick={() => confirmarSalvar(confirmDayMatches)} style={{ flex: 1 }}>
+                onClick={() => {
+                  const pendingPen = confirmDayMatches.find(m => {
+                    const dv = draft[m.id];
+                    const sv = myGuesses[m.id];
+                    const aVal = dv?.a !== undefined && dv.a !== '' ? dv.a : sv ? String(sv.guess_a) : '';
+                    const bVal = dv?.b !== undefined && dv.b !== '' ? dv.b : sv ? String(sv.guess_b) : '';
+                    return m.is_knockout && aVal !== '' && bVal !== '' && aVal === bVal && !jogoComecou(m.match_date) && !modalPens[m.id];
+                  });
+                  if (pendingPen) {
+                    alert(`Escolha quem avança em ${toPT(pendingPen.team_a)} x ${toPT(pendingPen.team_b)}!`);
+                    return;
+                  }
+                  confirmarSalvar(confirmDayMatches);
+                }} style={{ flex: 1 }}>
                 {saving ? 'Salvando...' : 'Confirmar'}
               </button>
             </div>
