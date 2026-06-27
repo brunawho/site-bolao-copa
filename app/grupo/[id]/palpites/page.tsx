@@ -638,9 +638,13 @@ export default function PalpitesGrupo() {
                         ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' }
                         : { a: '', b: '', pen: '' };
                     const pts     = previewPts(m.id, m);
-                    const isDraw  = saved
-                      ? saved.guess_a === saved.guess_b
-                      : (d.a !== '' && d.b !== '' && d.a === d.b);
+                    // Se tem draft preenchido, usa o draft para calcular isDraw
+                    // Senão usa o saved
+                    const isDraw = (draftVal && draftVal.a !== '' && draftVal.b !== '')
+                      ? draftVal.a === draftVal.b
+                      : saved
+                        ? saved.guess_a === saved.guess_b
+                        : false;
 
                     return (
                       <div key={m.id} style={{
