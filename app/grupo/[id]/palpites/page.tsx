@@ -691,7 +691,7 @@ export default function PalpitesGrupo() {
                         {m.is_knockout && isDraw && !blocked && (
                           <div style={{ marginTop: 12, textAlign: 'center' }}>
                             <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              Quem avança nos pênaltis?
+                              Quem avança?
                             </p>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                               {(['A', 'B'] as const).map(side => {
