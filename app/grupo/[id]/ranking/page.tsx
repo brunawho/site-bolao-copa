@@ -177,6 +177,7 @@ export default function RankingGrupo() {
   const [showChart, setShowChart]     = useState(false);
   const [rankTab, setRankTab]         = useState<'geral' | 'selecoes' | 'resultados'>('geral');
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
+  const [rankingFromView, setRankingFromView] = useState<{user_id: string; name: string; total_points: number; exact_hits: number; result_hits: number; partial_hits: number}[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<typeof memberStats[0] | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -268,7 +269,12 @@ export default function RankingGrupo() {
       if (bet) specialPts = calcSpecialPoints(bet, specialResult);
     }
 
-    return { ...member, total_points: totalPts, exact_hits: exactHits, winner_hits: winnerHits, special_pts: specialPts, grand_total: totalPts + specialPts, color: COLORS[idx % COLORS.length] };
+    // Usa pontuação da view do banco (mais confiável) se disponível
+    const viewData = rankingFromView.find(r => r.user_id === member.user_id);
+    const finalTotal = viewData ? viewData.total_points : (totalPts + specialPts);
+    const finalExact = viewData ? viewData.exact_hits : exactHits;
+
+    return { ...member, total_points: totalPts, exact_hits: finalExact, winner_hits: winnerHits, special_pts: specialPts, grand_total: finalTotal, color: COLORS[idx % COLORS.length] };
   }).sort((a, b) => b.grand_total - a.grand_total || b.exact_hits - a.exact_hits);
 
   // Calcula posições compartilhadas (empate = mesma posição)
