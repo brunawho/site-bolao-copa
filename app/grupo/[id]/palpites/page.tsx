@@ -229,8 +229,9 @@ export default function PalpitesGrupo() {
   const [memberId, setMemberId]   = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
   const [toast, setToast]         = useState('');
-  const [confirmDay, setConfirmDay]     = useState<string | null>(null);
+  const [confirmDay, setConfirmDay]         = useState<string | null>(null);
   const [confirmMatches, setConfirmMatches] = useState<Match[]>([]);
+  const [modalPens, setModalPens]           = useState<Record<string, 'A' | 'B' | ''>>({});
   const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
@@ -361,7 +362,7 @@ export default function PalpitesGrupo() {
         saved++;
       }
     }
-    setSaving(false); setConfirmDay(null); setConfirmMatches([]);
+    setSaving(false); setConfirmDay(null); setConfirmMatches([]); setModalPens({});
     if (lastError && saved === 0) { alert('Erro: ' + lastError); return; }
     if (saved > 0) showToast(`${saved} palpite(s) salvo(s)! ✅`);
 
@@ -470,7 +471,7 @@ export default function PalpitesGrupo() {
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" disabled={saving}
-                onClick={() => { setConfirmDay(null); setConfirmMatches([]); }} style={{ flex: 1 }}>Cancelar</button>
+                onClick={() => { setConfirmDay(null); setConfirmMatches([]); setModalPens({}); }} style={{ flex: 1 }}>Cancelar</button>
               <button className="btn" disabled={saving}
                 onClick={() => confirmarSalvar(confirmDayMatches)} style={{ flex: 1 }}>
                 {saving ? 'Salvando...' : 'Confirmar'}
@@ -729,6 +730,14 @@ export default function PalpitesGrupo() {
                       <button className="btn" onClick={() => {
                         setConfirmDay(day);
                         setConfirmMatches(dayMatches);
+                        // Inicializa pens com valores do draft ou saved
+                        const pens: Record<string, 'A' | 'B' | ''> = {};
+                        dayMatches.forEach(m => {
+                          if (m.is_knockout) {
+                            pens[m.id] = (draft[m.id]?.pen || myGuesses[m.id]?.guess_penalty_winner || '') as 'A' | 'B' | '';
+                          }
+                        });
+                        setModalPens(pens);
                       }} disabled={saving}>
                         Salvar palpites do dia ({novos})
                       </button>
