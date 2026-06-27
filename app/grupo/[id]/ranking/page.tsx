@@ -269,12 +269,13 @@ export default function RankingGrupo() {
       if (bet) specialPts = calcSpecialPoints(bet, specialResult);
     }
 
-    // Usa pontuação da view do banco (mais confiável) se disponível
+    return { ...member, total_points: totalPts, exact_hits: exactHits, winner_hits: winnerHits, special_pts: specialPts, grand_total: totalPts + specialPts, color: COLORS[idx % COLORS.length] };
+  }).map(member => {
     const viewData = rankingFromView.find(r => r.user_id === member.user_id);
-    const finalTotal = viewData ? viewData.total_points : (totalPts + specialPts);
-    const finalExact = viewData ? viewData.exact_hits : exactHits;
-
-    return { ...member, total_points: totalPts, exact_hits: finalExact, winner_hits: winnerHits, special_pts: specialPts, grand_total: finalTotal, color: COLORS[idx % COLORS.length] };
+    if (viewData) {
+      return { ...member, grand_total: viewData.total_points, exact_hits: viewData.exact_hits };
+    }
+    return member;
   }).sort((a, b) => b.grand_total - a.grand_total || b.exact_hits - a.exact_hits);
 
   // Calcula posições compartilhadas (empate = mesma posição)
