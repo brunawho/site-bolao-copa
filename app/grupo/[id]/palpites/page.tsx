@@ -638,14 +638,9 @@ export default function PalpitesGrupo() {
                         ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' }
                         : { a: '', b: '', pen: '' };
                     const pts     = previewPts(m.id, m);
-                    // Verifica empate no draft primeiro, senão usa o salvo
-                    const draftA = draft[m.id]?.a;
-                    const draftB = draft[m.id]?.b;
-                    const isDraw = (draftA !== undefined && draftA !== '' && draftB !== undefined && draftB !== '')
-                      ? draftA === draftB
-                      : saved
-                        ? saved.guess_a === saved.guess_b
-                        : false;
+                    const isDraw  = saved
+                      ? saved.guess_a === saved.guess_b
+                      : (d.a !== '' && d.b !== '' && d.a === d.b);
 
                     return (
                       <div key={m.id} style={{
@@ -695,15 +690,16 @@ export default function PalpitesGrupo() {
                             </p>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                               {(['A', 'B'] as const).map(side => {
-                                const isSelected = (saved as Guess | undefined)?.guess_penalty_winner === side || (!saved && d.pen === side);
+                                const penVal = draft[m.id]?.pen || (saved as Guess | undefined)?.guess_penalty_winner || '';
+                                const isSelected = penVal === side;
                                 return (
-                                  <button key={side} onClick={() => !saved && setPen(m.id, isSelected ? '' : side)}
+                                  <button key={side} onClick={() => !blocked && setPen(m.id, isSelected ? '' : side)}
                                     style={{
                                       padding: '8px 16px', borderRadius: 10, border: '1px solid',
                                       borderColor: isSelected ? 'var(--gold)' : 'var(--line)',
                                       background: isSelected ? 'var(--gold)' : 'var(--bg-soft)',
                                       color: isSelected ? '#1a1a1a' : 'var(--text)',
-                                      fontWeight: 700, fontSize: 13, cursor: saved ? 'default' : 'pointer'
+                                      fontWeight: 700, fontSize: 13, cursor: blocked ? 'default' : 'pointer'
                                     }}>
                                     {side === 'A' ? toPT(m.team_a) : toPT(m.team_b)}
                                   </button>
