@@ -73,7 +73,9 @@ export async function GET(req: Request) {
         .maybeSingle();
 
       if (existing) {
-        const updateData: any = { match_date: matchDate, phase: phaseLabel, is_knockout: knockout };
+        // Nunca rebaixar is_knockout de true para false
+        const updateData: any = { match_date: matchDate, phase: phaseLabel };
+        if (!existing.is_knockout) updateData.is_knockout = knockout;
         if (existing.score_a === null && scoreA !== null && !existing.score_locked) {
           updateData.score_a = scoreA;
           updateData.score_b = scoreB;
