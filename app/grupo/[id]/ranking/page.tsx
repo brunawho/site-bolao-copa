@@ -221,7 +221,8 @@ export default function RankingGrupo() {
           const { data: liveG } = await supabase
             .from('guesses').select('*')
             .eq('match_id', live.id)
-            .in('group_member_id', memberIds);
+            .in('group_member_id', memberIds)
+            .not('group_member_id', 'is', null);
           liveMap[live.id] = {};
           (liveG || []).forEach((g: any) => { liveMap[live.id][g.group_member_id] = g; });
         }
@@ -269,12 +270,13 @@ export default function RankingGrupo() {
     }
 
     // Usa pontuação da view como fonte de verdade
-    const grand_total = vr ? vr.total_points : 0;
-    const exact_hits  = vr ? vr.exact_hits   : 0;
+    const grand_total  = vr ? vr.total_points : 0;
+    const exact_hits   = vr ? vr.exact_hits   : 0;
+    const winner_hits  = vr ? vr.result_hits  : winnerHits;
 
     return {
       ...member, color,
-      grand_total, exact_hits, winner_hits: winnerHits, special_pts: specialPts,
+      grand_total, exact_hits, winner_hits, special_pts: specialPts,
       guessByMatch
     };
   }).sort((a, b) => b.grand_total - a.grand_total || b.exact_hits - a.exact_hits);
