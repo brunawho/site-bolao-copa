@@ -38,7 +38,8 @@ function palpitesRevelados(matchDate: string) {
 
 // Extrai o nome do campeonato da fase
 function extractComp(phase: string): string {
-  if (phase.includes('LAST_32')) return '16 Avos';
+  if (phase.includes('LAST_32')) return '🥊 16 Avos';
+  if (phase.includes('Copa do Mundo') && (phase.includes('GROUP') || phase.includes('Rodada'))) return '📅 Fase de Grupos';
   if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';
@@ -69,6 +70,7 @@ function Crest({ name, crests, size = 24 }: { name: string; crests: Record<strin
 // Componente de Chaveamento Visual da Copa
 function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record<string, any> }) {
   const stages = [
+    { key: 'LAST_32',        label: '16 Avos',    rounds: 16 },
     { key: 'ROUND_OF_16',   label: 'Oitavas',    rounds: 8 },
     { key: 'QUARTER_FINALS', label: 'Quartas',   rounds: 4 },
     { key: 'SEMI_FINALS',   label: 'Semifinais', rounds: 2 },
@@ -236,7 +238,8 @@ export default function PalpitesGrupo() {
   const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
-  const [selectedComp, setSelectedComp] = useState<string | null>('Copa do Mundo');
+  const [selectedComp, setSelectedComp] = useState<string | null>('📅 Fase de Grupos');
+  // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
   const [view, setView]     = useState<'palpites' | 'chaveamento'>('palpites');
@@ -397,7 +400,9 @@ export default function PalpitesGrupo() {
     if (!compMap[comp]) compMap[comp] = [];
     compMap[comp].push(m);
   });
-  const comps = [...Object.keys(compMap).sort(), '⭐ Especiais'];
+  const wcSubMenus = ['📅 Fase de Grupos', '🥊 16 Avos'].filter(c => compMap[c]?.length > 0);
+  const otherComps = Object.keys(compMap).filter(c => !wcSubMenus.includes(c)).sort();
+  const comps = [...wcSubMenus, ...otherComps, '⭐ Especiais'];
 
   // Filtra jogos do campeonato selecionado
   const allCompMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
@@ -569,7 +574,7 @@ export default function PalpitesGrupo() {
       )}
 
       {/* TOGGLE PALPITES / CHAVEAMENTO (só na Copa do Mundo) */}
-      {selectedComp === 'Copa do Mundo' && (
+      {(selectedComp === 'Copa do Mundo' || selectedComp === '📅 Fase de Grupos' || selectedComp === '🥊 16 Avos') && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <button onClick={() => setView('palpites')} style={{
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
@@ -589,8 +594,8 @@ export default function PalpitesGrupo() {
       )}
 
       {/* CHAVEAMENTO VISUAL */}
-      {view === 'chaveamento' && selectedComp === 'Copa do Mundo' && (
-        <Chaveamento matches={allCompMatches} myGuesses={myGuesses} />
+      {view === 'chaveamento' && (selectedComp === 'Copa do Mundo' || selectedComp === '📅 Fase de Grupos' || selectedComp === '🥊 16 Avos') && (
+        <Chaveamento matches={[...( compMap['📅 Fase de Grupos'] || []), ...(compMap['🥊 16 Avos'] || []), ...(compMap['Copa do Mundo'] || [])]} myGuesses={myGuesses} />
       )}
 
       {/* JOGOS POR DIA */}
