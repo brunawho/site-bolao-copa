@@ -163,6 +163,8 @@ export default function RankingGrupo() {
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<any | null>(null);
+  const [drilldownGuesses, setDrilldownGuesses] = useState<Record<string, Guess>>({});
+  const [drilldownLoading, setDrilldownLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -485,7 +487,17 @@ export default function RankingGrupo() {
                 const posLabel = r.pos <= 3 ? medals[r.pos - 1] : `${r.pos}º`;
                 return (
                   <div key={r.id} className="rank-row"
-                    onClick={() => setDrilldown(r)}
+                    onClick={async () => {
+                      setDrilldown(r);
+                      setDrilldownLoading(true);
+                      const { data: dg } = await supabase
+                        .from('guesses').select('*')
+                        .eq('group_member_id', r.id);
+                      const map: Record<string, Guess> = {};
+                      (dg || []).forEach((g: any) => { map[g.match_id] = g; });
+                      setDrilldownGuesses(map);
+                      setDrilldownLoading(false);
+                    }}
                     style={{
                       background: isLeader ? 'rgba(212,167,44,0.12)' : isMe ? 'rgba(212,167,44,0.06)' : undefined,
                       borderLeft: isLeader ? '3px solid var(--gold)' : undefined,
@@ -612,7 +624,7 @@ export default function RankingGrupo() {
       {drilldown && (() => {
         const member = drilldown;
         const scoredMatches = matches.map(m => {
-          const g = member.guessByMatch[m.id];
+          const g = drilldownGuesses[m.id];
           if (!g) return null;
           const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
           if (pts === 0) return null;
@@ -621,7 +633,7 @@ export default function RankingGrupo() {
         scoredMatches.sort((a, b) => new Date(b.m.match_date).getTime() - new Date(a.m.match_date).getTime());
 
         return (
-          <div onClick={() => setDrilldown(null)} style={{
+          <div onClick={() => { setDrilldown(null); setDrilldownGuesses({}); }} style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
             zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
           }}>
@@ -641,13 +653,15 @@ export default function RankingGrupo() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setDrilldown(null)} style={{
+                <button onClick={() => { setDrilldown(null); setDrilldownGuesses({}); }} style={{
                   background: 'var(--bg-soft)', border: 'none', borderRadius: '50%',
                   width: 32, height: 32, fontSize: 16, cursor: 'pointer', color: 'var(--muted)'
                 }}>✕</button>
               </div>
               <div style={{ overflowY: 'auto', flex: 1, padding: '12px 0' }}>
-                {scoredMatches.length === 0 ? (
+                {drilldownLoading ? (
+                  <div className="empty">Carregando...</div>
+                ) : scoredMatches.length === 0 ? (
                   <div className="empty">Nenhum ponto ainda.</div>
                 ) : scoredMatches.map(({ m, g, pts }) => {
                   const badge = ptsBadge(pts);
