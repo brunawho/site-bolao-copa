@@ -532,6 +532,11 @@ export default function RankingGrupo() {
                                   {g ? `${g.guess_a}x${g.guess_b}` : '—'}
                                 </span>
                                 {getFlag(lm.team_b) && <img src={getFlag(lm.team_b)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain' }} />}
+                                {g && lm.is_knockout && g.guess_a === g.guess_b && g.guess_penalty_winner && (
+                                  <span style={{ fontSize: 10, color: liveColor }}>
+                                    ({g.guess_penalty_winner === 'A' ? toPT(lm.team_a) : toPT(lm.team_b)})
+                                  </span>
+                                )}
                               </div>
                             );
                           })}
