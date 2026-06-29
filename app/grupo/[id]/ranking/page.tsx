@@ -679,6 +679,11 @@ export default function RankingGrupo() {
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                           Palpite: {g.guess_a} x {g.guess_b}
+                          {m.is_knockout && g.guess_a === g.guess_b && g.guess_penalty_winner && (
+                            <span style={{ marginLeft: 6, color: 'var(--gold)' }}>
+                              (pên: {g.guess_penalty_winner === 'A' ? toPT(m.team_a) : toPT(m.team_b)})
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
