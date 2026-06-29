@@ -58,13 +58,28 @@ export async function GET(req: Request) {
         ? `Copa do Mundo 2026 · ${group} · Rodada ${matchday}`
         : `Copa do Mundo 2026 · ${stage} · Rodada ${matchday}`;
       const knockout = isKnockout(stage);
-      const scoreA   = ['FINISHED', 'AWARDED'].includes(status) ? (m.score?.fullTime?.home ?? null) : null;
-      const scoreB   = ['FINISHED', 'AWARDED'].includes(status) ? (m.score?.fullTime?.away ?? null) : null;
-
-      let penaltyWinner: 'A' | 'B' | null = null;
       const penA = m.score?.penalties?.home;
       const penB = m.score?.penalties?.away;
-      if (penA != null && penB != null) penaltyWinner = penA > penB ? 'A' : 'B';
+      const hasPenalties = penA != null && penB != null;
+
+      // Se teve pênaltis, usa regularTime como placar real (não fullTime que pode vir com placar dos pênaltis)
+      let scoreA: number | null = null;
+      let scoreB: number | null = null;
+      if (['FINISHED', 'AWARDED'].includes(status)) {
+        if (hasPenalties && m.score?.regularTime?.home != null) {
+          scoreA = m.score.regularTime.home;
+          scoreB = m.score.regularTime.away;
+        } else if (hasPenalties && m.score?.extraTime?.home != null) {
+          scoreA = m.score.extraTime.home;
+          scoreB = m.score.extraTime.away;
+        } else {
+          scoreA = m.score?.fullTime?.home ?? null;
+          scoreB = m.score?.fullTime?.away ?? null;
+        }
+      }
+
+      let penaltyWinner: 'A' | 'B' | null = null;
+      if (hasPenalties) penaltyWinner = penA > penB ? 'A' : 'B';
 
       // Busca por times exatos — sem depender de data pra evitar duplicatas por fuso
       const { data: existing } = await supabase
@@ -76,10 +91,11 @@ export async function GET(req: Request) {
         // Nunca rebaixar is_knockout de true para false
         const updateData: any = { match_date: matchDate, phase: phaseLabel };
         if (!existing.is_knockout) updateData.is_knockout = knockout;
-        if (existing.score_a === null && scoreA !== null && !existing.score_locked) {
+        if (scoreA !== null && !existing.score_locked) {
           updateData.score_a = scoreA;
           updateData.score_b = scoreB;
           if (penaltyWinner) updateData.penalty_winner = penaltyWinner;
+          else updateData.penalty_winner = null;
         }
         await supabase.from('matches').update(updateData).eq('id', existing.id);
         updated++;
