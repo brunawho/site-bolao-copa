@@ -55,13 +55,37 @@ function fmtDay(dateYMD: string) {
   });
 }
 
-function jogoComecou(matchDate: string) {
-  // Bloqueio de edição: exato no horário do jogo
+
+const STATUS_LABEL: Record<string, string> = {
+  'SCHEDULED': 'Agendado',
+  'IN_PLAY':   'Em andamento',
+  'PAUSED':    'Pausado',
+  'FINISHED':  'Finalizado',
+  'POSTPONED': 'Adiado',
+  'SUSPENDED': 'Suspenso',
+  'CANCELLED': 'Cancelado',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  'SCHEDULED': 'var(--muted)',
+  'IN_PLAY':   '#f87171',
+  'PAUSED':    'var(--gold)',
+  'FINISHED':  '#2ea84c',
+  'POSTPONED': '#fb923c',
+  'SUSPENDED': '#fb923c',
+  'CANCELLED': 'var(--danger)',
+};
+
+function jogoComecou(matchDate: string, status?: string) {
+  // Se temos status da API, usa ele — mais confiável que horário
+  if (status) return ['IN_PLAY', 'PAUSED', 'FINISHED'].includes(status);
   return new Date(matchDate) <= new Date();
 }
 
-function palpitesRevelados(matchDate: string) {
-  // Revelação dos palpites: 10 minutos após o início
+function palpitesRevelados(matchDate: string, status?: string) {
+  // Revelação dos palpites: quando em andamento há 10min ou finalizado
+  if (status) return ['IN_PLAY', 'PAUSED', 'FINISHED'].includes(status) &&
+    new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
   return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
 }
 

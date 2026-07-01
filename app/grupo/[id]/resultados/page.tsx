@@ -40,18 +40,27 @@ function fmtDay(dateYMD: string) {
 }
 
 function extractComp(phase: string): string {
+  if (phase.includes('LAST_32')) return '16 Avos';
   if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';
   return phase.split(' ·')[0].trim();
 }
 
-function getStatus(match: Match): { label: string; color: string; icon: string } {
-  const now  = new Date();
-  const date = new Date(match.match_date);
+function getStatus(match: any): { label: string; color: string; icon: string } {
+  const statusMap: Record<string, { label: string; color: string; icon: string }> = {
+    'FINISHED':  { label: 'Finalizado',   color: '#2ea84c',        icon: '✅' },
+    'IN_PLAY':   { label: 'Em andamento', color: '#f87171',        icon: '🔴' },
+    'PAUSED':    { label: 'Pausado',      color: 'var(--gold)',    icon: '⏸️' },
+    'POSTPONED': { label: 'Adiado',       color: '#fb923c',        icon: '⚠️' },
+    'SUSPENDED': { label: 'Suspenso',     color: '#fb923c',        icon: '🚫' },
+    'CANCELLED': { label: 'Cancelado',    color: 'var(--danger)',  icon: '❌' },
+    'SCHEDULED': { label: 'Agendado',     color: 'var(--muted)',   icon: '⏳' },
+  };
+  if (match.status && statusMap[match.status]) return statusMap[match.status];
   if (match.score_a !== null) return { label: 'Finalizado', color: '#2ea84c', icon: '✅' };
-  if (date <= now)            return { label: 'Em andamento', color: 'var(--gold)', icon: '🔴' };
-  return { label: 'Aguardando', color: 'var(--muted)', icon: '⏳' };
+  if (new Date(match.match_date) <= new Date()) return { label: 'Em andamento', color: '#f87171', icon: '🔴' };
+  return { label: 'Agendado', color: 'var(--muted)', icon: '⏳' };
 }
 
 export default function ResultadosPage() {

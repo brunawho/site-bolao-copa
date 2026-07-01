@@ -58,6 +58,16 @@ export async function GET(req: Request) {
         ? `Copa do Mundo 2026 · ${group} · Rodada ${matchday}`
         : `Copa do Mundo 2026 · ${stage} · Rodada ${matchday}`;
       const knockout = isKnockout(stage);
+
+      // Status do jogo
+      const statusMap: Record<string, string> = {
+        'SCHEDULED': 'SCHEDULED', 'TIMED': 'SCHEDULED',
+        'IN_PLAY': 'IN_PLAY', 'PAUSED': 'PAUSED',
+        'FINISHED': 'FINISHED', 'AWARDED': 'FINISHED',
+        'POSTPONED': 'POSTPONED', 'SUSPENDED': 'SUSPENDED',
+        'CANCELLED': 'CANCELLED',
+      };
+      const matchStatus = statusMap[status] || 'SCHEDULED';
       const penA = m.score?.penalties?.home;
       const penB = m.score?.penalties?.away;
       const hasPenalties = penA != null && penB != null;
@@ -89,7 +99,7 @@ export async function GET(req: Request) {
 
       if (existing) {
         // Nunca rebaixar is_knockout de true para false
-        const updateData: any = { match_date: matchDate, phase: phaseLabel };
+        const updateData: any = { match_date: matchDate, phase: phaseLabel, status: matchStatus };
         if (!existing.is_knockout) updateData.is_knockout = knockout;
         if (scoreA !== null && !existing.score_locked) {
           updateData.score_a = scoreA;
@@ -102,7 +112,7 @@ export async function GET(req: Request) {
       } else {
         await supabase.from('matches').insert({
           team_a: homeTeam, team_b: awayTeam,
-          match_date: matchDate, phase: phaseLabel,
+          match_date: matchDate, phase: phaseLabel, status: matchStatus,
           is_knockout: knockout, score_a: scoreA, score_b: scoreB,
           ...(penaltyWinner && { penalty_winner: penaltyWinner }),
         });

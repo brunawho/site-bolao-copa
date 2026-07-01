@@ -208,7 +208,7 @@ export default function RankingGrupo() {
       setAllGuesses(guessData || []);
 
       // Jogos em andamento (após 10 minutos do início)
-      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const tenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
       const { data: liveData } = await supabase
         .from('matches').select('*')
         .is('score_a', null)
