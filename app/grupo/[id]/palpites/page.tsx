@@ -63,6 +63,11 @@ function palpitesRevelados(matchDate: string, status?: string) {
 // Extrai o nome do campeonato da fase
 function extractComp(phase: string): string {
   if (phase.includes('LAST_32')) return '🥊 16 Avos';
+  if (phase.includes('LAST_16') || phase.includes('ROUND_OF_16')) return '⚽ Oitavas de Final';
+  if (phase.includes('QUARTER')) return '⚽ Quartas de Final';
+  if (phase.includes('SEMI')) return '⚽ Semifinais';
+  if (phase.includes('THIRD') || phase.includes('3RD')) return '⚽ 3º Lugar';
+  if (phase.includes('FINAL') && !phase.includes('SEMI') && !phase.includes('QUARTER')) return '⚽ Final';
   if (phase.includes('Copa do Mundo') && (phase.includes('GROUP') || phase.includes('Rodada'))) return '📅 Fase de Grupos';
   if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
@@ -424,7 +429,7 @@ export default function PalpitesGrupo() {
     if (!compMap[comp]) compMap[comp] = [];
     compMap[comp].push(m);
   });
-  const wcSubMenus = ['📅 Fase de Grupos', '🥊 16 Avos'].filter(c => compMap[c]?.length > 0);
+  const wcSubMenus = ['📅 Fase de Grupos', '🥊 16 Avos', '⚽ Oitavas de Final', '⚽ Quartas de Final', '⚽ Semifinais', '⚽ 3º Lugar', '⚽ Final'].filter(c => compMap[c]?.length > 0);
   const otherComps = Object.keys(compMap).filter(c => !wcSubMenus.includes(c)).sort();
   const comps = [...wcSubMenus, ...otherComps, '⭐ Especiais'];
 
@@ -619,7 +624,15 @@ export default function PalpitesGrupo() {
 
       {/* CHAVEAMENTO VISUAL */}
       {view === 'chaveamento' && (selectedComp === 'Copa do Mundo' || selectedComp === '📅 Fase de Grupos' || selectedComp === '🥊 16 Avos') && (
-        <Chaveamento matches={[...( compMap['📅 Fase de Grupos'] || []), ...(compMap['🥊 16 Avos'] || []), ...(compMap['Copa do Mundo'] || [])]} myGuesses={myGuesses} />
+        <Chaveamento matches={[
+          ...(compMap['🥊 16 Avos'] || []),
+          ...(compMap['⚽ Oitavas de Final'] || []),
+          ...(compMap['⚽ Quartas de Final'] || []),
+          ...(compMap['⚽ Semifinais'] || []),
+          ...(compMap['⚽ 3º Lugar'] || []),
+          ...(compMap['⚽ Final'] || []),
+          ...(compMap['Copa do Mundo'] || []),
+        ]} myGuesses={myGuesses} />
       )}
 
       {/* JOGOS POR DIA */}
