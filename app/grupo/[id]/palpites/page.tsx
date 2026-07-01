@@ -47,17 +47,12 @@ const STATUS_COLOR: Record<string, string> = {
   'CANCELLED': 'var(--danger)',
 };
 
-function jogoComecou(matchDate: string, status?: string) {
-  // Se temos status da API, usa ele — mais confiável que horário
-  if (status) return ['IN_PLAY', 'PAUSED', 'FINISHED'].includes(status);
+function jogoComecou(matchDate: string) {
   return new Date(matchDate) <= new Date();
 }
 
-function palpitesRevelados(matchDate: string, status?: string) {
-  // Revelação dos palpites: quando em andamento há 10min ou finalizado
-  if (status) return ['IN_PLAY', 'PAUSED', 'FINISHED'].includes(status) &&
-    new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
-  return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
+function palpitesRevelados(matchDate: string) {
+  return new Date(matchDate).getTime() + 15 * 60 * 1000 <= Date.now();
 }
 
 // Extrai o nome do campeonato da fase
@@ -335,7 +330,7 @@ export default function PalpitesGrupo() {
     return dayMatches.filter(m => {
       const d = draft[m.id];
       const saved = myGuesses[m.id];
-      const started = jogoComecou(m.match_date, (m as any).status);
+      const started = jogoComecou(m.match_date);
       if (started) return false; // jogo já começou, não conta
       // Novo palpite ou edição
       const effectiveD = d || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' } : undefined);
@@ -348,7 +343,7 @@ export default function PalpitesGrupo() {
     const toInsert = dayMatches
       .filter(m => {
         const d = draft[m.id];
-        const started = jogoComecou(m.match_date, (m as any).status);
+        const started = jogoComecou(m.match_date);
         if (started) return false;
         const saved = myGuesses[m.id];
         const effectiveD = d || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b) } : undefined);
@@ -485,7 +480,7 @@ export default function PalpitesGrupo() {
                 const novosCount = confirmDayMatches.filter(m => {
                   const draftVal = draft[m.id];
                   const savedG = myGuesses[m.id];
-                  const started = jogoComecou(m.match_date, (m as any).status);
+                  const started = jogoComecou(m.match_date);
                   if (started) return false;
                   const hasNew = draftVal && draftVal.a !== '' && draftVal.b !== '';
                   const hasSaved = !!savedG;
@@ -685,7 +680,7 @@ export default function PalpitesGrupo() {
                 }}>
                   {dayMatches.map((m, i) => {
                     const saved   = myGuesses[m.id] as Guess | undefined;
-                    const started = jogoComecou(m.match_date, (m as any).status);
+                    const started = jogoComecou(m.match_date);
                     const blocked = started; // bloqueia apenas após início do jogo
                     // Prioriza draft se foi modificado, senão usa valores salvos
                     const draftVal = draft[m.id];

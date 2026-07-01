@@ -76,17 +76,12 @@ const STATUS_COLOR: Record<string, string> = {
   'CANCELLED': 'var(--danger)',
 };
 
-function jogoComecou(matchDate: string, status?: string) {
-  // Se temos status da API, usa ele — mais confiável que horário
-  if (status) return ['IN_PLAY', 'PAUSED', 'FINISHED'].includes(status);
+function jogoComecou(matchDate: string) {
   return new Date(matchDate) <= new Date();
 }
 
-function palpitesRevelados(matchDate: string, status?: string) {
-  // Revelação dos palpites: quando em andamento há 10min ou finalizado
-  if (status) return ['IN_PLAY', 'PAUSED', 'FINISHED'].includes(status) &&
-    new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
-  return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
+function palpitesRevelados(matchDate: string) {
+  return new Date(matchDate).getTime() + 15 * 60 * 1000 <= Date.now();
 }
 
 const MEMBER_COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
