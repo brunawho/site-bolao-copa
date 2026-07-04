@@ -53,7 +53,7 @@ export function getPhaseMultiplier(phase: string): number {
   if (upper.includes('FINAL') && !upper.includes('SEMI') && !upper.includes('QUARTER') && !upper.includes('3RD') && !upper.includes('THIRD')) return 3;
   if (upper.includes('SEMI') || upper.includes('3RD') || upper.includes('THIRD')) return 2.5;
   if (upper.includes('QUARTER')) return 2;
-  if (upper.includes('ROUND_OF_16') || upper.includes('OITAVAS')) return 1.5;
+  if (upper.includes('ROUND_OF_16') || upper.includes('OITAVAS') || upper.includes('LAST_16')) return 1.5;
   return 1;
 }
 
