@@ -26,18 +26,44 @@ function fmtDay(dateYMD: string) {
   });
 }
 
+
+const STATUS_LABEL: Record<string, string> = {
+  'SCHEDULED': 'Agendado',
+  'IN_PLAY':   'Em andamento',
+  'PAUSED':    'Pausado',
+  'FINISHED':  'Finalizado',
+  'POSTPONED': 'Adiado',
+  'SUSPENDED': 'Suspenso',
+  'CANCELLED': 'Cancelado',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  'SCHEDULED': 'var(--muted)',
+  'IN_PLAY':   '#f87171',
+  'PAUSED':    'var(--gold)',
+  'FINISHED':  '#2ea84c',
+  'POSTPONED': '#fb923c',
+  'SUSPENDED': '#fb923c',
+  'CANCELLED': 'var(--danger)',
+};
+
 function jogoComecou(matchDate: string) {
-  // Bloqueio de edição: exato no horário do jogo
   return new Date(matchDate) <= new Date();
 }
 
 function palpitesRevelados(matchDate: string) {
-  // Revelação dos palpites: 10 minutos após o início
-  return new Date(matchDate).getTime() + 10 * 60 * 1000 <= Date.now();
+  return new Date(matchDate).getTime() + 15 * 60 * 1000 <= Date.now();
 }
 
 // Extrai o nome do campeonato da fase
 function extractComp(phase: string): string {
+  if (phase.includes('LAST_32')) return '🥊 16 Avos';
+  if (phase.includes('LAST_16') || phase.includes('ROUND_OF_16')) return '⚽ Oitavas de Final';
+  if (phase.includes('QUARTER')) return '⚽ Quartas de Final';
+  if (phase.includes('SEMI')) return '⚽ Semifinais';
+  if (phase.includes('THIRD') || phase.includes('3RD')) return '⚽ 3º Lugar';
+  if (phase.includes('FINAL') && !phase.includes('SEMI') && !phase.includes('QUARTER')) return '⚽ Final';
+  if (phase.includes('Copa do Mundo') && (phase.includes('GROUP') || phase.includes('Rodada'))) return '📅 Fase de Grupos';
   if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';
@@ -68,6 +94,7 @@ function Crest({ name, crests, size = 24 }: { name: string; crests: Record<strin
 // Componente de Chaveamento Visual da Copa
 function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record<string, any> }) {
   const stages = [
+    { key: 'LAST_32',        label: '16 Avos',    rounds: 16 },
     { key: 'ROUND_OF_16',   label: 'Oitavas',    rounds: 8 },
     { key: 'QUARTER_FINALS', label: 'Quartas',   rounds: 4 },
     { key: 'SEMI_FINALS',   label: 'Semifinais', rounds: 2 },
@@ -229,12 +256,14 @@ export default function PalpitesGrupo() {
   const [memberId, setMemberId]   = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
   const [toast, setToast]         = useState('');
-  const [confirmDay, setConfirmDay]     = useState<string | null>(null);
+  const [confirmDay, setConfirmDay]         = useState<string | null>(null);
   const [confirmMatches, setConfirmMatches] = useState<Match[]>([]);
+  const [modalPens, setModalPens]           = useState<Record<string, 'A' | 'B' | ''>>({});
   const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
-  const [selectedComp, setSelectedComp] = useState<string | null>('Copa do Mundo');
+  const [selectedComp, setSelectedComp] = useState<string | null>('📅 Fase de Grupos');
+  // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
   const [view, setView]     = useState<'palpites' | 'chaveamento'>('palpites');
@@ -361,7 +390,7 @@ export default function PalpitesGrupo() {
         saved++;
       }
     }
-    setSaving(false); setConfirmDay(null); setConfirmMatches([]);
+    setSaving(false); setConfirmDay(null); setConfirmMatches([]); setModalPens({});
     if (lastError && saved === 0) { alert('Erro: ' + lastError); return; }
     if (saved > 0) showToast(`${saved} palpite(s) salvo(s)! ✅`);
 
@@ -395,7 +424,9 @@ export default function PalpitesGrupo() {
     if (!compMap[comp]) compMap[comp] = [];
     compMap[comp].push(m);
   });
-  const comps = [...Object.keys(compMap).sort(), '⭐ Especiais'];
+  const wcSubMenus = ['📅 Fase de Grupos', '🥊 16 Avos', '⚽ Oitavas de Final', '⚽ Quartas de Final', '⚽ Semifinais', '⚽ 3º Lugar', '⚽ Final'].filter(c => compMap[c]?.length > 0);
+  const otherComps = Object.keys(compMap).filter(c => !wcSubMenus.includes(c)).sort();
+  const comps = [...wcSubMenus, ...otherComps, '⭐ Especiais'];
 
   // Filtra jogos do campeonato selecionado
   const allCompMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
@@ -470,9 +501,22 @@ export default function PalpitesGrupo() {
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" disabled={saving}
-                onClick={() => { setConfirmDay(null); setConfirmMatches([]); }} style={{ flex: 1 }}>Cancelar</button>
+                onClick={() => { setConfirmDay(null); setConfirmMatches([]); setModalPens({}); }} style={{ flex: 1 }}>Cancelar</button>
               <button className="btn" disabled={saving}
-                onClick={() => confirmarSalvar(confirmDayMatches)} style={{ flex: 1 }}>
+                onClick={() => {
+                  const pendingPen = confirmDayMatches.find(m => {
+                    const dv = draft[m.id];
+                    const sv = myGuesses[m.id];
+                    const aVal = dv?.a !== undefined && dv.a !== '' ? dv.a : sv ? String(sv.guess_a) : '';
+                    const bVal = dv?.b !== undefined && dv.b !== '' ? dv.b : sv ? String(sv.guess_b) : '';
+                    return m.is_knockout && aVal !== '' && bVal !== '' && aVal === bVal && !jogoComecou(m.match_date) && !modalPens[m.id];
+                  });
+                  if (pendingPen) {
+                    alert(`Escolha quem avança em ${toPT(pendingPen.team_a)} x ${toPT(pendingPen.team_b)}!`);
+                    return;
+                  }
+                  confirmarSalvar(confirmDayMatches);
+                }} style={{ flex: 1 }}>
                 {saving ? 'Salvando...' : 'Confirmar'}
               </button>
             </div>
@@ -554,7 +598,7 @@ export default function PalpitesGrupo() {
       )}
 
       {/* TOGGLE PALPITES / CHAVEAMENTO (só na Copa do Mundo) */}
-      {selectedComp === 'Copa do Mundo' && (
+      {(selectedComp === 'Copa do Mundo' || selectedComp === '📅 Fase de Grupos' || selectedComp === '🥊 16 Avos') && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <button onClick={() => setView('palpites')} style={{
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
@@ -574,8 +618,16 @@ export default function PalpitesGrupo() {
       )}
 
       {/* CHAVEAMENTO VISUAL */}
-      {view === 'chaveamento' && selectedComp === 'Copa do Mundo' && (
-        <Chaveamento matches={allCompMatches} myGuesses={myGuesses} />
+      {view === 'chaveamento' && (selectedComp === 'Copa do Mundo' || selectedComp === '📅 Fase de Grupos' || selectedComp === '🥊 16 Avos') && (
+        <Chaveamento matches={[
+          ...(compMap['🥊 16 Avos'] || []),
+          ...(compMap['⚽ Oitavas de Final'] || []),
+          ...(compMap['⚽ Quartas de Final'] || []),
+          ...(compMap['⚽ Semifinais'] || []),
+          ...(compMap['⚽ 3º Lugar'] || []),
+          ...(compMap['⚽ Final'] || []),
+          ...(compMap['Copa do Mundo'] || []),
+        ]} myGuesses={myGuesses} />
       )}
 
       {/* JOGOS POR DIA */}
@@ -638,9 +690,13 @@ export default function PalpitesGrupo() {
                         ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' }
                         : { a: '', b: '', pen: '' };
                     const pts     = previewPts(m.id, m);
-                    const isDraw  = saved
-                      ? saved.guess_a === saved.guess_b
-                      : (d.a !== '' && d.b !== '' && d.a === d.b);
+                    // Se tem draft preenchido, usa o draft para calcular isDraw
+                    // Senão usa o saved
+                    const isDraw = (draftVal && draftVal.a !== '' && draftVal.b !== '')
+                      ? draftVal.a === draftVal.b
+                      : saved
+                        ? saved.guess_a === saved.guess_b
+                        : false;
 
                     return (
                       <div key={m.id} style={{
@@ -686,19 +742,20 @@ export default function PalpitesGrupo() {
                         {m.is_knockout && isDraw && !blocked && (
                           <div style={{ marginTop: 12, textAlign: 'center' }}>
                             <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              Quem avança nos pênaltis?
+                              Quem avança?
                             </p>
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                               {(['A', 'B'] as const).map(side => {
-                                const isSelected = (saved as Guess | undefined)?.guess_penalty_winner === side || (!saved && d.pen === side);
+                                const penVal = draft[m.id]?.pen || (saved as Guess | undefined)?.guess_penalty_winner || '';
+                                const isSelected = penVal === side;
                                 return (
-                                  <button key={side} onClick={() => !saved && setPen(m.id, isSelected ? '' : side)}
+                                  <button key={side} onClick={() => !blocked && setPen(m.id, isSelected ? '' : side)}
                                     style={{
                                       padding: '8px 16px', borderRadius: 10, border: '1px solid',
                                       borderColor: isSelected ? 'var(--gold)' : 'var(--line)',
                                       background: isSelected ? 'var(--gold)' : 'var(--bg-soft)',
                                       color: isSelected ? '#1a1a1a' : 'var(--text)',
-                                      fontWeight: 700, fontSize: 13, cursor: saved ? 'default' : 'pointer'
+                                      fontWeight: 700, fontSize: 13, cursor: blocked ? 'default' : 'pointer'
                                     }}>
                                     {side === 'A' ? toPT(m.team_a) : toPT(m.team_b)}
                                   </button>
@@ -724,6 +781,14 @@ export default function PalpitesGrupo() {
                       <button className="btn" onClick={() => {
                         setConfirmDay(day);
                         setConfirmMatches(dayMatches);
+                        // Inicializa pens com valores do draft ou saved
+                        const pens: Record<string, 'A' | 'B' | ''> = {};
+                        dayMatches.forEach(m => {
+                          if (m.is_knockout) {
+                            pens[m.id] = (draft[m.id]?.pen || myGuesses[m.id]?.guess_penalty_winner || '') as 'A' | 'B' | '';
+                          }
+                        });
+                        setModalPens(pens);
                       }} disabled={saving}>
                         Salvar palpites do dia ({novos})
                       </button>
