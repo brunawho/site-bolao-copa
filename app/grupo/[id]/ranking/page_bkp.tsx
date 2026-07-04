@@ -6,27 +6,16 @@ import { supabase, calcPoints, type Match, type Guess } from '@/lib/supabase';
 type Member = { id: string; user_id: string; name: string };
 type SpecialResult = { top_scorer: string|null; champion: string|null; runner_up: string|null; third_place: string|null };
 type SpecialBet    = { group_member_id: string; top_scorer: string; champion: string; runner_up: string; third_place: string };
+type ViewRanking   = { user_id: string; name: string; total_points: number; exact_hits: number; result_hits: number; partial_hits: number };
 
 function extractRound(phase: string): string {
   const match = phase.match(/Rodada (\d+)/);
   return match ? `R${match[1]}` : phase.split('·').pop()?.trim() ?? phase;
 }
 
-function calcSpecialPoints(bet: SpecialBet, result: SpecialResult): number {
-  const norm = (s: string | null) => s?.toLowerCase().trim() ?? '';
-  let pts = 0;
-  if (result.champion    && norm(bet.champion)    === norm(result.champion))    pts += 25;
-  if (result.runner_up   && norm(bet.runner_up)   === norm(result.runner_up))   pts += 20;
-  if (result.third_place && norm(bet.third_place) === norm(result.third_place)) pts += 15;
-  if (result.top_scorer  && norm(bet.top_scorer)  === norm(result.top_scorer))  pts += 15;
-  return pts;
-}
-
 const COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
 
-// Componente Avatar — inicial colorida
 function Avatar({ name, color, size = 32 }: { name: string; color: string; size?: number }) {
-  const initial = name.charAt(0).toUpperCase();
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
@@ -34,11 +23,10 @@ function Avatar({ name, color, size = 32 }: { name: string; color: string; size?
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexShrink: 0, fontSize: size * 0.4, fontWeight: 700, color
     }}>
-      {initial}
+      {name.charAt(0).toUpperCase()}
     </div>
   );
 }
-
 
 const FLAG_CODES: Record<string, string> = {
   'Algeria': 'dz', 'Argentina': 'ar', 'Australia': 'au', 'Austria': 'at',
@@ -82,25 +70,101 @@ function getFlag(team: string): string | null {
 
 const medals = ['🥇', '🥈', '🥉'];
 
+function ResultadosInline({ matches }: { matches: Match[] }) {
+  const [filter, setFilter] = useState<'past' | 'today' | 'upcoming'>('today');
+
+  function toBrazilDay(iso: string) {
+    return new Date(iso).toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).split('/').reverse().join('-');
+  }
+  const todayStr = toBrazilDay(new Date().toISOString());
+
+  const filtered = matches.filter(m => {
+    const day = toBrazilDay(m.match_date);
+    if (filter === 'today')    return day === todayStr;
+    if (filter === 'past')     return day < todayStr;
+    if (filter === 'upcoming') return day > todayStr;
+    return true;
+  }).sort((a, b) => filter === 'past'
+    ? new Date(b.match_date).getTime() - new Date(a.match_date).getTime()
+    : new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+  );
+
+  const todayCount    = matches.filter(m => toBrazilDay(m.match_date) === todayStr).length;
+  const pastCount     = matches.filter(m => toBrazilDay(m.match_date) < todayStr).length;
+  const upcomingCount = matches.filter(m => toBrazilDay(m.match_date) > todayStr).length;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {([
+          { key: 'past',     label: '✅ Passados', count: pastCount },
+          { key: 'today',    label: '⚡ Hoje',     count: todayCount },
+          { key: 'upcoming', label: '⏳ Próximos', count: upcomingCount },
+        ] as const).map(f => (
+          <button key={f.key} onClick={() => setFilter(f.key)} style={{
+            flex: 1, padding: '7px 4px', borderRadius: 10, border: '1px solid',
+            borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
+            background: filter === f.key ? 'var(--gold)' : 'var(--card)',
+            color: filter === f.key ? '#1a1a1a' : 'var(--text)',
+            fontWeight: filter === f.key ? 700 : 400, fontSize: 10, cursor: 'pointer', lineHeight: 1.4
+          }}>
+            {f.label}<br /><span style={{ fontSize: 9, opacity: 0.8 }}>({f.count})</span>
+          </button>
+        ))}
+      </div>
+      <div className="card" style={{ padding: 0 }}>
+        {filtered.length === 0 && <div className="empty">Nenhum jogo neste período.</div>}
+        {filtered.map((m, i) => {
+          const isFinished = m.score_a !== null;
+          const started    = new Date(m.match_date) <= new Date();
+          return (
+            <div key={m.id} style={{ padding: '12px 16px', borderTop: i > 0 ? '1px solid var(--line)' : 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                  {m.phase.split('·').slice(1).join('·').trim()}
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: isFinished ? '#2ea84c' : started ? '#f87171' : 'var(--muted)' }}>
+                  {isFinished ? '✅ Finalizado' : started ? '🔴 Em andamento' : '⏳ Aguardando'}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 6 }}>
+                <span style={{ textAlign: 'right', fontWeight: 600, fontSize: 13 }}>{toPT(m.team_a)}</span>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: isFinished ? 'var(--gold)' : 'var(--muted)', textAlign: 'center', minWidth: 60 }}>
+                  {isFinished ? `${m.score_a} x ${m.score_b}` :
+                    new Date(m.match_date).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })}
+                </span>
+                <span style={{ textAlign: 'left', fontWeight: 600, fontSize: 13 }}>{toPT(m.team_b)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function RankingGrupo() {
   const params  = useParams();
   const groupId = String(params.id);
 
-  const [members, setMembers]         = useState<Member[]>([]);
-  const [matches, setMatches]         = useState<Match[]>([]);
-  const [allGuesses, setAllGuesses]   = useState<Guess[]>([]);
-  const [specialBets, setSpecialBets] = useState<SpecialBet[]>([]);
+  const [members, setMembers]           = useState<Member[]>([]);
+  const [matches, setMatches]           = useState<Match[]>([]);
+  const [allMatches, setAllMatches]     = useState<Match[]>([]);
+  const [allGuesses, setAllGuesses]     = useState<Guess[]>([]);
+  const [specialBets, setSpecialBets]   = useState<SpecialBet[]>([]);
   const [specialResult, setSpecialResult] = useState<SpecialResult | null>(null);
-  const [loading, setLoading]         = useState(true);
-  const [myUserId, setMyUserId]       = useState<string | null>(null);
-  const [showChart, setShowChart]     = useState(false);
-  const [rankTab, setRankTab]         = useState<'geral' | 'selecoes'>('geral');
-  const [knockoutPicks, setKnockoutPicks] = useState<any[]>([]);
-  const [championPicks, setChampionPicks] = useState<any[]>([]);
-  const [finalPicks, setFinalPicks]       = useState<any[]>([]);
+  const [viewRanking, setViewRanking]   = useState<ViewRanking[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [myUserId, setMyUserId]         = useState<string | null>(null);
+  const [showChart, setShowChart]       = useState(false);
+  const [rankTab, setRankTab]           = useState<'geral' | 'selecoes' | 'resultados'>('geral');
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
-  const [drilldown, setDrilldown]       = useState<typeof memberStats[0] | null>(null);
+  const [drilldown, setDrilldown]       = useState<any | null>(null);
+  const [drilldownGuesses, setDrilldownGuesses] = useState<Record<string, Guess>>({});
+  const [drilldownLoading, setDrilldownLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -119,24 +183,38 @@ export default function RankingGrupo() {
       }));
       setMembers(memberList);
 
+      // Busca da view do banco — fonte de verdade para pontuação
+      const { data: vr } = await supabase
+        .from('ranking')
+        .select('user_id, name, total_points, exact_hits, result_hits, partial_hits')
+        .eq('group_id', groupId)
+        .order('total_points', { ascending: false });
+      setViewRanking(vr || []);
+
+      // Jogos finalizados para cálculos locais (gráfico, melhor da rodada, seleções)
       const { data: matchData } = await supabase
         .from('matches').select('*').not('score_a', 'is', null).not('score_b', 'is', null)
         .order('match_date');
       setMatches(matchData || []);
+
+      // Todos os jogos para aba resultados
+      const { data: allMatchesData } = await supabase
+        .from('matches').select('*').order('match_date');
+      setAllMatches(allMatchesData || []);
 
       const memberIds = ms.map((m: any) => m.id);
       const { data: guessData } = await supabase
         .from('guesses').select('*').in('group_member_id', memberIds);
       setAllGuesses(guessData || []);
 
-      // Jogos em andamento — só após 10 minutos do início
-      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const { data: allMatchData } = await supabase
+      // Jogos em andamento (após 10 minutos do início)
+      const tenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { data: liveData } = await supabase
         .from('matches').select('*')
         .is('score_a', null)
         .lte('match_date', tenMinutesAgo)
         .order('match_date', { ascending: true });
-      const lives = allMatchData || [];
+      const lives = liveData || [];
       setLiveMatches(lives);
 
       if (lives.length > 0) {
@@ -145,7 +223,8 @@ export default function RankingGrupo() {
           const { data: liveG } = await supabase
             .from('guesses').select('*')
             .eq('match_id', live.id)
-            .in('group_member_id', memberIds);
+            .in('group_member_id', memberIds)
+            .not('group_member_id', 'is', null);
           liveMap[live.id] = {};
           (liveG || []).forEach((g: any) => { liveMap[live.id][g.group_member_id] = g; });
         }
@@ -156,14 +235,6 @@ export default function RankingGrupo() {
         .from('special_bets').select('*').in('group_member_id', memberIds);
       setSpecialBets(bets || []);
 
-      // Palpites do mata-mata
-      const { data: kpData } = await supabase.from('knockout_picks').select('*').in('group_member_id', memberIds);
-      setKnockoutPicks(kpData || []);
-      const { data: cpData } = await supabase.from('phase_champion_picks').select('*').in('group_member_id', memberIds);
-      setChampionPicks(cpData || []);
-      const { data: fpData } = await supabase.from('final_score_pick').select('*').in('group_member_id', memberIds);
-      setFinalPicks(fpData || []);
-
       const { data: res } = await supabase.from('special_results').select('*').maybeSingle();
       setSpecialResult(res || null);
 
@@ -171,33 +242,49 @@ export default function RankingGrupo() {
     })();
   }, [groupId]);
 
-  // Calcula pontos por membro
+  // Monta memberStats combinando view (pontuação) com dados locais (cor, metadados)
   const memberStats = members.map((member, idx) => {
+    const vr = viewRanking.find(r => r.user_id === member.user_id);
+    const color = COLORS[idx % COLORS.length];
+
+    // Dados locais para gráfico/drilldown
     const guessByMatch: Record<string, Guess> = {};
     allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
 
-    let totalPts = 0, exactHits = 0, winnerHits = 0;
+    let winnerHits = 0;
+    let specialPts = 0;
     matches.forEach(m => {
       const g = guessByMatch[m.id];
       if (!g) return;
-      const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
-      totalPts += pts;
-      if (pts >= 6 && g.guess_a === m.score_a && g.guess_b === m.score_b) exactHits++;
+      const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
       if (pts === 3 || pts === 4) winnerHits++;
     });
 
-    let specialPts = 0;
     if (specialResult) {
+      const norm = (s: string | null) => s?.toLowerCase().trim() ?? '';
       const bet = specialBets.find(b => b.group_member_id === member.id);
-      if (bet) specialPts = calcSpecialPoints(bet, specialResult);
+      if (bet) {
+        if (specialResult.champion    && norm(bet.champion)    === norm(specialResult.champion))    specialPts += 25;
+        if (specialResult.runner_up   && norm(bet.runner_up)   === norm(specialResult.runner_up))   specialPts += 20;
+        if (specialResult.third_place && norm(bet.third_place) === norm(specialResult.third_place)) specialPts += 15;
+        if (specialResult.top_scorer  && norm(bet.top_scorer)  === norm(specialResult.top_scorer))  specialPts += 15;
+      }
     }
 
-    return { ...member, total_points: totalPts, exact_hits: exactHits, winner_hits: winnerHits, special_pts: specialPts, grand_total: totalPts + specialPts, color: COLORS[idx % COLORS.length] };
+    // Usa pontuação da view como fonte de verdade
+    const grand_total  = vr ? vr.total_points : 0;
+    const exact_hits   = vr ? vr.exact_hits   : 0;
+    const winner_hits  = vr ? vr.result_hits  : winnerHits;
+
+    return {
+      ...member, color,
+      grand_total, exact_hits, winner_hits, special_pts: specialPts,
+      guessByMatch
+    };
   }).sort((a, b) => b.grand_total - a.grand_total || b.exact_hits - a.exact_hits);
 
-  // Calcula posições compartilhadas (empate = mesma posição)
-  const rankingWithPos = memberStats.map((r, i) => {
-    // Conta quantos membros têm pontuação estritamente maior
+  // Posições compartilhadas
+  const rankingWithPos = memberStats.map(r => {
     const pos = memberStats.filter(other =>
       other.grand_total > r.grand_total ||
       (other.grand_total === r.grand_total && other.exact_hits > r.exact_hits)
@@ -205,15 +292,13 @@ export default function RankingGrupo() {
     return { ...r, pos };
   });
 
-  // Dados do gráfico — pontos acumulados por rodada
+  // Gráfico de evolução
   useEffect(() => {
     if (!showChart || !canvasRef.current || !matches.length) return;
-
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Agrupa matches por rodada
     const roundMap: Record<string, Match[]> = {};
     matches.forEach(m => {
       const round = extractRound(m.phase);
@@ -226,27 +311,21 @@ export default function RankingGrupo() {
       return na - nb;
     });
 
-    // Calcula pontos acumulados por pessoa por rodada
     const memberData = memberStats.map(member => {
-      const guessByMatch: Record<string, Guess> = {};
-      allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
-
       let accumulated = 0;
       const points = rounds.map(round => {
-        const roundMatches = roundMap[round];
-        roundMatches.forEach(m => {
-          const g = guessByMatch[m.id];
+        roundMap[round].forEach(m => {
+          const g = member.guessByMatch[m.id];
           if (!g) return;
-          accumulated += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+          accumulated += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
         });
         return accumulated;
       });
       return { name: member.name, color: member.color, points };
     });
 
-    // Desenha o gráfico
-    const dpr    = window.devicePixelRatio || 1;
-    const width  = canvas.offsetWidth;
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.offsetWidth;
     const height = canvas.offsetHeight;
     canvas.width  = width * dpr;
     canvas.height = height * dpr;
@@ -255,65 +334,51 @@ export default function RankingGrupo() {
     const padL = 40, padR = 16, padT = 16, padB = 40;
     const chartW = width - padL - padR;
     const chartH = height - padT - padB;
-
     ctx.clearRect(0, 0, width, height);
 
     const maxPts = Math.max(...memberData.flatMap(m => m.points), 1);
     const step   = chartW / Math.max(rounds.length - 1, 1);
 
-    // Grid
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++) {
       const y = padT + (chartH / 4) * i;
       ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke();
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.font = '10px Inter';
-      ctx.textAlign = 'right';
+      ctx.font = '10px Inter'; ctx.textAlign = 'right';
       ctx.fillText(String(Math.round(maxPts - (maxPts / 4) * i)), padL - 4, y + 3);
     }
 
-    // Labels eixo X
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = '9px Inter';
-    ctx.textAlign = 'center';
+    ctx.font = '9px Inter'; ctx.textAlign = 'center';
     const maxLabels = Math.min(rounds.length, 10);
     const labelStep = Math.ceil(rounds.length / maxLabels);
     rounds.forEach((r, i) => {
       if (i % labelStep !== 0 && i !== rounds.length - 1) return;
-      const x = padL + i * step;
-      ctx.fillText(r, x, height - padB + 14);
+      ctx.fillText(r, padL + i * step, height - padB + 14);
     });
 
-    // Linhas por pessoa
     memberData.forEach(member => {
       if (!member.points.length) return;
       ctx.beginPath();
       ctx.strokeStyle = member.color;
-      ctx.lineWidth = 2;
-      ctx.lineJoin = 'round';
+      ctx.lineWidth = 2; ctx.lineJoin = 'round';
       member.points.forEach((pts, i) => {
         const x = padL + i * step;
         const y = padT + chartH - (pts / maxPts) * chartH;
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       });
       ctx.stroke();
-
-      // Ponto final
       const lastX = padL + (member.points.length - 1) * step;
       const lastY = padT + chartH - ((member.points[member.points.length - 1] || 0) / maxPts) * chartH;
-      ctx.beginPath();
-      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = member.color;
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = member.color; ctx.fill();
     });
-
   }, [showChart, matches, allGuesses, memberStats, members]);
 
-  // Melhor da rodada — última rodada com jogos finalizados
+  // Melhor da rodada
   const lastRound = (() => {
     if (!matches.length) return null;
-    // Pega a rodada mais recente
     const rounds = Array.from(new Set(matches.map(m => {
       const r = m.phase.match(/Rodada (\d+)/);
       return r ? parseInt(r[1]) : 0;
@@ -322,41 +387,44 @@ export default function RankingGrupo() {
   })();
 
   const roundStats = lastRound === null ? [] : memberStats.map(member => {
-    const guessByMatch: Record<string, Guess> = {};
-    allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
     const roundMatches = matches.filter(m => {
       const r = m.phase.match(/Rodada (\d+)/);
       return r && parseInt(r[1]) === lastRound;
     });
     let pts = 0;
     roundMatches.forEach(m => {
-      const g = guessByMatch[m.id];
+      const g = member.guessByMatch[m.id];
       if (!g) return;
-      pts += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+      pts += calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
     });
     return { name: member.name, pts, color: member.color, user_id: member.user_id };
   }).filter(r => r.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
 
-  // Ranking de seleções — pontos gerados por cada time da Copa
+  // Ranking de seleções
   const selectionRanking = (() => {
     const wcMatches = matches.filter(m => m.phase.includes('Copa do Mundo'));
     const teamPts: Record<string, number> = {};
-
     wcMatches.forEach(m => {
-      allGuesses.filter(g => members.some(mb => mb.id === g.group_member_id)).forEach(g => {
-        if (g.match_id !== m.id) return;
-        const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+      memberStats.forEach(member => {
+        const g = member.guessByMatch[m.id];
+        if (!g) return;
+        const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
         if (pts > 0) {
           teamPts[m.team_a] = (teamPts[m.team_a] ?? 0) + pts;
           teamPts[m.team_b] = (teamPts[m.team_b] ?? 0) + pts;
         }
       });
     });
-
-    return Object.entries(teamPts)
-      .map(([team, pts]) => ({ team, pts }))
-      .sort((a, b) => b.pts - a.pts);
+    return Object.entries(teamPts).map(([team, pts]) => ({ team, pts })).sort((a, b) => b.pts - a.pts);
   })();
+
+  const ptsBadge = (pts: number) => {
+    if (pts >= 9)  return { label: '🏆 Exato + pên', color: '#2ea84c' };
+    if (pts >= 6)  return { label: '🎯 Exato', color: '#2ea84c' };
+    if (pts === 4) return { label: '⚡ Vencedor+', color: 'var(--gold)' };
+    if (pts === 3) return { label: '✅ Vencedor', color: 'var(--gold)' };
+    return { label: '〰️ Parcial', color: '#8ba9ff' };
+  };
 
   return (
     <main className="app">
@@ -367,22 +435,21 @@ export default function RankingGrupo() {
         <div className="empty">Carregando...</div>
       ) : (
         <>
-          {/* Abas Geral / Seleções */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <button onClick={() => setRankTab('geral')} style={{
-              flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-              borderColor: rankTab === 'geral' ? 'var(--gold)' : 'var(--line)',
-              background: rankTab === 'geral' ? 'var(--gold)' : 'var(--card)',
-              color: rankTab === 'geral' ? '#1a1a1a' : 'var(--text)',
-              fontWeight: rankTab === 'geral' ? 700 : 400, fontSize: 13, cursor: 'pointer'
-            }}>🏆 Geral</button>
-            <button onClick={() => setRankTab('selecoes')} style={{
-              flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-              borderColor: rankTab === 'selecoes' ? 'var(--gold)' : 'var(--line)',
-              background: rankTab === 'selecoes' ? 'var(--gold)' : 'var(--card)',
-              color: rankTab === 'selecoes' ? '#1a1a1a' : 'var(--text)',
-              fontWeight: rankTab === 'selecoes' ? 700 : 400, fontSize: 13, cursor: 'pointer'
-            }}>🌍 Seleções</button>
+          {/* Abas */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {([
+              { key: 'geral',      label: '🏆 Geral' },
+              { key: 'selecoes',   label: '🌍 Seleções' },
+              { key: 'resultados', label: '📋 Resultados' },
+            ] as const).map(tab => (
+              <button key={tab.key} onClick={() => setRankTab(tab.key)} style={{
+                flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
+                borderColor: rankTab === tab.key ? 'var(--gold)' : 'var(--line)',
+                background: rankTab === tab.key ? 'var(--gold)' : 'var(--card)',
+                color: rankTab === tab.key ? '#1a1a1a' : 'var(--text)',
+                fontWeight: rankTab === tab.key ? 700 : 400, fontSize: 11, cursor: 'pointer'
+              }}>{tab.label}</button>
+            ))}
           </div>
 
           {/* Jogos em andamento */}
@@ -396,9 +463,7 @@ export default function RankingGrupo() {
                     background: `${color}15`, border: `1px solid ${color}`,
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 11, color, fontWeight: 700 }}>🔴 Em andamento</span>
-                    </div>
+                    <span style={{ fontSize: 11, color, fontWeight: 700 }}>🔴 Em andamento</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {getFlag(m.team_a) && <img src={getFlag(m.team_a)!} alt="" style={{ width: 18, height: 13, objectFit: 'contain' }} />}
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{toPT(m.team_a)}</span>
@@ -412,19 +477,29 @@ export default function RankingGrupo() {
             </div>
           )}
 
-          {rankTab === 'geral' ? (
+          {rankTab === 'resultados' ? (
+            <ResultadosInline matches={allMatches} />
+          ) : rankTab === 'geral' ? (
             <div className="card" style={{ padding: 0, marginBottom: 16 }}>
               {rankingWithPos.map((r, i) => {
-                const isMe = r.user_id === myUserId;
+                const isMe     = r.user_id === myUserId;
                 const isLeader = r.pos === 1;
                 const posLabel = r.pos <= 3 ? medals[r.pos - 1] : `${r.pos}º`;
                 return (
                   <div key={r.id} className="rank-row"
-                    onClick={() => setDrilldown(r)}
+                    onClick={async () => {
+                      setDrilldown(r);
+                      setDrilldownLoading(true);
+                      const { data: dg } = await supabase
+                        .from('guesses').select('*')
+                        .eq('group_member_id', r.id);
+                      const map: Record<string, Guess> = {};
+                      (dg || []).forEach((g: any) => { map[g.match_id] = g; });
+                      setDrilldownGuesses(map);
+                      setDrilldownLoading(false);
+                    }}
                     style={{
-                      background: isLeader
-                        ? 'rgba(212,167,44,0.12)'
-                        : isMe ? 'rgba(212,167,44,0.06)' : undefined,
+                      background: isLeader ? 'rgba(212,167,44,0.12)' : isMe ? 'rgba(212,167,44,0.06)' : undefined,
                       borderLeft: isLeader ? '3px solid var(--gold)' : undefined,
                       cursor: 'pointer',
                     }}>
@@ -433,13 +508,7 @@ export default function RankingGrupo() {
                       <Avatar name={r.name} color={r.color} size={34} />
                       <div>
                         <div className="rank-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {isLeader && (
-                            <span style={{
-                              fontSize: 16,
-                              display: 'inline-block',
-                              animation: 'bounce 1s infinite'
-                            }}>👑</span>
-                          )}
+                          {isLeader && <span style={{ fontSize: 16, display: 'inline-block', animation: 'bounce 1s infinite' }}>👑</span>}
                           {r.name}
                           {isMe && <span style={{ fontSize: 11, color: 'var(--gold)' }}>← você</span>}
                         </div>
@@ -451,25 +520,23 @@ export default function RankingGrupo() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <span className="rank-points" style={{ color: isLeader ? 'var(--gold)' : undefined }}>{r.grand_total}</span>
-                      {r.special_pts > 0 && (
-                        <div style={{ fontSize: 10, color: 'var(--gold)' }}>{r.total_points} + {r.special_pts}</div>
-                      )}
                       {liveMatches.length > 0 && (
                         <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
                           {liveMatches.map((lm, idx) => {
-                            const color = ['#f87171','#60a5fa','#34d399','#fb923c','#a78bfa'][idx % 5];
+                            const liveColor = ['#f87171','#60a5fa','#34d399','#fb923c','#a78bfa'][idx % 5];
                             const g = liveGuesses[lm.id]?.[r.id];
                             return (
                               <div key={lm.id} style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                                {getFlag(lm.team_a) && <img src={getFlag(lm.team_a)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain', flexShrink: 0 }} />}
-                                <span style={{ fontSize: 11, color: g ? 'var(--text)' : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
-                                  {g ? g.guess_a : '—'}
+                                {getFlag(lm.team_a) && <img src={getFlag(lm.team_a)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain' }} />}
+                                <span style={{ fontSize: 11, color: g ? liveColor : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
+                                  {g ? `${g.guess_a}x${g.guess_b}` : '—'}
                                 </span>
-                                <span style={{ fontSize: 10, color: 'var(--muted)' }}>x</span>
-                                <span style={{ fontSize: 11, color: g ? 'var(--text)' : 'var(--muted)', fontWeight: g ? 700 : 400 }}>
-                                  {g ? g.guess_b : '—'}
-                                </span>
-                                {getFlag(lm.team_b) && <img src={getFlag(lm.team_b)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain', flexShrink: 0 }} />}
+                                {getFlag(lm.team_b) && <img src={getFlag(lm.team_b)!} alt="" style={{ width: 14, height: 10, objectFit: 'contain' }} />}
+                                {g && lm.is_knockout && g.guess_a === g.guess_b && g.guess_penalty_winner && (
+                                  <span style={{ fontSize: 10, color: liveColor }}>
+                                    ({g.guess_penalty_winner === 'A' ? toPT(lm.team_a) : toPT(lm.team_b)})
+                                  </span>
+                                )}
                               </div>
                             );
                           })}
@@ -484,23 +551,17 @@ export default function RankingGrupo() {
             <div className="card" style={{ padding: 0, marginBottom: 16 }}>
               {selectionRanking.length === 0 ? (
                 <div className="empty">Nenhum ponto gerado ainda.</div>
-              ) : (
-                selectionRanking.map((s, i) => (
-                  <div key={s.team} style={{
-                    display: 'grid', gridTemplateColumns: '36px 1fr auto',
-                    alignItems: 'center', padding: '12px 14px',
-                    borderBottom: i < selectionRanking.length - 1 ? '1px solid var(--line)' : 'none'
-                  }}>
-                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)' }}>
-                      {i + 1}º
-                    </span>
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>{s.team}</span>
-                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: 'var(--gold)' }}>
-                      {s.pts}
-                    </span>
-                  </div>
-                ))
-              )}
+              ) : selectionRanking.map((s, i) => (
+                <div key={s.team} style={{
+                  display: 'grid', gridTemplateColumns: '36px 1fr auto',
+                  alignItems: 'center', padding: '12px 14px',
+                  borderBottom: i < selectionRanking.length - 1 ? '1px solid var(--line)' : 'none'
+                }}>
+                  <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: 'var(--gold)' }}>{i + 1}º</span>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{toPT(s.team)}</span>
+                  <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: 'var(--gold)' }}>{s.pts}</span>
+                </div>
+              ))}
             </div>
           )}
 
@@ -509,12 +570,10 @@ export default function RankingGrupo() {
             {showChart ? '▲ Ocultar gráfico' : '📊 Ver evolução de pontos'}
           </button>
 
-          {/* Gráfico */}
           {showChart && (
             <div className="card" style={{ marginBottom: 16 }}>
               <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Evolução por rodada</p>
               <canvas ref={canvasRef} style={{ width: '100%', height: 200, display: 'block' }} />
-              {/* Legenda */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
                 {memberStats.map(m => (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
@@ -536,63 +595,50 @@ export default function RankingGrupo() {
                 const roundPos = roundStats.filter(other => other.pts > r.pts).length + 1;
                 const roundPosLabel = roundPos <= 3 ? ['🥇','🥈','🥉'][roundPos - 1] : `${roundPos}º`;
                 return (
-                <div key={r.user_id} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 0',
-                  borderTop: i > 0 ? '1px solid var(--line)' : 'none'
-                }}>
-                  <span style={{ fontSize: 20 }}>{roundPosLabel}</span>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>
-                    {r.name}
-                    {r.user_id === myUserId && <span style={{ fontSize: 11, color: 'var(--gold)', marginLeft: 6 }}>← você</span>}
-                  </span>
-                  <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>
-                    +{r.pts} pts
-                  </span>
-                </div>
-              );})}
+                  <div key={r.user_id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 0', borderTop: i > 0 ? '1px solid var(--line)' : 'none'
+                  }}>
+                    <span style={{ fontSize: 20 }}>{roundPosLabel}</span>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                    <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>
+                      {r.name}
+                      {r.user_id === myUserId && <span style={{ fontSize: 11, color: 'var(--gold)', marginLeft: 6 }}>← você</span>}
+                    </span>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>+{r.pts} pts</span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {/* Legenda pontuação */}
+          {/* Legenda */}
           <div style={{ padding: '12px 16px', background: 'var(--card)', borderRadius: 14, border: '1px solid var(--line)', fontSize: 12, color: 'var(--muted)', lineHeight: 1.8 }}>
             <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Pontuação</strong>
             6 pts · placar exato · 4 pts · vencedor + gols · 3 pts · vencedor · 1 pt · gols
           </div>
         </>
       )}
+
       <style>{`
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
-      {/* MODAL DRILLDOWN */}
+      {/* Modal Drilldown */}
       {drilldown && (() => {
         const member = drilldown;
-        const guessByMatch: Record<string, Guess> = {};
-        allGuesses.filter(g => g.group_member_id === member.id).forEach(g => { guessByMatch[g.match_id] = g; });
-
         const scoredMatches = matches.map(m => {
-          const g = guessByMatch[m.id];
+          const g = drilldownGuesses[m.id];
           if (!g) return null;
-          const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout);
+          const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
           if (pts === 0) return null;
           return { m, g, pts };
         }).filter(Boolean) as { m: Match; g: Guess; pts: number }[];
-
         scoredMatches.sort((a, b) => new Date(b.m.match_date).getTime() - new Date(a.m.match_date).getTime());
 
-        const ptsBadge = (pts: number) => {
-          if (pts >= 9) return { label: '🏆 Exato + pên', color: '#2ea84c' };
-          if (pts >= 6) return { label: '🎯 Exato', color: '#2ea84c' };
-          if (pts === 4) return { label: '⚡ Vencedor+', color: 'var(--gold)' };
-          if (pts === 3) return { label: '✅ Vencedor', color: 'var(--gold)' };
-          return { label: '〰️ Parcial', color: '#8ba9ff' };
-        };
-
         return (
-          <div onClick={() => setDrilldown(null)} style={{
+          <div onClick={() => { setDrilldown(null); setDrilldownGuesses({}); }} style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
             zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
           }}>
@@ -602,15 +648,9 @@ export default function RankingGrupo() {
               overflow: 'hidden', display: 'flex', flexDirection: 'column',
               animation: 'fadeIn 0.25s ease'
             }}>
-              {/* Header */}
               <div style={{ padding: '20px 20px 12px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
-                    background: `${member.color}30`, border: `2px solid ${member.color}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 16, fontWeight: 700, color: member.color
-                  }}>{member.name.charAt(0).toUpperCase()}</div>
+                  <Avatar name={member.name} color={member.color} size={40} />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 16 }}>{member.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--muted)' }}>
@@ -618,22 +658,21 @@ export default function RankingGrupo() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setDrilldown(null)} style={{
+                <button onClick={() => { setDrilldown(null); setDrilldownGuesses({}); }} style={{
                   background: 'var(--bg-soft)', border: 'none', borderRadius: '50%',
                   width: 32, height: 32, fontSize: 16, cursor: 'pointer', color: 'var(--muted)'
                 }}>✕</button>
               </div>
-
-              {/* Lista de jogos */}
               <div style={{ overflowY: 'auto', flex: 1, padding: '12px 0' }}>
-                {scoredMatches.length === 0 ? (
+                {drilldownLoading ? (
+                  <div className="empty">Carregando...</div>
+                ) : scoredMatches.length === 0 ? (
                   <div className="empty">Nenhum ponto ainda.</div>
                 ) : scoredMatches.map(({ m, g, pts }) => {
                   const badge = ptsBadge(pts);
                   return (
                     <div key={m.id} style={{
-                      padding: '12px 20px',
-                      borderBottom: '1px solid var(--line)',
+                      padding: '12px 20px', borderBottom: '1px solid var(--line)',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10
                     }}>
                       <div style={{ flex: 1 }}>
@@ -645,6 +684,11 @@ export default function RankingGrupo() {
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
                           Palpite: {g.guess_a} x {g.guess_b}
+                          {m.is_knockout && g.guess_a === g.guess_b && g.guess_penalty_winner && (
+                            <span style={{ marginLeft: 6, color: 'var(--gold)' }}>
+                              (pên: {g.guess_penalty_winner === 'A' ? toPT(m.team_a) : toPT(m.team_b)})
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
