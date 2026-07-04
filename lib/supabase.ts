@@ -72,7 +72,7 @@ export function calcPoints(
   const multiplier = phase ? getPhaseMultiplier(phase) : 1;
 
   function applyMult(pts: number): number {
-    return Math.round(pts * multiplier);
+    return pts * multiplier;
   }
 
   if (!is_knockout) {
