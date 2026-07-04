@@ -262,7 +262,7 @@ export default function PalpitesGrupo() {
   const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
-  const [selectedComp, setSelectedComp] = useState<string | null>('📅 Fase de Grupos');
+  const [selectedComp, setSelectedComp] = useState<string | null>(null);
   // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
