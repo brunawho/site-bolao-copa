@@ -27,6 +27,7 @@ function fmtDay(dateYMD: string) {
 }
 
 function extractComp(phase: string): string {
+  if (phase.includes('LAST_32')) return '16 Avos';
   if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';
@@ -39,15 +40,25 @@ function extractComp(phase: string): string {
 function getResult(guess: Guess, match: Match): { points: number; label: string; color: string; icon: string } {
   const pts = calcPoints(
     guess.guess_a, guess.guess_b, guess.guess_penalty_winner,
-    match.score_a!, match.score_b!, match.penalty_winner, match.is_knockout
+    match.score_a!, match.score_b!, match.penalty_winner, match.is_knockout, match.phase
   );
-  if (pts === 9) return { points: 9, label: 'Placar exato + pênaltis', color: '#2ea84c', icon: '🏆' };
-  if (pts === 6) {
-    const isExact = guess.guess_a === match.score_a && guess.guess_b === match.score_b;
-    if (isExact) return { points: 6, label: 'Placar exato!', color: '#2ea84c', icon: '🎯' };
-    return { points: 6, label: 'Empate + pênaltis certo', color: '#2ea84c', icon: '✅' };
+  const isExact   = guess.guess_a === match.score_a && guess.guess_b === match.score_b;
+  const isDraw    = match.score_a === match.score_b;
+  const realSign  = Math.sign((match.score_a ?? 0) - (match.score_b ?? 0));
+  const guessSign = Math.sign(guess.guess_a - guess.guess_b);
+
+  if (pts === 0) return { points: 0, label: 'Errou', color: 'var(--danger)', icon: '❌' };
+
+  if (isExact && match.is_knockout && isDraw && guess.guess_penalty_winner === match.penalty_winner) {
+    return { points: pts, label: 'Placar exato + pênaltis', color: '#2ea84c', icon: '🏆' };
   }
-  if (pts === 4) return { points: 4, label: 'Vencedor + gols de 1 time', color: 'var(--gold)', icon: '⚡' };
+  if (isExact) return { points: pts, label: 'Placar exato!', color: '#2ea84c', icon: '🎯' };
+  if (isDraw && guess.guess_a === guess.guess_b && match.is_knockout && guess.guess_penalty_winner === match.penalty_winner) {
+    return { points: pts, label: 'Empate + pênaltis certo', color: '#2ea84c', icon: '✅' };
+  }
+  if (realSign === guessSign && !isDraw && (guess.guess_a === match.score_a || guess.guess_b === match.score_b)) {
+    return { points: pts, label: 'Vencedor + gols de 1 time', color: 'var(--gold)', icon: '⚡' };
+  }
   if (pts === 3) {
     const isDraw = match.score_a === match.score_b;
     if (isDraw) return { points: 3, label: 'Empate (sem exato)', color: 'var(--gold)', icon: '🤝' };
@@ -65,7 +76,7 @@ export default function MeusPontos() {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [selectedComp, setSelectedComp] = useState<string>('Geral');
 
-  useEffect(() => {
+  async function loadData() {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
@@ -102,6 +113,12 @@ export default function MeusPontos() {
       }
       setLoading(false);
     })();
+  }
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 3 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [groupId]);
 
   function toggleDay(day: string) {

@@ -59,12 +59,14 @@ function getResult(guess: Guess, match: Match): { points: number; label: string;
   if (realSign === guessSign && !isDraw && (guess.guess_a === match.score_a || guess.guess_b === match.score_b)) {
     return { points: pts, label: 'Vencedor + gols de 1 time', color: 'var(--gold)', icon: '⚡' };
   }
-  if (pts === 3) {
-    const isDraw = match.score_a === match.score_b;
-    if (isDraw) return { points: 3, label: 'Empate (sem exato)', color: 'var(--gold)', icon: '🤝' };
-    return { points: 3, label: 'Acertou o vencedor', color: 'var(--gold)', icon: '✅' };
+  // Usa tipo do acerto em vez do valor (que pode variar com multiplicador)
+  if (isDraw && guess.guess_a === guess.guess_b) {
+    return { points: pts, label: 'Empate (sem exato)', color: 'var(--gold)', icon: '🤝' };
   }
-  if (pts === 1) return { points: 1, label: 'Gols de 1 time', color: '#8ba9ff', icon: '〰️' };
+  if (realSign === guessSign && !isDraw) {
+    return { points: pts, label: 'Acertou o vencedor', color: 'var(--gold)', icon: '✅' };
+  }
+  if (pts > 0) return { points: pts, label: 'Gols de 1 time', color: '#8ba9ff', icon: '〰️' };
   return { points: 0, label: 'Errou', color: 'var(--danger)', icon: '❌' };
 }
 
