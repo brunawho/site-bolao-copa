@@ -77,6 +77,7 @@ export default function MeusPontos() {
   const [loading, setLoading]     = useState(true);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [selectedComp, setSelectedComp] = useState<string>('Geral');
+  const [viewTotal, setViewTotal] = useState<number | null>(null);
 
   async function loadData() {
     (async () => {
@@ -113,6 +114,15 @@ export default function MeusPontos() {
         const firstDay = toBrazilDay(result[0].match.match_date);
         setExpandedDays({ [firstDay]: true });
       }
+      // Busca total da view do banco (fonte de verdade)
+      const { data: vr } = await supabase
+        .from('ranking')
+        .select('total_points')
+        .eq('group_id', groupId)
+        .eq('user_id', session.session.user.id)
+        .maybeSingle();
+      if (vr) setViewTotal(vr.total_points);
+
       setLoading(false);
     })();
   }
@@ -184,7 +194,7 @@ export default function MeusPontos() {
           <div className="card" style={{ marginBottom: 20, background: 'rgba(212,167,44,0.08)', border: '1px solid var(--gold)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center' }}>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>{totalPts}</div>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>{viewTotal ?? totalPts}</div>
                 <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>pts total</div>
               </div>
               <div>
