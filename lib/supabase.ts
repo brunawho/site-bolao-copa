@@ -105,11 +105,8 @@ export function calcPoints(
     // Empate no mata-mata (jogo foi pra pênaltis)
     const penCorrect = guess_pen !== null && guess_pen === real_pen;
     if (!guessIsDraw) {
-      // Chutou vitória — verifica se acertou quem se classificou nos pênaltis
-      // guessSign > 0 = chutou vitória do time A, guessSign < 0 = chutou vitória do time B
-      const guessedWinner = guessSign > 0 ? 'A' : 'B';
-      if (real_pen !== null && guessedWinner === real_pen) return applyMult(3); // Acertou quem se classificou
-      if (guess_a === real_a || guess_b === real_b) return applyMult(1); // Gols de 1 time
+      // Chutou vitória mas terminou empatado — só pontua se acertou gols de 1 time
+      if (guess_a === real_a || guess_b === real_b) return applyMult(1);
       return 0;
     }
     // Chutou empate no mata-mata
