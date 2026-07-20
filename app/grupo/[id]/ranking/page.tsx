@@ -570,16 +570,7 @@ export default function RankingGrupo() {
                           if (g.guess_a === m.score_a && g.guess_b === m.score_b) exact++;
                         });
 
-                        if (false && specialResult) { // Copa agora usa view
-                          const norm = (s: string | null) => s?.toLowerCase().trim() ?? '';
-                          const bet = specialBets.find(b => b.group_member_id === member.id);
-                          if (bet) {
-                            if (specialResult.champion    && norm(bet.champion)    === norm(specialResult.champion))    pts += 25;
-                            if (specialResult.runner_up   && norm(bet.runner_up)   === norm(specialResult.runner_up))   pts += 20;
-                            if (specialResult.third_place && norm(bet.third_place) === norm(specialResult.third_place)) pts += 15;
-                            if (specialResult.top_scorer  && norm(bet.top_scorer)  === norm(specialResult.top_scorer))  pts += 15;
-                          }
-                        }
+
 
                         return { name: member.name, user_id: member.user_id, total_points: pts, exact_hits: exact, color: member.color };
                       }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
