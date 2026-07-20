@@ -818,17 +818,23 @@ export default function GaleraGrupo() {
 
                     {/* Valor de entrada — só criador edita */}
                     {isCreator && (
-                      <div style={{ marginBottom: 12 }}>
-                        <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <input className="input" type="number" min="0"
-                            value={entryVal}
-                            onChange={e => setCompEntryValues(prev => ({ ...prev, [selectedCompPay]: Number(e.target.value) }))}
-                            style={{ flex: 1 }} />
-                          <button className="btn" onClick={() => saveCompEntryValue(selectedCompPay, entryVal)} disabled={savingCompValue} style={{ whiteSpace: 'nowrap' }}>
-                            {savingCompValue ? '...' : 'Salvar'}
-                          </button>
-                        </div>
+                      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>Entrada R$</span>
+                        <input type="number" min="0"
+                          value={entryVal}
+                          onChange={e => setCompEntryValues(prev => ({ ...prev, [selectedCompPay]: Number(e.target.value) }))}
+                          style={{
+                            width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--line)',
+                            background: 'var(--bg-soft)', color: 'var(--text)', fontSize: 14, textAlign: 'center'
+                          }} />
+                        <button onClick={() => saveCompEntryValue(selectedCompPay, entryVal)} disabled={savingCompValue}
+                          style={{
+                            padding: '6px 14px', borderRadius: 8, border: 'none',
+                            background: 'var(--gold)', color: '#1a1a1a',
+                            fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap'
+                          }}>
+                          {savingCompValue ? '...' : 'Salvar'}
+                        </button>
                       </div>
                     )}
 
