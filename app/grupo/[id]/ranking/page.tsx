@@ -164,6 +164,7 @@ export default function RankingGrupo() {
   const [selectedCompRank, setSelectedCompRank] = useState<string | null>(null);
   const [compRankData, setCompRankData] = useState<{name: string; user_id: string; total_points: number; exact_hits: number; color: string}[]>([]);
   const [wcViewRanking, setWcViewRanking] = useState<{user_id: string; name: string; total_points: number; exact_hits: number}[]>([]);
+  const [compSpecialPts, setCompSpecialPts] = useState<Record<string, Record<string, number>>>({});
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<any | null>(null);
@@ -249,6 +250,20 @@ export default function RankingGrupo() {
         .eq('group_id', groupId)
         .order('total_points', { ascending: false });
       setWcViewRanking(wcVR || []);
+
+      // Pontos especiais por campeonato
+      const { data: compSpecial } = await supabase
+        .from('ranking_competitions')
+        .select('user_id, competition_id, special_points')
+        .eq('group_id', groupId);
+      
+      // Organiza por competition_id -> user_id -> pts
+      const specialMap: Record<string, Record<string, number>> = {};
+      (compSpecial || []).forEach((r: any) => {
+        if (!specialMap[r.competition_id]) specialMap[r.competition_id] = {};
+        specialMap[r.competition_id][r.user_id] = r.special_points;
+      });
+      setCompSpecialPts(specialMap);
 
       // Campeonatos ativos no grupo
       const { data: gcData } = await supabase
@@ -572,7 +587,9 @@ export default function RankingGrupo() {
 
 
 
-                        return { name: member.name, user_id: member.user_id, total_points: pts, exact_hits: exact, color: member.color };
+                        // Adiciona pontos especiais do campeonato
+                        const specialPts = compSpecialPts[comp.id]?.[member.user_id] ?? 0;
+                        return { name: member.name, user_id: member.user_id, total_points: pts + specialPts, exact_hits: exact, color: member.color };
                       }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
                     }
                     setCompRankData(rankData);
