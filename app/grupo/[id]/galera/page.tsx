@@ -177,9 +177,34 @@ export default function GaleraGrupo() {
       const { data: compsData } = await supabase.from('competitions').select('*').eq('active', true);
       setCompetitions(compsData || []);
 
-      // Campeonatos ativos no grupo
-      const { data: gcData } = await supabase.from('group_competitions').select('competition_id').eq('group_id', groupId);
+      // Campeonatos ativos no grupo com valor de entrada
+      const { data: gcData } = await supabase
+        .from('group_competitions')
+        .select('competition_id, entry_value, competitions(id, name, code)')
+        .eq('group_id', groupId);
       setGroupComps((gcData || []).map((gc: any) => gc.competition_id));
+      const compsWithVal = (gcData || []).map((gc: any) => ({
+        id: gc.competitions?.id,
+        name: gc.competitions?.name,
+        code: gc.competitions?.code,
+        entry_value: gc.entry_value || 0,
+      })).filter((c: any) => c.id);
+      setGroupCompsWithValue(compsWithVal);
+      const valMap: Record<string, number> = {};
+      compsWithVal.forEach((c: any) => { valMap[c.id] = c.entry_value; });
+      setCompEntryValues(valMap);
+
+      // Pagamentos por campeonato
+      const { data: cpData } = await supabase
+        .from('competition_payments')
+        .select('competition_id, user_id, paid')
+        .eq('group_id', groupId);
+      const cpMap: Record<string, Record<string, boolean>> = {};
+      (cpData || []).forEach((cp: any) => {
+        if (!cpMap[cp.competition_id]) cpMap[cp.competition_id] = {};
+        cpMap[cp.competition_id][cp.user_id] = cp.paid;
+      });
+      setCompPayments(cpMap);
 
       // Apostas especiais e mata-mata (visíveis após 28/06)
       const brDate2 = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
@@ -250,6 +275,31 @@ export default function GaleraGrupo() {
       if (data) setPayment(data);
     }
     setSavingConfig(false);
+  }
+
+  async function toggleCompPayment(compId: string, userId: string, currentPaid: boolean) {
+    const { data: existing } = await supabase.from('competition_payments').select('id')
+      .eq('group_id', groupId).eq('competition_id', compId).eq('user_id', userId).maybeSingle();
+    if (existing) {
+      await supabase.from('competition_payments').update({ paid: !currentPaid, paid_at: !currentPaid ? new Date().toISOString() : null })
+        .eq('id', existing.id);
+    } else {
+      await supabase.from('competition_payments').insert({ group_id: groupId, competition_id: compId, user_id: userId, paid: true, paid_at: new Date().toISOString() });
+    }
+    setCompPayments(prev => ({
+      ...prev,
+      [compId]: { ...(prev[compId] || {}), [userId]: !currentPaid }
+    }));
+  }
+
+  async function saveCompEntryValue(compId: string, value: number) {
+    setSavingCompValue(true);
+    await supabase.from('group_competitions')
+      .update({ entry_value: value })
+      .eq('group_id', groupId)
+      .eq('competition_id', compId);
+    setCompEntryValues(prev => ({ ...prev, [compId]: value }));
+    setSavingCompValue(false);
   }
 
   async function toggleCompetition(compId: string, currentActive: boolean) {
@@ -710,6 +760,109 @@ export default function GaleraGrupo() {
                 </div>
               )}
             </>
+          )}
+        </div>
+      )}
+
+      {/* Caixinha por campeonato */}
+      {groupCompsWithValue.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <button onClick={() => setShowCompPayments(s => !s)} className="btn btn-ghost" style={{ width: '100%', fontSize: 12 }}>
+            {showCompPayments ? '▲ Ocultar caixinha por campeonato' : '💰 Caixinha por campeonato'}
+          </button>
+          {showCompPayments && (
+            <div className="card" style={{ marginTop: 8 }}>
+              {/* Seletor de campeonato */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+                {groupCompsWithValue.map(comp => (
+                  <button key={comp.id} onClick={() => setSelectedCompPay(comp.id)} style={{
+                    padding: '6px 12px', borderRadius: 20, border: '1px solid',
+                    borderColor: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--line)',
+                    background: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--bg-soft)',
+                    color: selectedCompPay === comp.id ? '#1a1a1a' : 'var(--text)',
+                    fontWeight: selectedCompPay === comp.id ? 700 : 400, fontSize: 12, cursor: 'pointer'
+                  }}>{comp.name}</button>
+                ))}
+              </div>
+
+              {selectedCompPay && (() => {
+                const comp = groupCompsWithValue.find(c => c.id === selectedCompPay)!;
+                const pays = compPayments[selectedCompPay] || {};
+                const paidCount = Object.values(pays).filter(Boolean).length;
+                const entryVal = compEntryValues[selectedCompPay] || 0;
+                const total = paidCount * entryVal;
+
+                return (
+                  <>
+                    {/* Resumo */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>
+                      <div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: 'var(--gold)' }}>R$ {total.toFixed(0)}</div>
+                        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: '#2ea84c' }}>{paidCount}</div>
+                        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: 'var(--danger)' }}>{members.length - paidCount}</div>
+                        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
+                      </div>
+                    </div>
+
+                    {/* Valor de entrada — só criador edita */}
+                    {isCreator && (
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input className="input" type="number" min="0"
+                            value={entryVal}
+                            onChange={e => setCompEntryValues(prev => ({ ...prev, [selectedCompPay]: Number(e.target.value) }))}
+                            style={{ flex: 1 }} />
+                          <button className="btn" onClick={() => saveCompEntryValue(selectedCompPay, entryVal)} disabled={savingCompValue} style={{ whiteSpace: 'nowrap' }}>
+                            {savingCompValue ? '...' : 'Salvar'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!isCreator && entryVal > 0 && (
+                      <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 10, fontSize: 13 }}>
+                        Valor da entrada: <strong style={{ color: 'var(--gold)' }}>R$ {entryVal.toFixed(2)}</strong>
+                      </div>
+                    )}
+
+                    {/* Status de pagamento */}
+                    <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+                      <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
+                      {members.map(m => (
+                        <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
+                          {isCreator ? (
+                            <button onClick={() => toggleCompPayment(selectedCompPay, m.user_id, pays[m.user_id] || false)} style={{
+                              padding: '6px 12px', borderRadius: 8, border: '1px solid',
+                              borderColor: pays[m.user_id] ? '#2ea84c' : 'var(--line)',
+                              background: pays[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
+                              color: pays[m.user_id] ? '#2ea84c' : 'var(--muted)',
+                              fontSize: 12, cursor: 'pointer', fontWeight: 600
+                            }}>
+                              {pays[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
+                            </button>
+                          ) : (
+                            <span style={{
+                              padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                              color: pays[m.user_id] ? '#2ea84c' : 'var(--danger)',
+                            }}>
+                              {pays[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           )}
         </div>
       )}
