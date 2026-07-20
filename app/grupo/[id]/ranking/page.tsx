@@ -159,7 +159,7 @@ export default function RankingGrupo() {
   const [loading, setLoading]           = useState(true);
   const [myUserId, setMyUserId]         = useState<string | null>(null);
   const [showChart, setShowChart]       = useState(false);
-  const [rankTab, setRankTab]           = useState<'geral' | 'selecoes' | 'resultados' | 'campeonatos'>('geral');
+  const [rankTab, setRankTab]           = useState<'campeonatos' | 'selecoes' | 'resultados'>('campeonatos');
   const [competitions, setCompetitions] = useState<{id: string; name: string; code: string}[]>([]);
   const [selectedCompRank, setSelectedCompRank] = useState<string | null>(null);
   const [compRankData, setCompRankData] = useState<{name: string; user_id: string; total_points: number; exact_hits: number; color: string}[]>([]);
@@ -247,7 +247,16 @@ export default function RankingGrupo() {
         .select('competition_id, competitions(id, name, code)')
         .eq('group_id', groupId);
       const activeComps = (gcData || []).map((gc: any) => gc.competitions).filter(Boolean);
-      setCompetitions(activeComps);
+      // Ordem: Brasileirão, Champions, Copa do Mundo 2026, Geral
+      const wcComp      = { id: 'wc',    name: 'Copa do Mundo 2026', code: 'WC' };
+      const geralComp   = { id: 'geral', name: 'Geral',              code: 'GERAL' };
+      const orderedComps = [
+        ...activeComps.filter((c: any) => c.code === 'BSA'),
+        ...activeComps.filter((c: any) => c.code === 'CL'),
+        wcComp,
+        geralComp,
+      ];
+      setCompetitions(orderedComps);
 
       setLoading(false);
     })();
@@ -507,19 +516,54 @@ export default function RankingGrupo() {
                   <button key={comp.id} onClick={async () => {
                     setSelectedCompRank(comp.id);
                     // Calcula ranking para esse campeonato
-                    const compMatches = allMatches.filter(m => (m as any).competition_id === comp.id && m.score_a !== null);
-                    const rankData = memberStats.map(member => {
-                      let pts = 0;
-                      let exact = 0;
-                      compMatches.forEach(m => {
-                        const g = member.guessByMatch[m.id];
-                        if (!g) return;
-                        const p = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
-                        pts += p;
-                        if (g.guess_a === m.score_a && g.guess_b === m.score_b) exact++;
-                      });
-                      return { name: member.name, user_id: member.user_id, total_points: pts, exact_hits: exact, color: member.color };
-                    }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
+                    const isWC    = comp.id === 'wc';
+                    const isGeral = comp.id === 'geral';
+                    const compMatches = isWC
+                      ? allMatches.filter(m => m.phase.includes('Copa do Mundo') && m.score_a !== null)
+                      : isGeral
+                        ? allMatches.filter(m => m.score_a !== null)
+                        : allMatches.filter(m => (m as any).competition_id === comp.id && m.score_a !== null);
+
+                    let rankData;
+                    if (isGeral) {
+                      // Geral usa a view do banco (fonte de verdade)
+                      rankData = memberStats.map(member => {
+                        const vr = viewRanking.find(r => r.user_id === member.user_id);
+                        return {
+                          name: member.name,
+                          user_id: member.user_id,
+                          total_points: vr ? vr.total_points : member.grand_total,
+                          exact_hits: vr ? vr.exact_hits : member.exact_hits,
+                          color: member.color
+                        };
+                      }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
+                    } else {
+                      rankData = memberStats.map(member => {
+                        let pts = 0;
+                        let exact = 0;
+
+                        compMatches.forEach(m => {
+                          const g = member.guessByMatch[m.id];
+                          if (!g) return;
+                          const p = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
+                          pts += p;
+                          if (g.guess_a === m.score_a && g.guess_b === m.score_b) exact++;
+                        });
+
+                        if (isWC && specialResult) {
+                          const norm = (s: string | null) => s?.toLowerCase().trim() ?? '';
+                          const bet = specialBets.find(b => b.group_member_id === member.id);
+                          if (bet) {
+                            if (specialResult.champion    && norm(bet.champion)    === norm(specialResult.champion))    pts += 25;
+                            if (specialResult.runner_up   && norm(bet.runner_up)   === norm(specialResult.runner_up))   pts += 20;
+                            if (specialResult.third_place && norm(bet.third_place) === norm(specialResult.third_place)) pts += 15;
+                            if (specialResult.top_scorer  && norm(bet.top_scorer)  === norm(specialResult.top_scorer))  pts += 15;
+                          }
+                        }
+
+                        return { name: member.name, user_id: member.user_id, total_points: pts, exact_hits: exact, color: member.color };
+                      }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
+                    }
                     setCompRankData(rankData);
                   }} style={{
                     padding: '8px 16px', borderRadius: 12, border: '1px solid',
