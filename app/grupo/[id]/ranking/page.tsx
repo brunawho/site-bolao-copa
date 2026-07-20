@@ -165,6 +165,7 @@ export default function RankingGrupo() {
   const [compRankData, setCompRankData] = useState<{name: string; user_id: string; total_points: number; exact_hits: number; color: string}[]>([]);
   const [wcViewRanking, setWcViewRanking] = useState<{user_id: string; name: string; total_points: number; exact_hits: number}[]>([]);
   const [compSpecialPts, setCompSpecialPts] = useState<Record<string, Record<string, number>>>({});
+  const [compPaidUsers, setCompPaidUsers]   = useState<Record<string, string[]>>({});
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<any | null>(null);
@@ -250,6 +251,19 @@ export default function RankingGrupo() {
         .eq('group_id', groupId)
         .order('total_points', { ascending: false });
       setWcViewRanking(wcVR || []);
+
+      // Pagamentos por campeonato
+      const { data: cpData } = await supabase
+        .from('competition_payments')
+        .select('competition_id, user_id, paid')
+        .eq('group_id', groupId)
+        .eq('paid', true);
+      const paidMap: Record<string, string[]> = {};
+      (cpData || []).forEach((cp: any) => {
+        if (!paidMap[cp.competition_id]) paidMap[cp.competition_id] = [];
+        paidMap[cp.competition_id].push(cp.user_id);
+      });
+      setCompPaidUsers(paidMap);
 
       // Pontos especiais por campeonato
       const { data: compSpecial } = await supabase
@@ -573,7 +587,13 @@ export default function RankingGrupo() {
                         };
                       }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
                     } else {
-                      rankData = memberStats.map(member => {
+                      // Filtra só quem pagou esse campeonato
+                      const paidUsers = compPaidUsers[comp.id] || [];
+                      const filteredStats = paidUsers.length > 0
+                        ? memberStats.filter(m => paidUsers.includes(m.user_id))
+                        : memberStats;
+
+                      rankData = filteredStats.map(member => {
                         let pts = 0;
                         let exact = 0;
 
