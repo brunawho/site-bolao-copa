@@ -103,7 +103,13 @@ export default function GaleraGrupo() {
   const [filter, setFilter]         = useState<'upcoming' | 'today' | 'past'>('today');
   const [memberColors, setMemberColors] = useState<Record<string, string>>({});
   const [isCreator, setIsCreator]   = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
+  const [showConfig, setShowConfig]                     = useState(false);
+  const [showCompPayments, setShowCompPayments]         = useState(false);
+  const [compPayments, setCompPayments]                 = useState<Record<string, Record<string, boolean>>>({});
+  const [groupCompsWithValue, setGroupCompsWithValue]   = useState<{id: string; name: string; code: string; entry_value: number}[]>([]);
+  const [selectedCompPay, setSelectedCompPay]           = useState<string | null>(null);
+  const [savingCompValue, setSavingCompValue]           = useState(false);
+  const [compEntryValues, setCompEntryValues]           = useState<Record<string, number>>({});
   const [payment, setPayment]       = useState({ id: '', entry_value: 0, prize_1st: 60, prize_2nd: 30, prize_3rd: 10, prize_locked: false });
   const [memberPayments, setMemberPayments] = useState<Record<string, boolean>>({});
   const [savingConfig, setSavingConfig] = useState(false);
