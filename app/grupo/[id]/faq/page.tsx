@@ -181,9 +181,9 @@ export default function FAQGrupo() {
         <>
           <p style={{ marginBottom: 8 }}>O ranking tem três abas:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
-            <li><strong style={{ color: 'var(--text)' }}>🏆 Geral</strong> — pontos de todos os jogos + apostas especiais. O líder tem 👑 coroa animada.</li>
-            <li><strong style={{ color: 'var(--text)' }}>🌍 Seleções</strong> — ranking de quais seleções geraram mais pontos pro grupo</li>
-            <li><strong style={{ color: 'var(--text)' }}>📋 Resultados</strong> — placares de todos os jogos com filtro Passados/Hoje/Próximos (dentro do Ranking)</li>
+            <li><strong style={{ color: 'var(--text)' }}>🏆 Rankings</strong> — selecione o campeonato: Brasileirão · Champions · Copa do Mundo · Geral. Só aparecem os participantes que pagaram cada campeonato.</li>
+            <li><strong style={{ color: 'var(--text)' }}>🌍 Times</strong> — ranking de quais times geraram mais pontos pro grupo</li>
+            <li><strong style={{ color: 'var(--text)' }}>📋 Resultados</strong> — placares de todos os jogos com filtro Passados/Hoje/Próximos</li>
           </ul>
           <p style={{ marginBottom: 8 }}>Abaixo da tabela:</p>
           <ul style={{ paddingLeft: 16, marginBottom: 8 }}>
@@ -223,13 +223,66 @@ export default function FAQGrupo() {
             <li>A partir de <strong style={{ color: 'var(--gold)' }}>28/06</strong> — botão <strong style={{ color: 'var(--text)' }}>🌟 Ver apostas especiais</strong> mostra as apostas especiais de cada pessoa</li>
           </ul>
           <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>💰 Caixinha do grupo</p>
-          <ul style={{ paddingLeft: 16 }}>
-            <li>Clique em <strong style={{ color: 'var(--text)' }}>💰 Caixinha do grupo</strong> para ver o status financeiro</li>
+          <ul style={{ paddingLeft: 16, marginBottom: 12 }}>
+            <li>Clique em <strong style={{ color: 'var(--text)' }}>💰 Caixinha do grupo</strong> para ver o status financeiro geral</li>
             <li>Mostra quanto foi arrecadado, quem pagou e quem está pendente</li>
             <li>Aba <strong style={{ color: 'var(--text)' }}>🏆 Prêmio</strong> mostra a distribuição e projeção baseada no ranking atual</li>
             <li>O <strong style={{ color: 'var(--text)' }}>criador do grupo</strong> pode definir o valor, marcar pagamentos e configurar a divisão com sliders</li>
             <li>A distribuição pode ser <strong style={{ color: 'var(--text)' }}>bloqueada</strong> — após confirmada não pode ser alterada</li>
           </ul>
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>💰 Caixinha por campeonato</p>
+          <ul style={{ paddingLeft: 16 }}>
+            <li>Clique em <strong style={{ color: 'var(--text)' }}>💰 Caixinha por campeonato</strong> para ver o status de cada campeonato separado</li>
+            <li>Selecione o campeonato (Brasileirão, Champions) para ver quem pagou</li>
+            <li>O criador define o valor de entrada e marca quem pagou por campeonato</li>
+            <li>Apenas quem pagou aparece no ranking daquele campeonato</li>
+          </ul>
+        </>
+      )
+    },
+    {
+      icon: '🌟', title: 'Apostas Especiais por Campeonato',
+      content: (
+        <>
+          <p style={{ marginBottom: 10 }}>Além das apostas da Copa, cada campeonato ativo tem suas próprias apostas especiais. Acesse em <strong style={{ color: 'var(--text)' }}>Palpites → selecione o campeonato → ⭐ Apostas especiais</strong>.</p>
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>🇧🇷 Brasileirão</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
+            <tbody>
+              {[
+                [50, '🏆 Campeão', 'Acertar o campeão do Brasileirão'],
+                [10, '🔝 Top 4 (cada)', 'Acertar cada time no G4'],
+                [10, '⬇️ Rebaixados (cada)', 'Acertar cada time no Z4'],
+                [50, '⚽ Artilheiro', 'Acertar o artilheiro do Brasileirão'],
+              ].map(([pts, label, desc]) => (
+                <tr key={String(label)} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
+                  <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                    <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{desc}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>🏆 Champions League</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
+            <tbody>
+              {[
+                [25, '🏆 Campeão', 'Acertar o campeão da Champions'],
+                [10, '🥈 Vice-campeão', 'Acertar o vice-campeão'],
+                [25, '⚽ Artilheiro', 'Acertar o artilheiro da Champions'],
+              ].map(([pts, label, desc]) => (
+                <tr key={String(label)} style={{ borderBottom: '1px solid var(--line)' }}>
+                  <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
+                  <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
+                    <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{desc}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 12, fontStyle: 'italic' }}>💡 Na Champions, os multiplicadores de fase da Copa do Mundo também se aplicam.</p>
         </>
       )
     },
