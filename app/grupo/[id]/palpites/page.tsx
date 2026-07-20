@@ -57,14 +57,7 @@ function palpitesRevelados(matchDate: string) {
 
 // Extrai o nome do campeonato da fase
 function extractComp(phase: string): string {
-  if (phase.includes('LAST_32')) return '🥊 16 Avos';
-  if (phase.includes('LAST_16') || phase.includes('ROUND_OF_16')) return '⚽ Oitavas de Final';
-  if (phase.includes('QUARTER')) return '⚽ Quartas de Final';
-  if (phase.includes('SEMI')) return '⚽ Semifinais';
-  if (phase.includes('THIRD') || phase.includes('3RD')) return '⚽ 3º Lugar';
-  if (phase.includes('FINAL') && !phase.includes('SEMI') && !phase.includes('QUARTER')) return '⚽ Final';
-  if (phase.includes('Copa do Mundo') && (phase.includes('GROUP') || phase.includes('Rodada'))) return '📅 Fase de Grupos';
-  if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
+  if (phase.includes('Copa do Mundo')) return '🏆 Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';
   if (phase.includes('Libertadores'))  return 'Libertadores';
@@ -73,6 +66,16 @@ function extractComp(phase: string): string {
   return phase.split(' ·')[0].split(' -')[0].trim();
 }
 
+
+function extractSubPhase(phase: string): string {
+  if (phase.includes('LAST_32')) return '🥊 16 Avos';
+  if (phase.includes('LAST_16') || phase.includes('ROUND_OF_16')) return '⚽ Oitavas';
+  if (phase.includes('QUARTER')) return '⚽ Quartas';
+  if (phase.includes('SEMI')) return '⚽ Semifinais';
+  if (phase.includes('THIRD') || phase.includes('3RD')) return '⚽ 3º Lugar';
+  if (phase.includes('FINAL') && !phase.includes('SEMI') && !phase.includes('QUARTER')) return '⚽ Final';
+  return '📅 Fase de Grupos';
+}
 
 // Componente de escudo/bandeira
 function Crest({ name, crests, size = 24 }: { name: string; crests: Record<string, string>; size?: number }) {
@@ -263,6 +266,7 @@ export default function PalpitesGrupo() {
 
   // Seleção de campeonato e dia
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
   // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
@@ -456,12 +460,25 @@ export default function PalpitesGrupo() {
     if (!compMap[comp]) compMap[comp] = [];
     compMap[comp].push(m);
   });
-  const wcSubMenus = ['📅 Fase de Grupos', '🥊 16 Avos', '⚽ Oitavas de Final', '⚽ Quartas de Final', '⚽ Semifinais', '⚽ 3º Lugar', '⚽ Final'].filter(c => compMap[c]?.length > 0);
-  const otherComps = Object.keys(compMap).filter(c => !wcSubMenus.includes(c)).sort();
-  const comps = [...wcSubMenus, ...otherComps, '⭐ Especiais'];
+  const comps = [...Object.keys(compMap).sort(), '⭐ Especiais'];
+
+  // Sub-fases da Copa do Mundo
+  const wcPhases = selectedComp === '🏆 Copa do Mundo' ? (() => {
+    const phases = new Set<string>();
+    (compMap['🏆 Copa do Mundo'] || []).forEach(m => phases.add(extractSubPhase(m.phase)));
+    const order = ['📅 Fase de Grupos', '🥊 16 Avos', '⚽ Oitavas', '⚽ Quartas', '⚽ Semifinais', '⚽ 3º Lugar', '⚽ Final'];
+    return order.filter(p => phases.has(p));
+  })() : [];
 
   // Filtra jogos do campeonato selecionado
-  const allCompMatches = selectedComp ? compMap[selectedComp] ?? [] : [];
+  const allCompMatches = (() => {
+    if (!selectedComp) return [];
+    const base = compMap[selectedComp] ?? [];
+    if (selectedComp === '🏆 Copa do Mundo' && selectedPhase) {
+      return base.filter(m => extractSubPhase(m.phase) === selectedPhase);
+    }
+    return base;
+  })();
   const todayStr = todayBrazil();
   const upcomingMatches = allCompMatches.filter(m => toBrazilDay(m.match_date) > todayStr);
   const todayMatches    = allCompMatches.filter(m => toBrazilDay(m.match_date) === todayStr);
@@ -583,6 +600,7 @@ export default function PalpitesGrupo() {
                   return;
                 }
                 setSelectedComp(isSelected ? null : comp);
+                setSelectedPhase(null);
                 setFilter('today');
                 setView('palpites');
                 setExpandedDays({ [todayBrazil()]: true });
@@ -604,6 +622,28 @@ export default function PalpitesGrupo() {
       </div>
 
       {/* FILTRO PASSADOS / HOJE / PRÓXIMOS */}
+      {/* Sub-fases da Copa do Mundo */}
+      {selectedComp === '🏆 Copa do Mundo' && wcPhases.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 8 }}>
+          <button onClick={() => setSelectedPhase(null)} style={{
+            padding: '6px 12px', borderRadius: 20, border: '1px solid',
+            borderColor: !selectedPhase ? 'var(--gold)' : 'var(--line)',
+            background: !selectedPhase ? 'var(--gold)' : 'var(--card)',
+            color: !selectedPhase ? '#1a1a1a' : 'var(--text)',
+            fontWeight: !selectedPhase ? 700 : 400, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+          }}>Todas</button>
+          {wcPhases.map(phase => (
+            <button key={phase} onClick={() => setSelectedPhase(phase)} style={{
+              padding: '6px 12px', borderRadius: 20, border: '1px solid',
+              borderColor: selectedPhase === phase ? 'var(--gold)' : 'var(--line)',
+              background: selectedPhase === phase ? 'var(--gold)' : 'var(--card)',
+              color: selectedPhase === phase ? '#1a1a1a' : 'var(--text)',
+              fontWeight: selectedPhase === phase ? 700 : 400, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+            }}>{phase}</button>
+          ))}
+        </div>
+      )}
+
       {selectedComp && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
           {([
@@ -630,7 +670,7 @@ export default function PalpitesGrupo() {
       )}
 
       {/* TOGGLE PALPITES / CHAVEAMENTO (só na Copa do Mundo) */}
-      {(selectedComp === 'Copa do Mundo' || selectedComp === '📅 Fase de Grupos' || selectedComp === '🥊 16 Avos') && (
+      {selectedComp === '🏆 Copa do Mundo' && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <button onClick={() => setView('palpites')} style={{
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
@@ -650,16 +690,8 @@ export default function PalpitesGrupo() {
       )}
 
       {/* CHAVEAMENTO VISUAL */}
-      {view === 'chaveamento' && (selectedComp === 'Copa do Mundo' || selectedComp === '📅 Fase de Grupos' || selectedComp === '🥊 16 Avos') && (
-        <Chaveamento matches={[
-          ...(compMap['🥊 16 Avos'] || []),
-          ...(compMap['⚽ Oitavas de Final'] || []),
-          ...(compMap['⚽ Quartas de Final'] || []),
-          ...(compMap['⚽ Semifinais'] || []),
-          ...(compMap['⚽ 3º Lugar'] || []),
-          ...(compMap['⚽ Final'] || []),
-          ...(compMap['Copa do Mundo'] || []),
-        ]} myGuesses={myGuesses} />
+      {view === 'chaveamento' && selectedComp === '🏆 Copa do Mundo' && (
+        <Chaveamento matches={compMap['🏆 Copa do Mundo'] || []} myGuesses={myGuesses} />
       )}
 
       {/* JOGOS POR DIA */}

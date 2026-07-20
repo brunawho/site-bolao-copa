@@ -262,7 +262,7 @@ export default function PalpitesGrupo() {
   const [crests, setCrests]       = useState<Record<string, string>>({});
 
   // Seleção de campeonato e dia
-  const [selectedComp, setSelectedComp] = useState<string | null>('📅 Fase de Grupos');
+  const [selectedComp, setSelectedComp] = useState<string | null>(null);
   // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
@@ -310,7 +310,39 @@ export default function PalpitesGrupo() {
     const map: Record<string, Guess> = {};
     (gs || []).forEach(g => { map[g.match_id] = g; });
     setMyGuesses(map);
-    setExpandedDays({ [todayBrazil()]: true });
+
+    // Auto-seleciona categoria com jogos hoje
+    const today2 = new Date().toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).split('/').reverse().join('-');
+
+    const localMap: Record<string, string[]> = {};
+    (ms || []).forEach((m: any) => {
+      let comp = '📅 Fase de Grupos';
+      if (m.phase.includes('LAST_32')) comp = '🥊 16 Avos';
+      else if (m.phase.includes('LAST_16') || m.phase.includes('ROUND_OF_16')) comp = '⚽ Oitavas de Final';
+      else if (m.phase.includes('QUARTER')) comp = '⚽ Quartas de Final';
+      else if (m.phase.includes('SEMI')) comp = '⚽ Semifinais';
+      else if (m.phase.includes('THIRD') || m.phase.includes('3RD')) comp = '⚽ 3º Lugar';
+      else if (m.phase.includes('FINAL') && !m.phase.includes('SEMI') && !m.phase.includes('QUARTER')) comp = '⚽ Final';
+      if (!localMap[comp]) localMap[comp] = [];
+      localMap[comp].push(m.match_date);
+    });
+
+    const cats = ['📅 Fase de Grupos', '🥊 16 Avos', '⚽ Oitavas de Final', '⚽ Quartas de Final', '⚽ Semifinais', '⚽ 3º Lugar', '⚽ Final'];
+    const catToday = cats.find(c => (localMap[c] || []).some(d =>
+      new Date(d).toLocaleDateString('pt-BR', {
+        timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).split('/').reverse().join('-') === today2
+    ));
+
+    if (catToday) {
+      setSelectedComp(catToday);
+      setFilter('today');
+      setExpandedDays({ [today2]: true });
+    } else {
+      setExpandedDays({ [todayBrazil()]: true });
+    }
   }
 
   function toggleDay(day: string) {
