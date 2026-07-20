@@ -267,6 +267,7 @@ export default function PalpitesGrupo() {
   // Seleção de campeonato e dia
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
+  const [groupCompCodes, setGroupCompCodes] = useState<string[]>([]);
   // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
@@ -311,6 +312,14 @@ export default function PalpitesGrupo() {
     const { data: ms } = await supabase.from('matches').select('*').order('match_date');
     const { data: gs } = await supabase.from('guesses').select('*').eq('group_member_id', mid);
     setMatches(ms || []);
+
+    // Busca campeonatos ativos no grupo
+    const { data: gcData } = await supabase
+      .from('group_competitions')
+      .select('competitions(code)')
+      .eq('group_id', groupId);
+    const codes = (gcData || []).map((gc: any) => gc.competitions?.code).filter(Boolean);
+    setGroupCompCodes(codes);
     const map: Record<string, Guess> = {};
     (gs || []).forEach(g => { map[g.match_id] = g; });
     setMyGuesses(map);
@@ -622,6 +631,20 @@ export default function PalpitesGrupo() {
       </div>
 
       {/* FILTRO PASSADOS / HOJE / PRÓXIMOS */}
+      {/* Botão apostas especiais para campeonatos não-Copa */}
+      {selectedComp && selectedComp !== '🏆 Copa do Mundo' && selectedComp !== '⭐ Especiais' && (
+        <button
+          onClick={() => router.push(`/grupo/${groupId}/apostas-comp`)}
+          style={{
+            width: '100%', marginBottom: 12, padding: '10px', borderRadius: 12,
+            border: '1px solid var(--gold)', background: 'rgba(212,167,44,0.1)',
+            color: 'var(--gold)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+          }}>
+          ⭐ Apostas especiais do {selectedComp}
+        </button>
+      )}
+
       {/* Sub-fases da Copa do Mundo */}
       {selectedComp === '🏆 Copa do Mundo' && wcPhases.length > 1 && (
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 8 }}>
