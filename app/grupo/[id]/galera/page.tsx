@@ -113,6 +113,9 @@ export default function GaleraGrupo() {
   const [allGuessesMap, setAllGuessesMap] = useState<Record<string, Record<string, any>>>({});
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
   const [showSpecials, setShowSpecials]   = useState(false);
+  const [showCompetitions, setShowCompetitions] = useState(false);
+  const [competitions, setCompetitions]   = useState<{id: string; name: string; code: string; active: boolean}[]>([]);
+  const [groupComps, setGroupComps]       = useState<string[]>([]); // competition_ids ativos
   const [allSpecialBets, setAllSpecialBets] = useState<any[]>([]);
   const [allKnockoutPicks, setAllKnockoutPicks] = useState<any[]>([]);
   const [allChampionPicks, setAllChampionPicks] = useState<any[]>([]);
@@ -169,6 +172,14 @@ export default function GaleraGrupo() {
         guessMap[g.match_id][g.group_member_id] = g;
       });
       setAllGuessesMap(guessMap);
+
+      // Campeonatos disponíveis
+      const { data: compsData } = await supabase.from('competitions').select('*').eq('active', true);
+      setCompetitions(compsData || []);
+
+      // Campeonatos ativos no grupo
+      const { data: gcData } = await supabase.from('group_competitions').select('competition_id').eq('group_id', groupId);
+      setGroupComps((gcData || []).map((gc: any) => gc.competition_id));
 
       // Apostas especiais e mata-mata (visíveis após 28/06)
       const brDate2 = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
@@ -239,6 +250,17 @@ export default function GaleraGrupo() {
       if (data) setPayment(data);
     }
     setSavingConfig(false);
+  }
+
+  async function toggleCompetition(compId: string, currentActive: boolean) {
+    if (currentActive) {
+      await supabase.from('group_competitions').delete()
+        .eq('group_id', groupId).eq('competition_id', compId);
+      setGroupComps(gc => gc.filter(id => id !== compId));
+    } else {
+      await supabase.from('group_competitions').insert({ group_id: groupId, competition_id: compId });
+      setGroupComps(gc => [...gc, compId]);
+    }
   }
 
   async function togglePaid(userId: string, currentPaid: boolean) {
@@ -688,6 +710,45 @@ export default function GaleraGrupo() {
                 </div>
               )}
             </>
+          )}
+        </div>
+      )}
+
+      {/* Campeonatos do grupo — só criador vê */}
+      {isCreator && competitions.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <button onClick={() => setShowCompetitions(s => !s)} className="btn btn-ghost" style={{ width: '100%', fontSize: 12 }}>
+            {showCompetitions ? '▲ Ocultar campeonatos' : '⚽ Campeonatos do grupo'}
+          </button>
+          {showCompetitions && (
+            <div className="card" style={{ marginTop: 8 }}>
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
+                Ative os campeonatos que seu grupo vai participar:
+              </p>
+              {competitions.map(comp => {
+                const isActive = groupComps.includes(comp.id);
+                return (
+                  <div key={comp.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '10px 0', borderBottom: '1px solid var(--line)'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{comp.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{comp.code}</div>
+                    </div>
+                    <button onClick={() => toggleCompetition(comp.id, isActive)} style={{
+                      padding: '6px 14px', borderRadius: 10, border: '1px solid',
+                      borderColor: isActive ? '#2ea84c' : 'var(--line)',
+                      background: isActive ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
+                      color: isActive ? '#2ea84c' : 'var(--muted)',
+                      fontWeight: 700, fontSize: 12, cursor: 'pointer'
+                    }}>
+                      {isActive ? '✅ Ativo' : '+ Ativar'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
