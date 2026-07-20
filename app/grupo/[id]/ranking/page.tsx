@@ -163,6 +163,7 @@ export default function RankingGrupo() {
   const [competitions, setCompetitions] = useState<{id: string; name: string; code: string}[]>([]);
   const [selectedCompRank, setSelectedCompRank] = useState<string | null>(null);
   const [compRankData, setCompRankData] = useState<{name: string; user_id: string; total_points: number; exact_hits: number; color: string}[]>([]);
+  const [wcViewRanking, setWcViewRanking] = useState<{user_id: string; name: string; total_points: number; exact_hits: number}[]>([]);
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<any | null>(null);
@@ -240,6 +241,14 @@ export default function RankingGrupo() {
 
       const { data: res } = await supabase.from('special_results').select('*').maybeSingle();
       setSpecialResult(res || null);
+
+      // Ranking Copa do Mundo via view
+      const { data: wcVR } = await supabase
+        .from('ranking_wc')
+        .select('user_id, name, total_points, exact_hits')
+        .eq('group_id', groupId)
+        .order('total_points', { ascending: false });
+      setWcViewRanking(wcVR || []);
 
       // Campeonatos ativos no grupo
       const { data: gcData } = await supabase
@@ -536,6 +545,18 @@ export default function RankingGrupo() {
                           color: member.color
                         };
                       }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
+                    } else if (isWC) {
+                      // Copa do Mundo usa a view ranking_wc (fonte de verdade)
+                      rankData = memberStats.map(member => {
+                        const vr = wcViewRanking.find(r => r.user_id === member.user_id);
+                        return {
+                          name: member.name,
+                          user_id: member.user_id,
+                          total_points: vr ? vr.total_points : 0,
+                          exact_hits: vr ? vr.exact_hits : 0,
+                          color: member.color
+                        };
+                      }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
                     } else {
                       rankData = memberStats.map(member => {
                         let pts = 0;
@@ -549,7 +570,7 @@ export default function RankingGrupo() {
                           if (g.guess_a === m.score_a && g.guess_b === m.score_b) exact++;
                         });
 
-                        if (isWC && specialResult) {
+                        if (false && specialResult) { // Copa agora usa view
                           const norm = (s: string | null) => s?.toLowerCase().trim() ?? '';
                           const bet = specialBets.find(b => b.group_member_id === member.id);
                           if (bet) {
