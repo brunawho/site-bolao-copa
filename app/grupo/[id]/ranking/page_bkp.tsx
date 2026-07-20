@@ -418,11 +418,21 @@ export default function RankingGrupo() {
     return Object.entries(teamPts).map(([team, pts]) => ({ team, pts })).sort((a, b) => b.pts - a.pts);
   })();
 
-  const ptsBadge = (pts: number) => {
-    if (pts >= 9)  return { label: '🏆 Exato + pên', color: '#2ea84c' };
-    if (pts >= 6)  return { label: '🎯 Exato', color: '#2ea84c' };
-    if (pts === 4) return { label: '⚡ Vencedor+', color: 'var(--gold)' };
-    if (pts === 3) return { label: '✅ Vencedor', color: 'var(--gold)' };
+  const ptsBadge = (m: Match, g: Guess, pts: number) => {
+    const isExact  = g.guess_a === m.score_a && g.guess_b === m.score_b;
+    const isDraw   = m.score_a === m.score_b;
+    const penRight = m.is_knockout && isDraw && g.guess_penalty_winner === m.penalty_winner;
+    const realSign  = Math.sign((m.score_a ?? 0) - (m.score_b ?? 0));
+    const guessSign = Math.sign(g.guess_a - g.guess_b);
+    const rightWinner = realSign === guessSign && !isDraw;
+    const oneGoal = g.guess_a === m.score_a || g.guess_b === m.score_b;
+
+    if (isExact && penRight)  return { label: '🏆 Exato + pên', color: '#2ea84c' };
+    if (isExact)              return { label: '🎯 Exato', color: '#2ea84c' };
+    if (isDraw && g.guess_a === g.guess_b && penRight) return { label: '✅ Empate + pên', color: '#2ea84c' };
+    if (rightWinner && oneGoal) return { label: '⚡ Vencedor+', color: 'var(--gold)' };
+    if (rightWinner)            return { label: '✅ Vencedor', color: 'var(--gold)' };
+    if (isDraw && g.guess_a === g.guess_b) return { label: '✅ Empate', color: 'var(--gold)' };
     return { label: '〰️ Parcial', color: '#8ba9ff' };
   };
 
@@ -669,7 +679,7 @@ export default function RankingGrupo() {
                 ) : scoredMatches.length === 0 ? (
                   <div className="empty">Nenhum ponto ainda.</div>
                 ) : scoredMatches.map(({ m, g, pts }) => {
-                  const badge = ptsBadge(pts);
+                  const badge = ptsBadge(m, g, pts);
                   return (
                     <div key={m.id} style={{
                       padding: '12px 20px', borderBottom: '1px solid var(--line)',

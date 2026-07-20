@@ -13,6 +13,8 @@ export type Match = {
   score_b: number | null;
   phase: string;
   is_knockout: boolean;
+  competition_id: string | null;
+  status: string | null;
   penalty_winner: 'A' | 'B' | null;
 };
 export type Group = {

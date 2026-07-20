@@ -159,7 +159,10 @@ export default function RankingGrupo() {
   const [loading, setLoading]           = useState(true);
   const [myUserId, setMyUserId]         = useState<string | null>(null);
   const [showChart, setShowChart]       = useState(false);
-  const [rankTab, setRankTab]           = useState<'geral' | 'selecoes' | 'resultados'>('geral');
+  const [rankTab, setRankTab]           = useState<'geral' | 'selecoes' | 'resultados' | 'campeonatos'>('geral');
+  const [competitions, setCompetitions] = useState<{id: string; name: string; code: string}[]>([]);
+  const [selectedCompRank, setSelectedCompRank] = useState<string | null>(null);
+  const [compRankData, setCompRankData] = useState<{name: string; user_id: string; total_points: number; exact_hits: number; color: string}[]>([]);
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<any | null>(null);
@@ -237,6 +240,14 @@ export default function RankingGrupo() {
 
       const { data: res } = await supabase.from('special_results').select('*').maybeSingle();
       setSpecialResult(res || null);
+
+      // Campeonatos ativos no grupo
+      const { data: gcData } = await supabase
+        .from('group_competitions')
+        .select('competition_id, competitions(id, name, code)')
+        .eq('group_id', groupId);
+      const activeComps = (gcData || []).map((gc: any) => gc.competitions).filter(Boolean);
+      setCompetitions(activeComps);
 
       setLoading(false);
     })();
@@ -451,6 +462,7 @@ export default function RankingGrupo() {
               { key: 'geral',      label: '🏆 Geral' },
               { key: 'selecoes',   label: '🌍 Seleções' },
               { key: 'resultados', label: '📋 Resultados' },
+              ...(competitions.length > 0 ? [{ key: 'campeonatos' as const, label: '🏆 Campeonatos' }] : []),
             ] as const).map(tab => (
               <button key={tab.key} onClick={() => setRankTab(tab.key)} style={{
                 flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
@@ -487,7 +499,79 @@ export default function RankingGrupo() {
             </div>
           )}
 
-          {rankTab === 'resultados' ? (
+          {rankTab === 'campeonatos' ? (
+            <div>
+              {/* Seletor de campeonato */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                {competitions.map(comp => (
+                  <button key={comp.id} onClick={async () => {
+                    setSelectedCompRank(comp.id);
+                    // Calcula ranking para esse campeonato
+                    const compMatches = allMatches.filter(m => (m as any).competition_id === comp.id && m.score_a !== null);
+                    const rankData = memberStats.map(member => {
+                      let pts = 0;
+                      let exact = 0;
+                      compMatches.forEach(m => {
+                        const g = member.guessByMatch[m.id];
+                        if (!g) return;
+                        const p = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
+                        pts += p;
+                        if (g.guess_a === m.score_a && g.guess_b === m.score_b) exact++;
+                      });
+                      return { name: member.name, user_id: member.user_id, total_points: pts, exact_hits: exact, color: member.color };
+                    }).sort((a, b) => b.total_points - a.total_points || b.exact_hits - a.exact_hits);
+                    setCompRankData(rankData);
+                  }} style={{
+                    padding: '8px 16px', borderRadius: 12, border: '1px solid',
+                    borderColor: selectedCompRank === comp.id ? 'var(--gold)' : 'var(--line)',
+                    background: selectedCompRank === comp.id ? 'var(--gold)' : 'var(--card)',
+                    color: selectedCompRank === comp.id ? '#1a1a1a' : 'var(--text)',
+                    fontWeight: selectedCompRank === comp.id ? 700 : 400,
+                    fontSize: 13, cursor: 'pointer'
+                  }}>{comp.name}</button>
+                ))}
+              </div>
+
+              {/* Ranking do campeonato selecionado */}
+              {selectedCompRank && compRankData.length > 0 && (
+                <div className="card" style={{ padding: 0 }}>
+                  {compRankData.map((r, i) => {
+                    const isMe = r.user_id === myUserId;
+                    const posLabel = i < 3 ? medals[i] : `${i+1}º`;
+                    return (
+                      <div key={r.user_id} className="rank-row" style={{
+                        background: i === 0 ? 'rgba(212,167,44,0.12)' : isMe ? 'rgba(212,167,44,0.06)' : undefined,
+                        borderLeft: i === 0 ? '3px solid var(--gold)' : undefined,
+                      }}>
+                        <span className="rank-pos">{posLabel}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${r.color}30`, border: `2px solid ${r.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: r.color }}>
+                            {r.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="rank-name">
+                              {r.name}
+                              {isMe && <span style={{ fontSize: 11, color: 'var(--gold)', marginLeft: 6 }}>← você</span>}
+                            </div>
+                            <div className="rank-meta">{r.exact_hits} exato{r.exact_hits !== 1 ? 's' : ''}</div>
+                          </div>
+                        </div>
+                        <span className="rank-points">{r.total_points}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {selectedCompRank && compRankData.length === 0 && (
+                <div className="empty">Nenhum jogo finalizado ainda neste campeonato.</div>
+              )}
+
+              {!selectedCompRank && (
+                <div className="empty">Selecione um campeonato acima.</div>
+              )}
+            </div>
+          ) : rankTab === 'resultados' ? (
             <ResultadosInline matches={allMatches} />
           ) : rankTab === 'geral' ? (
             <div className="card" style={{ padding: 0, marginBottom: 16 }}>
