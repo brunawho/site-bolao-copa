@@ -139,12 +139,10 @@ function MultiSelect({ values, onChange, options, placeholder, max, disabled }: 
 }
 
 const BSA_TEAMS = [
-  'Flamengo','Palmeiras','Atlético Mineiro','Fluminense','São Paulo','Corinthians',
-  'Internacional','Grêmio','Botafogo','Vasco','Santos','Cruzeiro','Athletico Paranaense',
-  'Bahia','Fortaleza','Coritiba','RB Bragantino','América Mineiro','Goiás','Cuiabá',
-  'Vitória','Criciúma','Mirassol','Chapecoense','Ceará','Sport','Clube do Remo',
-  'CA Mineiro','SC Internacional','SC Corinthians Paulista','SE Palmeiras','Fluminense FC',
-  'RB Bragantino','EC Bahia','Coritiba FBC','CR Flamengo','Botafogo FR','EC Vitória',
+  'Botafogo FR','CA Mineiro','CA Paranaense','Chapecoense AF','Clube do Remo',
+  'Coritiba FBC','CR Flamengo','CR Vasco da Gama','Cruzeiro EC','EC Bahia',
+  'Fluminense FC','Grêmio FBPA','Mirassol FC','RB Bragantino','Santos FC',
+  'São Paulo FC','SC Corinthians Paulista','SC Internacional','SE Palmeiras','EC Vitória',
 ];
 
 const CL_TEAMS = [
