@@ -468,10 +468,9 @@ export default function RankingGrupo() {
           {/* Abas */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
             {([
-              { key: 'geral',      label: '🏆 Geral' },
-              { key: 'selecoes',   label: '🌍 Seleções' },
-              { key: 'resultados', label: '📋 Resultados' },
-              ...(competitions.length > 0 ? [{ key: 'campeonatos' as const, label: '🏆 Campeonatos' }] : []),
+              { key: 'campeonatos', label: '🏆 Rankings' },
+              { key: 'selecoes',    label: '🌍 Times' },
+              { key: 'resultados',  label: '📋 Resultados' },
             ] as const).map(tab => (
               <button key={tab.key} onClick={() => setRankTab(tab.key)} style={{
                 flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
