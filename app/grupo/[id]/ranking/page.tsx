@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase, calcPoints, type Match, type Guess } from '@/lib/supabase';
+import { ThemeToggle } from '@/components/theme-provider';
 
 type Member = { id: string; user_id: string; name: string };
 type SpecialResult = { top_scorer: string|null; champion: string|null; runner_up: string|null; third_place: string|null };
@@ -496,8 +497,13 @@ export default function RankingGrupo() {
 
   return (
     <main className="app">
-      <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>Ranking</h1>
-      <p className="subtitle" style={{ marginBottom: 20 }}>Quem manda nesse grupo.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, marginTop: 16 }}>
+        <div>
+          <p className="subtitle" style={{ marginBottom: 2 }}>Bolão Copa 2026</p>
+          <h1 className="brand">RAN<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>KING</span></h1>
+        </div>
+        <ThemeToggle />
+      </div>
 
       {loading ? (
         <div className="empty">Carregando...</div>
@@ -513,8 +519,8 @@ export default function RankingGrupo() {
               <button key={tab.key} onClick={() => setRankTab(tab.key)} style={{
                 flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
                 borderColor: rankTab === tab.key ? 'var(--gold)' : 'var(--line)',
-                background: rankTab === tab.key ? 'var(--gold)' : 'var(--card)',
-                color: rankTab === tab.key ? '#1a1a1a' : 'var(--text)',
+                background: rankTab === tab.key ? 'var(--neon)' : 'var(--bg3)',
+                color: rankTab === tab.key ? '#020A02' : 'var(--sub)',
                 fontWeight: rankTab === tab.key ? 700 : 400, fontSize: 11, cursor: 'pointer'
               }}>{tab.label}</button>
             ))}
@@ -615,9 +621,9 @@ export default function RankingGrupo() {
                     setCompRankData(rankData);
                   }} style={{
                     padding: '8px 16px', borderRadius: 12, border: '1px solid',
-                    borderColor: selectedCompRank === comp.id ? 'var(--gold)' : 'var(--line)',
-                    background: selectedCompRank === comp.id ? 'var(--gold)' : 'var(--card)',
-                    color: selectedCompRank === comp.id ? '#1a1a1a' : 'var(--text)',
+                    borderColor: selectedCompRank === comp.id ? 'var(--gold)' : 'var(--line2)',
+                    background: selectedCompRank === comp.id ? 'rgba(255,215,0,0.1)' : 'var(--bg3)',
+                    color: selectedCompRank === comp.id ? 'var(--gold)' : 'var(--sub)',
                     fontWeight: selectedCompRank === comp.id ? 700 : 400,
                     fontSize: 13, cursor: 'pointer'
                   }}>{comp.name}</button>

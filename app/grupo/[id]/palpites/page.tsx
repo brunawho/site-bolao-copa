@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { ThemeToggle } from '@/components/theme-provider';
 import { supabase, type Match, type Guess, calcPoints } from '@/lib/supabase';
 
 type Draft = Record<string, { a: string; b: string; pen: 'A' | 'B' | '' }>;
@@ -658,9 +659,9 @@ export default function PalpitesGrupo() {
           {wcPhases.map(phase => (
             <button key={phase} onClick={() => setSelectedPhase(phase)} style={{
               padding: '6px 12px', borderRadius: 20, border: '1px solid',
-              borderColor: selectedPhase === phase ? 'var(--gold)' : 'var(--line)',
-              background: selectedPhase === phase ? 'var(--gold)' : 'var(--card)',
-              color: selectedPhase === phase ? '#1a1a1a' : 'var(--text)',
+              borderColor: selectedPhase === phase ? 'var(--neon)' : 'var(--line2)',
+              background: selectedPhase === phase ? 'var(--neon)' : 'var(--bg3)',
+              color: selectedPhase === phase ? '#020A02' : 'var(--sub)',
               fontWeight: selectedPhase === phase ? 700 : 400, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
             }}>{phase}</button>
           ))}
