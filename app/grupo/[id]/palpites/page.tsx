@@ -437,7 +437,13 @@ export default function PalpitesGrupo() {
     }
     setSaving(false); setConfirmDay(null); setConfirmMatches([]); setModalPens({});
     if (lastError && saved === 0) { alert('Erro: ' + lastError); return; }
-    if (saved > 0) showToast(`${saved} palpite(s) salvo(s)! ✅`);
+    if (saved > 0) {
+      const resumo = toInsert.slice(0, 3).map(g => {
+        const m = dayMatches.find(m => m.id === g.match_id);
+        return m ? `${g.guess_a}x${g.guess_b}` : '';
+      }).filter(Boolean).join(' · ');
+      showToast(`⚽ ${saved} palpite${saved > 1 ? 's' : ''} salvo${saved > 1 ? 's' : ''}${resumo ? ` · ${resumo}` : ''}`);
+    }
 
     // Marca jogos salvos para highlight
     const savedIds = new Set(toInsert.map(g => g.match_id));
@@ -449,7 +455,10 @@ export default function PalpitesGrupo() {
   }
 
   function showToast(msg: string) {
-    setToast(msg); setTimeout(() => setToast(''), 3000);
+    setToast(msg);
+    // Vibração haptica no mobile
+    if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+    setTimeout(() => setToast(''), 3500);
   }
 
   function previewPts(mid: string, m: Match) {
@@ -527,7 +536,16 @@ export default function PalpitesGrupo() {
 
   return (
     <main className="app">
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div className="toast" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 20, animation: 'ballSpin 0.5s ease' }}>⚽</span>
+          {toast}
+        </div>
+      )}
+      <style>{`
+        @keyframes ballSpin { from { transform: rotate(0deg) scale(0); } to { transform: rotate(360deg) scale(1); } }
+        @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }
+      `}</style>
 
       {/* MODAL */}
       {confirmDay && (
@@ -731,10 +749,16 @@ export default function PalpitesGrupo() {
       {/* JOGOS POR DIA */}
       {!selectedComp ? (
         <div className="empty" style={{ marginTop: 40 }}>
-          👆 Selecione um campeonato acima para ver os jogos
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🏟️</div>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--neon)', marginBottom: 6 }}>ESCOLHA SEU CAMPO</div>
+          <div style={{ fontSize: 12, color: 'var(--sub)' }}>Selecione um campeonato acima para palpitar</div>
         </div>
       ) : view === 'chaveamento' ? null : days.length === 0 ? (
-        <div className="empty">Nenhum jogo encontrado.</div>
+        <div className="empty">
+          <div style={{ fontSize: 40, marginBottom: 12 }}>😴</div>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--neon)', marginBottom: 6 }}>SILÊNCIO NO ESTÁDIO</div>
+          <div style={{ fontSize: 12, color: 'var(--sub)' }}>Nenhum jogo neste período</div>
+        </div>
       ) : (
         days.map(day => {
           const dayMatches = byDay[day] ?? [];

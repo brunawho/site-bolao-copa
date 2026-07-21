@@ -499,7 +499,17 @@ export default function RankingGrupo() {
       <h1 className="brand" style={{ marginTop: 16, marginBottom: 16 }}>RAN<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>KING</span></h1>
 
       {loading ? (
-        <div className="empty">Carregando...</div>
+        <div style={{ marginTop: 16 }}>
+        <div style={{ width: 160, height: 44, background: 'var(--bg3)', borderRadius: 'var(--radius)', marginBottom: 14, animation: 'shimmer 1.5s infinite' }} />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {[1,2,3].map(i => <div key={i} style={{ flex: 1, height: 32, background: 'var(--bg3)', borderRadius: 'var(--radius)', animation: 'shimmer 1.5s infinite' }} />)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+          {[1,2,3].map(i => <div key={i} style={{ height: 120, background: 'var(--bg3)', borderRadius: 'var(--radius)', animation: 'shimmer 1.5s infinite' }} />)}
+        </div>
+        {[1,2,3,4].map(i => <div key={i} style={{ height: 54, background: 'var(--bg3)', borderRadius: 'var(--radius)', marginBottom: 6, animation: 'shimmer 1.5s infinite' }} />)}
+        <style>{`@keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }`}</style>
+      </div>
       ) : (
         <>
           {/* Abas */}
@@ -625,6 +635,41 @@ export default function RankingGrupo() {
 
               {/* Ranking do campeonato selecionado */}
               {selectedCompRank && compRankData.length > 0 && (
+                <div>
+                  {/* PÓDIO TOP 3 */}
+                  {compRankData.length >= 3 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12, alignItems: 'end' }}>
+                      {[
+                        { idx: 1, height: 90,  crown: '🥈', data: compRankData[1] },
+                        { idx: 0, height: 120, crown: '👑', data: compRankData[0] },
+                        { idx: 2, height: 80,  crown: '🥉', data: compRankData[2] },
+                      ].map(({ idx, height, crown, data }) => (
+                        <div key={idx} style={{
+                          background: idx === 0 ? 'rgba(255,215,0,0.06)' : 'var(--card)',
+                          border: `1px solid ${idx === 0 ? 'rgba(255,215,0,0.25)' : 'var(--line2)'}`,
+                          borderRadius: 'var(--radius)', padding: '12px 8px', textAlign: 'center',
+                          height, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4
+                        }}>
+                          <div style={{ fontSize: idx === 0 ? 20 : 16 }}>{crown}</div>
+                          <div style={{
+                            width: idx === 0 ? 36 : 28, height: idx === 0 ? 36 : 28,
+                            borderRadius: '50%', background: `${data.color}20`,
+                            border: `2px solid ${data.color}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: idx === 0 ? 14 : 11, fontWeight: 900, color: data.color
+                          }}>
+                            {data.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {data.name.split(' ')[0]}
+                          </div>
+                          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: idx === 0 ? 22 : 18, color: idx === 0 ? 'var(--gold)' : 'var(--text)', textShadow: idx === 0 ? 'var(--shadow-gold)' : 'none' }}>
+                            {data.total_points}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 <div className="card" style={{ padding: 0 }}>
                   {compRankData.map((r, i) => {
                     const isMe = r.user_id === myUserId;
@@ -651,6 +696,7 @@ export default function RankingGrupo() {
                       </div>
                     );
                   })}
+                </div>
                 </div>
               )}
 
@@ -740,6 +786,7 @@ export default function RankingGrupo() {
       <style>{`
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }
       `}</style>
 
       {/* Modal Drilldown */}
@@ -782,7 +829,17 @@ export default function RankingGrupo() {
               </div>
               <div style={{ overflowY: 'auto', flex: 1, padding: '12px 0' }}>
                 {drilldownLoading ? (
-                  <div className="empty">Carregando...</div>
+                  <div style={{ marginTop: 16 }}>
+        <div style={{ width: 160, height: 44, background: 'var(--bg3)', borderRadius: 'var(--radius)', marginBottom: 14, animation: 'shimmer 1.5s infinite' }} />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {[1,2,3].map(i => <div key={i} style={{ flex: 1, height: 32, background: 'var(--bg3)', borderRadius: 'var(--radius)', animation: 'shimmer 1.5s infinite' }} />)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+          {[1,2,3].map(i => <div key={i} style={{ height: 120, background: 'var(--bg3)', borderRadius: 'var(--radius)', animation: 'shimmer 1.5s infinite' }} />)}
+        </div>
+        {[1,2,3,4].map(i => <div key={i} style={{ height: 54, background: 'var(--bg3)', borderRadius: 'var(--radius)', marginBottom: 6, animation: 'shimmer 1.5s infinite' }} />)}
+        <style>{`@keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }`}</style>
+      </div>
                 ) : scoredMatches.length === 0 ? (
                   <div className="empty">Nenhum ponto ainda.</div>
                 ) : scoredMatches.map(({ m, g, pts }) => {
