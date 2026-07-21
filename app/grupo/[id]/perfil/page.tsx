@@ -188,9 +188,9 @@ export default function PerfilPage() {
           </div>
 
           {[
-            { label: '🎯 Placar exato', value: stats.exact, color: '#2ea84c' },
+            { label: '🎯 Placar exato', value: stats.exact, color: 'var(--green)' },
             { label: '✅ Vencedor acertado', value: stats.winner, color: 'var(--gold)' },
-            { label: '〰️ Parcial (1pt)', value: stats.partial, color: '#8ba9ff' },
+            { label: '〰️ Parcial (1pt)', value: stats.partial, color: 'var(--blue)' },
             { label: '❌ Errou', value: stats.zero, color: 'var(--danger)' },
           ].map(s => (
             <div key={s.label} style={{ marginBottom: 10 }}>
@@ -215,7 +215,7 @@ export default function PerfilPage() {
             🔑 Redefinir senha
           </button>
         ) : resetSent ? (
-          <div style={{ padding: '12px', background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', borderRadius: 10, fontSize: 13, color: '#2ea84c', marginBottom: 8 }}>
+          <div style={{ padding: '12px', background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', borderRadius: 10, fontSize: 13, color: 'var(--green)', marginBottom: 8 }}>
             ✅ Email enviado para {email}
           </div>
         ) : (

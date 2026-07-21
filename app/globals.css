@@ -44,6 +44,7 @@
   --gold2: #FF6B00;
   --red:   #D4000F;
   --blue:  #0060CC;
+  --green: #047857;
   --shadow-neon: 0 0 16px rgba(124,0,255,0.25), 0 0 40px rgba(124,0,255,0.08);
   --shadow-gold: 0 0 16px rgba(217,123,0,0.3), 0 0 40px rgba(217,123,0,0.1);
 }
@@ -66,6 +67,7 @@
   --gold2: #FF8C00;
   --red:   #FF1744;
   --blue:  #00CFFF;
+  --green: #10B981;
   --shadow-neon: 0 0 20px rgba(200,0,255,0.35), 0 0 60px rgba(200,0,255,0.12);
   --shadow-gold: 0 0 20px rgba(255,215,0,0.4), 0 0 60px rgba(255,140,0,0.15);
 }

@@ -574,7 +574,7 @@ export default function GaleraGrupo() {
               <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>arrecadado</div>
             </div>
             <div>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#2ea84c' }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--green)' }}>
                 {Object.values(memberPayments).filter(Boolean).length}
               </div>
               <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pagaram</div>
@@ -729,7 +729,7 @@ export default function GaleraGrupo() {
               {(payment.prize_locked || !isCreator) && (
                 <div style={{ marginBottom: 12 }}>
                   {payment.prize_locked && (
-                    <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 12, color: '#2ea84c', marginBottom: 12 }}>
+                    <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 12, color: 'var(--green)', marginBottom: 12 }}>
                       🔒 Distribuição confirmada
                     </div>
                   )}
@@ -807,7 +807,7 @@ export default function GaleraGrupo() {
                         <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>arrecadado</div>
                       </div>
                       <div>
-                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: '#2ea84c' }}>{paidCount}</div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: 'var(--green)' }}>{paidCount}</div>
                         <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pagaram</div>
                       </div>
                       <div>

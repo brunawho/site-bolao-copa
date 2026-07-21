@@ -501,13 +501,13 @@ export default function RankingGrupo() {
     const rightWinner = realSign === guessSign && !isDraw;
     const oneGoal = g.guess_a === m.score_a || g.guess_b === m.score_b;
 
-    if (isExact && penRight)  return { label: '🏆 Exato + pên', color: '#2ea84c' };
-    if (isExact)              return { label: '🎯 Exato', color: '#2ea84c' };
-    if (isDraw && g.guess_a === g.guess_b && penRight) return { label: '✅ Empate + pên', color: '#2ea84c' };
+    if (isExact && penRight)  return { label: '🏆 Exato + pên', color: 'var(--green)' };
+    if (isExact)              return { label: '🎯 Exato', color: 'var(--green)' };
+    if (isDraw && g.guess_a === g.guess_b && penRight) return { label: '✅ Empate + pên', color: 'var(--green)' };
     if (rightWinner && oneGoal) return { label: '⚡ Vencedor+', color: 'var(--gold)' };
     if (rightWinner)            return { label: '✅ Vencedor', color: 'var(--gold)' };
     if (isDraw && g.guess_a === g.guess_b) return { label: '✅ Empate', color: 'var(--gold)' };
-    return { label: '〰️ Parcial', color: '#8ba9ff' };
+    return { label: '〰️ Parcial', color: 'var(--blue)' };
   };
 
   return (

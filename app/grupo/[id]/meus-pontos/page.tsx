@@ -27,8 +27,7 @@ function fmtDay(dateYMD: string) {
 }
 
 function extractComp(phase: string): string {
-  if (phase.includes('LAST_32')) return '16 Avos';
-  if (phase.includes('Copa do Mundo')) return 'Copa do Mundo';
+  if (phase.includes('Copa do Mundo') || phase.includes('LAST_32') || phase.includes('LAST_16') || phase.includes('QUARTER') || phase.includes('SEMI') || phase.includes('FINAL') || phase.includes('THIRD') || phase.includes('3RD')) return 'Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';
   if (phase.includes('Libertadores'))  return 'Libertadores';
@@ -50,11 +49,11 @@ function getResult(guess: Guess, match: Match): { points: number; label: string;
   if (pts === 0) return { points: 0, label: 'Errou', color: 'var(--danger)', icon: '❌' };
 
   if (isExact && match.is_knockout && isDraw && guess.guess_penalty_winner === match.penalty_winner) {
-    return { points: pts, label: 'Placar exato + pênaltis', color: '#2ea84c', icon: '🏆' };
+    return { points: pts, label: 'Placar exato + pênaltis', color: 'var(--green)', icon: '🏆' };
   }
-  if (isExact) return { points: pts, label: 'Placar exato!', color: '#2ea84c', icon: '🎯' };
+  if (isExact) return { points: pts, label: 'Placar exato!', color: 'var(--green)', icon: '🎯' };
   if (isDraw && guess.guess_a === guess.guess_b && match.is_knockout && guess.guess_penalty_winner === match.penalty_winner) {
-    return { points: pts, label: 'Empate + pênaltis certo', color: '#2ea84c', icon: '✅' };
+    return { points: pts, label: 'Empate + pênaltis certo', color: 'var(--green)', icon: '✅' };
   }
   if (realSign === guessSign && !isDraw && (guess.guess_a === match.score_a || guess.guess_b === match.score_b)) {
     return { points: pts, label: 'Vencedor + gols de 1 time', color: 'var(--gold)', icon: '⚡' };
@@ -66,7 +65,7 @@ function getResult(guess: Guess, match: Match): { points: number; label: string;
   if (realSign === guessSign && !isDraw) {
     return { points: pts, label: 'Acertou o vencedor', color: 'var(--gold)', icon: '✅' };
   }
-  if (pts > 0) return { points: pts, label: 'Gols de 1 time', color: '#8ba9ff', icon: '〰️' };
+  if (pts > 0) return { points: pts, label: 'Gols de 1 time', color: 'var(--blue)', icon: '〰️' };
   return { points: 0, label: 'Errou', color: 'var(--danger)', icon: '❌' };
 }
 
@@ -198,7 +197,7 @@ export default function MeusPontos() {
                 <div style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>pts total</div>
               </div>
               <div>
-                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: '#2ea84c' }}>{exactHits}</div>
+                <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--green)' }}>{exactHits}</div>
                 <div style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>exatos</div>
               </div>
               <div>
