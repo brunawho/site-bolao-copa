@@ -118,7 +118,7 @@ export default function PerfilPage() {
 
   return (
     <main className="app">
-      {toast && <div className="toast" style={{ background: 'var(--gold)', color: '#020A02' }}>{toast}</div>}
+      {toast && <div className="toast" style={{ background: 'var(--gold)', color: 'var(--bg)' }}>{toast}</div>}
 
       <h1 className="brand" style={{ marginTop: 16, marginBottom: 16 }}>MEU<span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}> PERFIL</span></h1>
       <p className="subtitle" style={{ marginBottom: 20 }}>Suas informações e estatísticas.</p>
@@ -158,7 +158,7 @@ export default function PerfilPage() {
               onChange={e => { setNewName(e.target.value); setNameErr(''); }}
               maxLength={30} style={{ marginBottom: 8 }}
               onKeyDown={e => e.key === 'Enter' && salvarNome()} />
-            {nameErr && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{nameErr}</p>}
+            {nameErr && <p style={{ color: 'var(--red)', fontSize: 12, marginBottom: 8 }}>{nameErr}</p>}
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-ghost" onClick={() => { setEditingName(false); setNewName(name); setNameErr(''); }} style={{ flex: 1 }}>
                 Cancelar
@@ -191,7 +191,7 @@ export default function PerfilPage() {
             { label: '🎯 Placar exato', value: stats.exact, color: 'var(--green)' },
             { label: '✅ Vencedor acertado', value: stats.winner, color: 'var(--gold)' },
             { label: '〰️ Parcial (1pt)', value: stats.partial, color: 'var(--blue)' },
-            { label: '❌ Errou', value: stats.zero, color: 'var(--danger)' },
+            { label: '❌ Errou', value: stats.zero, color: 'var(--red)' },
           ].map(s => (
             <div key={s.label} style={{ marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
@@ -215,7 +215,7 @@ export default function PerfilPage() {
             🔑 Redefinir senha
           </button>
         ) : resetSent ? (
-          <div style={{ padding: '12px', background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', borderRadius: 10, fontSize: 13, color: 'var(--green)', marginBottom: 8 }}>
+          <div style={{ padding: '12px', background: 'rgba(16,185,129,0.1)', border: '1px solid var(--green)', borderRadius: 10, fontSize: 13, color: 'var(--green)', marginBottom: 8 }}>
             ✅ Email enviado para {email}
           </div>
         ) : (
@@ -232,8 +232,8 @@ export default function PerfilPage() {
 
         <button onClick={logout} style={{
           width: '100%', padding: '12px', borderRadius: 12,
-          background: 'rgba(227,93,93,0.1)', border: '1px solid var(--danger)',
-          color: 'var(--danger)', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+          background: 'rgba(227,93,93,0.1)', border: '1px solid var(--red)',
+          color: 'var(--red)', fontWeight: 700, fontSize: 14, cursor: 'pointer'
         }}>
           🚪 Sair da conta
         </button>

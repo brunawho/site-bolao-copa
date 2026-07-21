@@ -105,7 +105,7 @@ export default function Login() {
         )}
 
         {err && (
-          <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 10, textAlign: 'center' }}>
+          <p style={{ color: 'var(--red)', fontSize: 13, marginBottom: 10, textAlign: 'center' }}>
             ⚠️ {err}
           </p>
         )}

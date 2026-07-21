@@ -158,14 +158,14 @@ export default function Convite() {
           flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
           borderColor: authMode === 'login' ? 'var(--neon)' : 'var(--line2)',
           background: authMode === 'login' ? 'var(--neon)' : 'var(--bg3)',
-          color: authMode === 'login' ? '#020A02' : 'var(--sub)',
+          color: authMode === 'login' ? 'var(--bg)' : 'var(--sub)',
           fontWeight: authMode === 'login' ? 700 : 400, fontSize: 14, cursor: 'pointer'
         }}>Já tenho conta</button>
         <button onClick={() => { setAuthMode('signup'); setErr(''); }} style={{
           flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
           borderColor: authMode === 'signup' ? 'var(--neon)' : 'var(--line2)',
           background: authMode === 'signup' ? 'var(--neon)' : 'var(--bg3)',
-          color: authMode === 'signup' ? '#020A02' : 'var(--sub)',
+          color: authMode === 'signup' ? 'var(--bg)' : 'var(--sub)',
           fontWeight: authMode === 'signup' ? 700 : 400, fontSize: 14, cursor: 'pointer'
         }}>Criar conta</button>
       </div>
@@ -183,7 +183,7 @@ export default function Convite() {
           value={password} onChange={e => setPassword(e.target.value)}
           required minLength={6} style={{ marginBottom: 10 }} />
 
-        {err && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 10 }}>⚠️ {err}</p>}
+        {err && <p style={{ color: 'var(--red)', fontSize: 13, marginBottom: 10 }}>⚠️ {err}</p>}
 
         <button className="btn" type="submit" disabled={saving}>
           {saving ? 'Aguarde...' : authMode === 'login' ? 'Entrar no grupo' : 'Criar conta e entrar'}

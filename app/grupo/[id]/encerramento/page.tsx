@@ -226,7 +226,7 @@ export default function EncerramentoPage() {
                     {r.grand_total}
                   </div>
                   {prize > 0 && (
-                    <div style={{ fontSize: 12, color: '#2ea84c', fontWeight: 700 }}>R$ {prize.toFixed(2)}</div>
+                    <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 700 }}>R$ {prize.toFixed(2)}</div>
                   )}
                 </div>
               </div>
@@ -254,10 +254,10 @@ export default function EncerramentoPage() {
 
         {/* Caixinha final */}
         {totalArrecadado > 0 && (
-          <div className="card" style={{ marginBottom: 16, background: 'rgba(46,168,76,0.06)', border: '1px solid #2ea84c' }}>
+          <div className="card" style={{ marginBottom: 16, background: 'rgba(16,185,129,0.06)', border: '1px solid var(--green)' }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>💰 Distribuição do Prêmio</h3>
             <div style={{ textAlign: 'center', marginBottom: 14 }}>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: '#2ea84c' }}>R$ {totalArrecadado.toFixed(2)}</div>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--green)' }}>R$ {totalArrecadado.toFixed(2)}</div>
               <div style={{ fontSize: 12, color: 'var(--sub)' }}>total arrecadado</div>
             </div>
             {[
@@ -269,7 +269,7 @@ export default function EncerramentoPage() {
               return winners.map(w => (
                 <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
                   <span>{p.label} {w.name}</span>
-                  <span style={{ color: '#2ea84c', fontWeight: 700 }}>R$ {(p.prize / winners.length).toFixed(2)}</span>
+                  <span style={{ color: 'var(--green)', fontWeight: 700 }}>R$ {(p.prize / winners.length).toFixed(2)}</span>
                 </div>
               ));
             })}

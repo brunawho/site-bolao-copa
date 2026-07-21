@@ -73,7 +73,7 @@ function AutocompleteInput({
       {open && filtered.length > 0 && (
         <div style={{
           position: 'absolute', top: '110%', left: 0, right: 0,
-          background: 'var(--card)', border: '1px solid var(--gold)',
+          background: 'var(--bg3)', border: '1px solid var(--gold)',
           borderRadius: 12, zIndex: 100, overflow: 'hidden',
           boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
         }}>
@@ -249,7 +249,7 @@ export default function ApostasEspeciais() {
           zIndex: 200, padding: 20
         }} onClick={() => !saving && setConfirmOpen(false)}>
           <div style={{
-            background: 'var(--card)', border: '2px solid var(--gold)',
+            background: 'var(--bg3)', border: '2px solid var(--gold)',
             borderRadius: 18, padding: 24, maxWidth: 400, width: '100%'
           }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 12 }}>🏆</div>
@@ -258,7 +258,7 @@ export default function ApostasEspeciais() {
             </h2>
             {[...teamFields, { key: 'top_scorer' as const, label: '⚽ Artilheiro', pts: 15 }].map(f => (
               <div key={f.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
-                <span style={{ fontSize: 13, color: 'var(--muted)' }}>{f.label}</span>
+                <span style={{ fontSize: 13, color: 'var(--sub)' }}>{f.label}</span>
                 <span style={{ fontSize: 13, fontWeight: 700 }}>{bet[f.key] || '—'}</span>
               </div>
             ))}
@@ -280,11 +280,11 @@ export default function ApostasEspeciais() {
       <div style={{
         padding: '12px 16px', borderRadius: 12, marginBottom: 20,
         background: deadline ? 'rgba(227,93,93,0.1)' : 'rgba(212,167,44,0.1)',
-        border: `1px solid ${deadline ? 'var(--danger)' : 'var(--gold)'}`,
+        border: `1px solid ${deadline ? 'var(--red)' : 'var(--gold)'}`,
         fontSize: 13
       }}>
         {deadline
-          ? <span style={{ color: 'var(--danger)' }}>🔒 Prazo encerrado</span>
+          ? <span style={{ color: 'var(--red)' }}>🔒 Prazo encerrado</span>
           : <span>⏰ Prazo: <strong>{fmtDeadline()}</strong> · Pode editar até lá</span>
         }
       </div>
@@ -293,7 +293,7 @@ export default function ApostasEspeciais() {
       {pts !== null && (
         <div className="card" style={{ marginBottom: 20, background: 'rgba(212,167,44,0.08)', border: '1px solid var(--gold)', textAlign: 'center' }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, color: 'var(--gold)' }}>{pts}</div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>pontos especiais</div>
+          <div style={{ fontSize: 12, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>pontos especiais</div>
         </div>
       )}
 
@@ -303,7 +303,7 @@ export default function ApostasEspeciais() {
         ) : (
           <div>
             {/* Pontuação resumo */}
-            <div style={{ marginBottom: 20, padding: '12px 16px', background: 'var(--card)', borderRadius: 14, border: '1px solid var(--line)', fontSize: 12, color: 'var(--muted)', lineHeight: 1.8 }}>
+            <div style={{ marginBottom: 20, padding: '12px 16px', background: 'var(--bg3)', borderRadius: 14, border: '1px solid var(--line)', fontSize: 12, color: 'var(--sub)', lineHeight: 1.8 }}>
               <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Pontuação</strong>
               🥇 Campeão: <strong style={{ color: 'var(--gold)' }}>25 pts</strong> ·
               🥈 Vice: <strong style={{ color: 'var(--gold)' }}>20 pts</strong> ·
@@ -346,7 +346,7 @@ export default function ApostasEspeciais() {
                 disabled={deadline}
                 getLabel={playerLabel}
               />
-              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8 }}>
+              <p style={{ fontSize: 11, color: 'var(--sub)', marginTop: 8 }}>
                 Filtra por nome — mostra o time ao lado
               </p>
             </div>
@@ -372,21 +372,21 @@ export default function ApostasEspeciais() {
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
                   <div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{f.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 4 }}>{f.label}</div>
                     <div style={{ fontWeight: 700, fontSize: 16 }}>
                       {savedBet?.[f.key] ? (TEAM_TRANSLATIONS[savedBet[f.key]] || savedBet[f.key]) : '—'}
                     </div>
                     {result?.[f.key] && (
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 2 }}>
                         Resultado: {result[f.key]}
                       </div>
                     )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     {acertou
-                      ? <span style={{ color: '#2ea84c', fontFamily: "'Bebas Neue', sans-serif", fontSize: 24 }}>+{f.pts}</span>
+                      ? <span style={{ color: 'var(--green)', fontFamily: "'Bebas Neue', sans-serif", fontSize: 24 }}>+{f.pts}</span>
                       : result?.[f.key]
-                        ? <span style={{ color: 'var(--danger)', fontSize: 20 }}>❌</span>
+                        ? <span style={{ color: 'var(--red)', fontSize: 20 }}>❌</span>
                         : <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: 'var(--gold)' }}>{f.pts} pts</span>
                     }
                   </div>

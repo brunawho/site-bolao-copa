@@ -43,13 +43,13 @@ function AutocompleteInput({ value, onChange, options, placeholder, disabled }: 
         placeholder={placeholder}
         style={{
           width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--line)',
-          background: 'var(--bg-soft)', color: 'var(--text)', fontSize: 14,
+          background: 'var(--bg2)', color: 'var(--text)', fontSize: 14,
           opacity: disabled ? 0.5 : 1, boxSizing: 'border-box'
         }} />
       {open && filtered.length > 0 && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-          background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10,
+          background: 'var(--bg3)', border: '1px solid var(--line)', borderRadius: 10,
           boxShadow: '0 4px 20px rgba(0,0,0,0.3)', maxHeight: 200, overflowY: 'auto'
         }}>
           {filtered.map(opt => (
@@ -104,7 +104,7 @@ function MultiSelect({ values, onChange, options, placeholder, max, disabled }: 
           </div>
         ))}
         {values.length < max && !disabled && (
-          <div style={{ fontSize: 11, color: 'var(--muted)', alignSelf: 'center' }}>
+          <div style={{ fontSize: 11, color: 'var(--sub)', alignSelf: 'center' }}>
             {max - values.length} restante{max - values.length !== 1 ? 's' : ''}
           </div>
         )}
@@ -116,12 +116,12 @@ function MultiSelect({ values, onChange, options, placeholder, max, disabled }: 
             placeholder={placeholder}
             style={{
               width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--line)',
-              background: 'var(--bg-soft)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box'
+              background: 'var(--bg2)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box'
             }} />
           {open && filtered.length > 0 && (
             <div style={{
               position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-              background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10,
+              background: 'var(--bg3)', border: '1px solid var(--line)', borderRadius: 10,
               boxShadow: '0 4px 20px rgba(0,0,0,0.3)', maxHeight: 200, overflowY: 'auto'
             }}>
               {filtered.map(opt => (
@@ -260,7 +260,7 @@ export default function ApostasCompPage() {
       <h1 className="brand" style={{ fontSize: 24, marginTop: 20 }}>Apostas Especiais</h1>
       <div className="empty" style={{ marginTop: 40 }}>
         Nenhum campeonato ativo neste grupo.<br />
-        <span style={{ fontSize: 12, color: 'var(--muted)' }}>O criador pode ativar campeonatos na aba Galera.</span>
+        <span style={{ fontSize: 12, color: 'var(--sub)' }}>O criador pode ativar campeonatos na aba Galera.</span>
       </div>
     </main>
   );
@@ -281,8 +281,8 @@ export default function ApostasCompPage() {
             <button key={comp.id} onClick={() => setSelectedComp(comp)} style={{
               flex: 1, padding: '8px', borderRadius: 12, border: '1px solid',
               borderColor: selectedComp?.id === comp.id ? 'var(--gold)' : 'var(--line)',
-              background: selectedComp?.id === comp.id ? 'var(--gold)' : 'var(--card)',
-              color: selectedComp?.id === comp.id ? '#1a1a1a' : 'var(--text)',
+              background: selectedComp?.id === comp.id ? 'var(--gold)' : 'var(--bg3)',
+              color: selectedComp?.id === comp.id ? 'var(--bg)' : 'var(--text)',
               fontWeight: selectedComp?.id === comp.id ? 700 : 400, fontSize: 12, cursor: 'pointer'
             }}>{comp.name}</button>
           ))}
@@ -299,7 +299,7 @@ export default function ApostasCompPage() {
 
           {config.hasChampion && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>
                 🏆 Campeão <span style={{ color: 'var(--gold)' }}>+{config.championPts} pts</span>
               </label>
               <AutocompleteInput value={bet.champion || ''} onChange={v => setBet(b => ({ ...b, champion: v }))}
@@ -309,7 +309,7 @@ export default function ApostasCompPage() {
 
           {config.hasRunnerUp && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>
                 🥈 Vice-campeão <span style={{ color: 'var(--gold)' }}>+{config.runnerUpPts} pts</span>
               </label>
               <AutocompleteInput value={bet.runner_up || ''} onChange={v => setBet(b => ({ ...b, runner_up: v }))}
@@ -319,7 +319,7 @@ export default function ApostasCompPage() {
 
           {config.hasTop4 && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>
                 🔝 Top 4 (G4) <span style={{ color: 'var(--gold)' }}>+{config.top4Pts} pts cada</span>
               </label>
               <MultiSelect values={bet.top4 || []} onChange={v => setBet(b => ({ ...b, top4: v }))}
@@ -329,7 +329,7 @@ export default function ApostasCompPage() {
 
           {config.hasRelegated && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>
                 ⬇️ Rebaixados (Z4) <span style={{ color: 'var(--gold)' }}>+{config.relegatedPts} pts cada</span>
               </label>
               <MultiSelect values={bet.relegated || []} onChange={v => setBet(b => ({ ...b, relegated: v }))}
@@ -339,7 +339,7 @@ export default function ApostasCompPage() {
 
           {config.hasTopScorer && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>
                 ⚽ Artilheiro <span style={{ color: 'var(--gold)' }}>+{config.scorerPts} pts</span>
               </label>
               <input value={bet.top_scorer || ''} disabled={isDeadlinePassed}
@@ -347,7 +347,7 @@ export default function ApostasCompPage() {
                 placeholder="Nome do jogador..."
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--line)',
-                  background: 'var(--bg-soft)', color: 'var(--text)', fontSize: 14,
+                  background: 'var(--bg2)', color: 'var(--text)', fontSize: 14,
                   opacity: isDeadlinePassed ? 0.5 : 1, boxSizing: 'border-box'
                 }} />
             </div>

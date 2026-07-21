@@ -86,7 +86,7 @@ function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record
     const guess  = myGuesses[m.id];
     const isDone = m.score_a !== null;
     return (
-      <div style={{ background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 4, padding: '8px 10px', minWidth: 160, fontSize: 12 }}>
+      <div style={{ background: 'var(--bg3)', border: '1px solid var(--line2)', borderRadius: 4, padding: '8px 10px', minWidth: 160, fontSize: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={{ fontWeight: 600, fontSize: 11, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {toPT(m.team_a) || '?'}
@@ -488,7 +488,7 @@ export default function PalpitesGrupo() {
       {confirmDay && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 20 }}
           onClick={() => !saving && setConfirmDay(null)}>
-          <div style={{ background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%' }}
+          <div style={{ background: 'var(--bg3)', border: '1px solid var(--line2)', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)', textAlign: 'center', marginBottom: 12 }}>
               Confirmar palpites?
@@ -515,7 +515,7 @@ export default function PalpitesGrupo() {
                         flex: 1, padding: '8px', borderRadius: 8, border: '1px solid',
                         borderColor: modalPens[m.id] === side ? 'var(--neon)' : 'var(--line2)',
                         background: modalPens[m.id] === side ? 'var(--neon)' : 'var(--bg3)',
-                        color: modalPens[m.id] === side ? '#020A02' : 'var(--sub)',
+                        color: modalPens[m.id] === side ? 'var(--bg)' : 'var(--sub)',
                         fontWeight: 700, fontSize: 13, cursor: 'pointer'
                       }}>
                       {side === 'A' ? toPT(m.team_a) : toPT(m.team_b)}
@@ -563,7 +563,7 @@ export default function PalpitesGrupo() {
               padding: '7px 14px', borderRadius: 100, border: '1px solid',
               borderColor: isSelected ? 'var(--neon)' : 'var(--line2)',
               background: isSelected ? 'var(--neon)' : 'var(--bg3)',
-              color: isSelected ? '#020A02' : 'var(--sub)',
+              color: isSelected ? 'var(--bg)' : 'var(--sub)',
               fontWeight: isSelected ? 800 : 600, fontSize: 11, cursor: 'pointer',
               whiteSpace: 'nowrap', flexShrink: 0,
             }}>
@@ -590,7 +590,7 @@ export default function PalpitesGrupo() {
             padding: '6px 12px', borderRadius: 100, border: '1px solid',
             borderColor: !selectedPhase ? 'var(--neon)' : 'var(--line2)',
             background: !selectedPhase ? 'var(--neon)' : 'var(--bg3)',
-            color: !selectedPhase ? '#020A02' : 'var(--sub)',
+            color: !selectedPhase ? 'var(--bg)' : 'var(--sub)',
             fontWeight: !selectedPhase ? 800 : 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
           }}>Todas</button>
           {wcPhases.map(phase => (
@@ -598,7 +598,7 @@ export default function PalpitesGrupo() {
               padding: '6px 12px', borderRadius: 100, border: '1px solid',
               borderColor: selectedPhase === phase ? 'var(--neon)' : 'var(--line2)',
               background: selectedPhase === phase ? 'var(--neon)' : 'var(--bg3)',
-              color: selectedPhase === phase ? '#020A02' : 'var(--sub)',
+              color: selectedPhase === phase ? 'var(--bg)' : 'var(--sub)',
               fontWeight: selectedPhase === phase ? 800 : 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
             }}>{phase}</button>
           ))}
@@ -634,7 +634,7 @@ export default function PalpitesGrupo() {
               flex: 1, padding: '9px', borderRadius: 'var(--radius)', border: '1px solid',
               borderColor: view === v ? 'var(--neon)' : 'var(--line2)',
               background: view === v ? 'var(--neon)' : 'var(--bg3)',
-              color: view === v ? '#020A02' : 'var(--sub)',
+              color: view === v ? 'var(--bg)' : 'var(--sub)',
               fontWeight: view === v ? 800 : 600, fontSize: 12, cursor: 'pointer',
               textTransform: 'uppercase', letterSpacing: '.04em'
             }}>
@@ -679,7 +679,7 @@ export default function PalpitesGrupo() {
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {today && <span style={{ background: 'var(--neon)', color: '#020A02', fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 2, textTransform: 'uppercase', letterSpacing: '.08em' }}>Hoje</span>}
+                  {today && <span style={{ background: 'var(--neon)', color: 'var(--bg)', fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 2, textTransform: 'uppercase', letterSpacing: '.08em' }}>Hoje</span>}
                   <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: '.04em', color: today ? 'var(--neon)' : 'var(--text)', textTransform: 'uppercase' }}>
                     {fmtDay(day)}
                   </span>
@@ -725,7 +725,7 @@ export default function PalpitesGrupo() {
 
                     return (
                       <div key={m.id} style={{
-                        background: 'var(--card)', borderTop: i > 0 ? `1px solid var(--line)` : 'none',
+                        background: 'var(--bg3)', borderTop: i > 0 ? `1px solid var(--line)` : 'none',
                         position: 'relative', overflow: 'hidden'
                       }}>
                         {/* Stripe topo */}
@@ -799,7 +799,7 @@ export default function PalpitesGrupo() {
                                       padding: '8px 16px', borderRadius: 'var(--radius)', border: '1px solid',
                                       borderColor: isSelected ? 'var(--neon)' : 'var(--line2)',
                                       background: isSelected ? 'var(--neon)' : 'var(--bg2)',
-                                      color: isSelected ? '#020A02' : 'var(--sub)',
+                                      color: isSelected ? 'var(--bg)' : 'var(--sub)',
                                       fontWeight: 800, fontSize: 12, cursor: blocked ? 'default' : 'pointer',
                                       textTransform: 'uppercase', letterSpacing: '.04em'
                                     }}>

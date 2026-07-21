@@ -106,8 +106,8 @@ function ResultadosInline({ matches }: { matches: Match[] }) {
           <button key={f.key} onClick={() => setFilter(f.key)} style={{
             flex: 1, padding: '7px 4px', borderRadius: 10, border: '1px solid',
             borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
-            background: filter === f.key ? 'var(--gold)' : 'var(--card)',
-            color: filter === f.key ? '#1a1a1a' : 'var(--text)',
+            background: filter === f.key ? 'var(--gold)' : 'var(--bg3)',
+            color: filter === f.key ? 'var(--bg)' : 'var(--text)',
             fontWeight: filter === f.key ? 700 : 400, fontSize: 10, cursor: 'pointer', lineHeight: 1.4
           }}>
             {f.label}<br /><span style={{ fontSize: 9, opacity: 0.8 }}>({f.count})</span>
@@ -122,16 +122,16 @@ function ResultadosInline({ matches }: { matches: Match[] }) {
           return (
             <div key={m.id} style={{ padding: '12px 16px', borderTop: i > 0 ? '1px solid var(--line)' : 'none' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                <span style={{ fontSize: 10, color: 'var(--sub)' }}>
                   {m.phase.split('·').slice(1).join('·').trim()}
                 </span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: isFinished ? '#2ea84c' : started ? '#f87171' : 'var(--muted)' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: isFinished ? 'var(--green)' : started ? '#f87171' : 'var(--sub)' }}>
                   {isFinished ? '✅ Finalizado' : started ? '🔴 Em andamento' : '⏳ Aguardando'}
                 </span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 6 }}>
                 <span style={{ textAlign: 'right', fontWeight: 600, fontSize: 13 }}>{toPT(m.team_a)}</span>
-                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: isFinished ? 'var(--gold)' : 'var(--muted)', textAlign: 'center', minWidth: 60 }}>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: isFinished ? 'var(--gold)' : 'var(--sub)', textAlign: 'center', minWidth: 60 }}>
                   {isFinished ? `${m.score_a} x ${m.score_b}` :
                     new Date(m.match_date).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -539,7 +539,7 @@ export default function RankingGrupo() {
                 flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
                 borderColor: rankTab === tab.key ? 'var(--gold)' : 'var(--line)',
                 background: rankTab === tab.key ? 'var(--neon)' : 'var(--bg3)',
-                color: rankTab === tab.key ? '#020A02' : 'var(--sub)',
+                color: rankTab === tab.key ? 'var(--bg)' : 'var(--sub)',
                 fontWeight: rankTab === tab.key ? 700 : 400, fontSize: 11, cursor: 'pointer'
               }}>{tab.label}</button>
             ))}
@@ -560,7 +560,7 @@ export default function RankingGrupo() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {getFlag(m.team_a) && <img src={getFlag(m.team_a)!} alt="" style={{ width: 18, height: 13, objectFit: 'contain' }} />}
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{toPT(m.team_a)}</span>
-                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>vs</span>
+                      <span style={{ fontSize: 11, color: 'var(--sub)' }}>vs</span>
                       {getFlag(m.team_b) && <img src={getFlag(m.team_b)!} alt="" style={{ width: 18, height: 13, objectFit: 'contain' }} />}
                       <span style={{ fontSize: 12, fontWeight: 700 }}>{toPT(m.team_b)}</span>
                     </div>
@@ -691,7 +691,7 @@ export default function RankingGrupo() {
                           { crown: '🥉', data: compRankData[2] },
                         ].map(({ crown, data }, i) => (
                           <div key={i} style={{
-                            background: 'var(--card)', border: '1px solid var(--line2)',
+                            background: 'var(--bg3)', border: '1px solid var(--line2)',
                             borderRadius: 'var(--radius)', padding: '14px 10px', textAlign: 'center'
                           }}>
                             <div style={{ fontSize: 20, marginBottom: 6 }}>{crown}</div>
@@ -785,7 +785,7 @@ export default function RankingGrupo() {
                 {memberStats.map(m => (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                     <div style={{ width: 12, height: 3, background: m.color, borderRadius: 2 }} />
-                    <span style={{ color: 'var(--muted)' }}>{m.name}</span>
+                    <span style={{ color: 'var(--sub)' }}>{m.name}</span>
                   </div>
                 ))}
               </div>
@@ -795,7 +795,7 @@ export default function RankingGrupo() {
           {/* Melhor da rodada */}
           {roundStats.length > 0 && (
             <div className="card" style={{ marginBottom: 16, background: 'rgba(212,167,44,0.06)', border: '1px solid rgba(212,167,44,0.3)' }}>
-              <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
+              <p style={{ fontSize: 12, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
                 🏅 Melhor da Rodada {lastRound}
               </p>
               {roundStats.map((r, i) => {
@@ -820,7 +820,7 @@ export default function RankingGrupo() {
           )}
 
           {/* Legenda */}
-          <div style={{ padding: '12px 16px', background: 'var(--card)', borderRadius: 14, border: '1px solid var(--line)', fontSize: 12, color: 'var(--muted)', lineHeight: 1.8 }}>
+          <div style={{ padding: '12px 16px', background: 'var(--bg3)', borderRadius: 14, border: '1px solid var(--line)', fontSize: 12, color: 'var(--sub)', lineHeight: 1.8 }}>
             <strong style={{ color: 'var(--text)', display: 'block', marginBottom: 4 }}>Pontuação</strong>
             6 pts · placar exato · 4 pts · vencedor + gols · 3 pts · vencedor · 1 pt · gols
           </div>
@@ -851,7 +851,7 @@ export default function RankingGrupo() {
             zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
           }}>
             <div onClick={e => e.stopPropagation()} style={{
-              background: 'var(--card)', borderRadius: '20px 20px 0 0',
+              background: 'var(--bg3)', borderRadius: '20px 20px 0 0',
               width: '100%', maxWidth: 480, maxHeight: '80vh',
               overflow: 'hidden', display: 'flex', flexDirection: 'column',
               animation: 'fadeIn 0.25s ease'
@@ -861,14 +861,14 @@ export default function RankingGrupo() {
                   <Avatar name={member.name} color={member.color} size={40} />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 16 }}>{member.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    <div style={{ fontSize: 12, color: 'var(--sub)' }}>
                       {scoredMatches.length} acerto{scoredMatches.length !== 1 ? 's' : ''} · {member.grand_total} pts total
                     </div>
                   </div>
                 </div>
                 <button onClick={() => { setDrilldown(null); setDrilldownGuesses({}); }} style={{
-                  background: 'var(--bg-soft)', border: 'none', borderRadius: '50%',
-                  width: 32, height: 32, fontSize: 16, cursor: 'pointer', color: 'var(--muted)'
+                  background: 'var(--bg2)', border: 'none', borderRadius: '50%',
+                  width: 32, height: 32, fontSize: 16, cursor: 'pointer', color: 'var(--sub)'
                 }}>✕</button>
               </div>
               <div style={{ overflowY: 'auto', flex: 1, padding: '12px 0' }}>
@@ -894,13 +894,13 @@ export default function RankingGrupo() {
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10
                     }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>
+                        <div style={{ fontSize: 11, color: 'var(--sub)', marginBottom: 4 }}>
                           {new Date(m.match_date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })}
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 600 }}>
                           {toPT(m.team_a)} {m.score_a} x {m.score_b} {toPT(m.team_b)}
                         </div>
-                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 2 }}>
                           Palpite: {g.guess_a} x {g.guess_b}
                           {m.is_knockout && g.guess_a === g.guess_b && g.guess_penalty_winner && (
                             <span style={{ marginLeft: 6, color: 'var(--gold)' }}>

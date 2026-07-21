@@ -70,10 +70,10 @@ const STATUS_COLOR: Record<string, string> = {
   'SCHEDULED': 'var(--sub)',
   'IN_PLAY':   '#f87171',
   'PAUSED':    'var(--gold)',
-  'FINISHED':  '#2ea84c',
+  'FINISHED':  'var(--green)',
   'POSTPONED': '#fb923c',
   'SUSPENDED': '#fb923c',
-  'CANCELLED': 'var(--danger)',
+  'CANCELLED': 'var(--red)',
 };
 
 function jogoComecou(matchDate: string) {
@@ -385,7 +385,7 @@ export default function GaleraGrupo() {
               flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
               borderColor: filter === f.key ? 'var(--gold)' : 'var(--line2)',
               background: filter === f.key ? 'var(--gold)' : 'var(--bg3)',
-              color: filter === f.key ? '#020A02' : 'var(--sub)',
+              color: filter === f.key ? 'var(--bg)' : 'var(--sub)',
               fontWeight: filter === f.key ? 700 : 400,
               fontSize: 11, cursor: 'pointer', lineHeight: 1.4
             }}>
@@ -580,7 +580,7 @@ export default function GaleraGrupo() {
               <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pagaram</div>
             </div>
             <div>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--danger)' }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--red)' }}>
                 {members.length - Object.values(memberPayments).filter(Boolean).length}
               </div>
               <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pendentes</div>
@@ -594,7 +594,7 @@ export default function GaleraGrupo() {
                 flex: 1, padding: '8px', borderRadius: 10, border: '1px solid',
                 borderColor: configTab === tab ? 'var(--gold)' : 'var(--line2)',
                 background: configTab === tab ? 'var(--gold)' : 'var(--bg2)',
-                color: configTab === tab ? '#1a1a1a' : 'var(--text)',
+                color: configTab === tab ? 'var(--bg)' : 'var(--text)',
                 fontWeight: configTab === tab ? 700 : 400, fontSize: 12, cursor: 'pointer'
               }}>
                 {tab === 'pagamentos' ? '💰 Pagamentos' : '🏆 Prêmio'}
@@ -628,9 +628,9 @@ export default function GaleraGrupo() {
                     {isCreator ? (
                       <button onClick={() => togglePaid(m.user_id, memberPayments[m.user_id] || false)} style={{
                         padding: '6px 12px', borderRadius: 8, border: '1px solid',
-                        borderColor: memberPayments[m.user_id] ? '#2ea84c' : 'var(--line2)',
-                        background: memberPayments[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg2)',
-                        color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--sub)',
+                        borderColor: memberPayments[m.user_id] ? 'var(--green)' : 'var(--line2)',
+                        background: memberPayments[m.user_id] ? 'rgba(16,185,129,0.12)' : 'var(--bg2)',
+                        color: memberPayments[m.user_id] ? 'var(--green)' : 'var(--sub)',
                         fontSize: 12, cursor: 'pointer', fontWeight: 600
                       }}>
                         {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
@@ -638,7 +638,7 @@ export default function GaleraGrupo() {
                     ) : (
                       <span style={{
                         padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                        color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--danger)',
+                        color: memberPayments[m.user_id] ? 'var(--green)' : 'var(--red)',
                       }}>
                         {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
                       </span>
@@ -660,7 +660,7 @@ export default function GaleraGrupo() {
                   <>
                     <style>{`
                       .prize-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; }
-                      .prize-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid #1a1a1a; }
+                      .prize-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid var(--bg); }
                     `}</style>
 
                     <div style={{ marginBottom: 16 }}>
@@ -716,7 +716,7 @@ export default function GaleraGrupo() {
                       <button className="btn btn-ghost" onClick={() => savePaymentConfig(false)} disabled={savingConfig}>
                         Salvar rascunho
                       </button>
-                      <button className="btn" style={{ background: '#2ea84c' }}
+                      <button className="btn" style={{ background: 'var(--green)' }}
                         onClick={() => { if (confirm('Confirmar e bloquear? Não poderá ser alterado depois.')) savePaymentConfig(true); }}
                         disabled={savingConfig}>
                         🔒 Confirmar e bloquear
@@ -729,7 +729,7 @@ export default function GaleraGrupo() {
               {(payment.prize_locked || !isCreator) && (
                 <div style={{ marginBottom: 12 }}>
                   {payment.prize_locked && (
-                    <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(46,168,76,0.1)', border: '1px solid #2ea84c', textAlign: 'center', fontSize: 12, color: 'var(--green)', marginBottom: 12 }}>
+                    <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid var(--green)', textAlign: 'center', fontSize: 12, color: 'var(--green)', marginBottom: 12 }}>
                       🔒 Distribuição confirmada
                     </div>
                   )}
@@ -785,7 +785,7 @@ export default function GaleraGrupo() {
                     padding: '6px 12px', borderRadius: 20, border: '1px solid',
                     borderColor: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--line2)',
                     background: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--bg2)',
-                    color: selectedCompPay === comp.id ? '#1a1a1a' : 'var(--text)',
+                    color: selectedCompPay === comp.id ? 'var(--bg)' : 'var(--text)',
                     fontWeight: selectedCompPay === comp.id ? 700 : 400, fontSize: 12, cursor: 'pointer'
                   }}>{comp.name}</button>
                 ))}
@@ -811,7 +811,7 @@ export default function GaleraGrupo() {
                         <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pagaram</div>
                       </div>
                       <div>
-                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: 'var(--danger)' }}>{members.length - paidCount}</div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: 'var(--red)' }}>{members.length - paidCount}</div>
                         <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pendentes</div>
                       </div>
                     </div>
@@ -830,7 +830,7 @@ export default function GaleraGrupo() {
                         <button onClick={() => saveCompEntryValue(selectedCompPay, entryVal)} disabled={savingCompValue}
                           style={{
                             padding: '6px 14px', borderRadius: 8, border: 'none',
-                            background: 'var(--gold)', color: '#020A02',
+                            background: 'var(--gold)', color: 'var(--bg)',
                             fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap'
                           }}>
                           {savingCompValue ? '...' : 'Salvar'}
@@ -853,9 +853,9 @@ export default function GaleraGrupo() {
                           {isCreator ? (
                             <button onClick={() => toggleCompPayment(selectedCompPay, m.user_id, pays[m.user_id] || false)} style={{
                               padding: '6px 12px', borderRadius: 8, border: '1px solid',
-                              borderColor: pays[m.user_id] ? '#2ea84c' : 'var(--line2)',
-                              background: pays[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg2)',
-                              color: pays[m.user_id] ? '#2ea84c' : 'var(--sub)',
+                              borderColor: pays[m.user_id] ? 'var(--green)' : 'var(--line2)',
+                              background: pays[m.user_id] ? 'rgba(16,185,129,0.15)' : 'var(--bg2)',
+                              color: pays[m.user_id] ? 'var(--green)' : 'var(--sub)',
                               fontSize: 12, cursor: 'pointer', fontWeight: 600
                             }}>
                               {pays[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
@@ -863,7 +863,7 @@ export default function GaleraGrupo() {
                           ) : (
                             <span style={{
                               padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                              color: pays[m.user_id] ? '#2ea84c' : 'var(--danger)',
+                              color: pays[m.user_id] ? 'var(--green)' : 'var(--red)',
                             }}>
                               {pays[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
                             </span>
@@ -903,9 +903,9 @@ export default function GaleraGrupo() {
                     </div>
                     <button onClick={() => toggleCompetition(comp.id, isActive)} style={{
                       padding: '6px 14px', borderRadius: 10, border: '1px solid',
-                      borderColor: isActive ? '#2ea84c' : 'var(--line2)',
-                      background: isActive ? 'rgba(46,168,76,0.15)' : 'var(--bg2)',
-                      color: isActive ? '#2ea84c' : 'var(--sub)',
+                      borderColor: isActive ? 'var(--green)' : 'var(--line2)',
+                      background: isActive ? 'rgba(16,185,129,0.15)' : 'var(--bg2)',
+                      color: isActive ? 'var(--green)' : 'var(--sub)',
                       fontWeight: 700, fontSize: 12, cursor: 'pointer'
                     }}>
                       {isActive ? '✅ Ativo' : '+ Ativar'}
@@ -925,14 +925,14 @@ export default function GaleraGrupo() {
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
             borderColor: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--line2)',
             background: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--bg3)',
-            color: galeraMode === 'pessoa' ? '#1a1a1a' : 'var(--text)',
+            color: galeraMode === 'pessoa' ? 'var(--bg)' : 'var(--text)',
             fontWeight: galeraMode === 'pessoa' ? 700 : 400, fontSize: 13, cursor: 'pointer'
           }}>👥 Por pessoa</button>
           <button onClick={() => setGaleraMode('jogo')} style={{
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
             borderColor: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--line2)',
             background: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--bg3)',
-            color: galeraMode === 'jogo' ? '#1a1a1a' : 'var(--text)',
+            color: galeraMode === 'jogo' ? 'var(--bg)' : 'var(--text)',
             fontWeight: galeraMode === 'jogo' ? 700 : 400, fontSize: 13, cursor: 'pointer'
           }}>⚽ Por jogo</button>
         </div>
@@ -966,7 +966,7 @@ export default function GaleraGrupo() {
                       <span style={{ fontSize: 11, color: 'var(--sub)' }}>
                         {m.phase.split('·').slice(1).join('·').trim() || m.phase}
                       </span>
-                      <span style={{ fontSize: 11, color: isFinished ? '#2ea84c' : 'var(--gold)', fontWeight: 700 }}>
+                      <span style={{ fontSize: 11, color: isFinished ? 'var(--green)' : 'var(--gold)', fontWeight: 700 }}>
                         {isFinished ? '✅ Finalizado' : '🔴 Em andamento'}
                       </span>
                     </div>

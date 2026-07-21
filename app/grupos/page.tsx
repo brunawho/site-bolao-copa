@@ -189,7 +189,7 @@ export default function Grupos() {
 
   return (
     <main className="app">
-      {toast && <div className="toast" style={{ background: 'var(--gold)', color: '#020A02' }}>{toast}</div>}
+      {toast && <div className="toast" style={{ background: 'var(--gold)', color: 'var(--bg)' }}>{toast}</div>}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h1 className="brand">MEUS<br /><span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>BOLÕES</span></h1>
@@ -308,7 +308,7 @@ export default function Grupos() {
             </>
           )}
 
-          {err && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 10 }}>{err}</p>}
+          {err && <p style={{ color: 'var(--red)', fontSize: 12, marginBottom: 10 }}>{err}</p>}
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-ghost" onClick={cancelar} style={{ flex: 1 }}>
