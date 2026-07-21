@@ -62,7 +62,7 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
     { href: `/grupo/${groupId}/palpites`,    label: 'Palpites',  icon: '⚽', badge: pendingCount },
     { href: `/grupo/${groupId}/galera`,      label: 'Galera',    icon: '👥', badge: 0 },
     { href: `/grupo/${groupId}/ranking`,     label: 'Ranking',   icon: '📊', badge: 0 },
-    { href: `/grupo/${groupId}/meus-pontos`, label: 'Meus pts',  icon: '⭐', badge: 0 },
+
     { href: `/grupo/${groupId}/faq`,         label: 'Regras',    icon: '📖', badge: 0 },
     ...(wcEnded ? [{ href: `/grupo/${groupId}/encerramento`, label: 'Final', icon: '🏆', badge: 0 }] : []),
   ];
