@@ -123,7 +123,7 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
                 {it.badge > 0 && (
                   <span style={{
                     position: 'absolute', top: -4, right: -6,
-                    background: 'var(--danger)', color: '#fff',
+                    background: 'var(--red)', color: '#fff',
                     borderRadius: '50%', width: 14, height: 14,
                     fontSize: 9, fontWeight: 700,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',

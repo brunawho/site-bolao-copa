@@ -78,16 +78,16 @@ export default function Login() {
 
   return (
     <main className="app">
-      <div style={{ marginTop: 60 }}>
-        <h1 className="brand">Bolão<br /><span>da Copa</span></h1>
-        <p className="subtitle">
-          {mode === 'login' && 'Faça login pra entrar nos seus bolões.'}
-          {mode === 'signup' && 'Crie sua conta e comece a palpitar.'}
-          {mode === 'reset' && 'Digite seu email pra redefinir a senha.'}
+      <div style={{ marginTop: 60, marginBottom: 40 }}>
+        <h1 className="brand">BET<span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>WELL</span></h1>
+        <p style={{ fontSize: 12, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.1em', marginTop: 6 }}>
+          {mode === 'login' && 'Entre no seu bolão'}
+          {mode === 'signup' && 'Crie sua conta'}
+          {mode === 'reset' && 'Redefina sua senha'}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ marginTop: 40 }}>
+      <form onSubmit={handleSubmit} style={{ marginTop: 0 }}>
         {mode === 'signup' && (
           <input className="input" placeholder="Seu nome"
             value={name} onChange={e => setName(e.target.value)}
@@ -130,24 +130,24 @@ export default function Login() {
         {mode === 'login' && (
           <>
             <button onClick={() => { setMode('signup'); setErr(''); setSuccess(''); setPassword(''); }}
-              style={{ background: 'transparent', border: 'none', color: 'var(--gold)', fontSize: 13, cursor: 'pointer' }}>
+              style={{ background: 'transparent', border: 'none', color: 'var(--neon)', fontSize: 13, cursor: 'pointer', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>
               Não tem conta? Criar uma
             </button>
             <button onClick={() => { setMode('reset'); setErr(''); setSuccess(''); setPassword(''); }}
-              style={{ background: 'transparent', border: 'none', color: 'var(--muted)', fontSize: 12, cursor: 'pointer' }}>
+              style={{ background: 'transparent', border: 'none', color: 'var(--sub)', fontSize: 11, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.06em' }}>
               Esqueci minha senha
             </button>
           </>
         )}
         {mode === 'signup' && (
           <button onClick={() => { setMode('login'); setErr(''); setSuccess(''); }}
-            style={{ background: 'transparent', border: 'none', color: 'var(--gold)', fontSize: 13, cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: 'none', color: 'var(--neon)', fontSize: 13, cursor: 'pointer', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>
             Já tem conta? Fazer login
           </button>
         )}
         {mode === 'reset' && (
           <button onClick={() => { setMode('login'); setErr(''); setSuccess(''); }}
-            style={{ background: 'transparent', border: 'none', color: 'var(--gold)', fontSize: 13, cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: 'none', color: 'var(--neon)', fontSize: 13, cursor: 'pointer', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>
             ← Voltar ao login
           </button>
         )}

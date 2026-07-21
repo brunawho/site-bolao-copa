@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { supabase, calcPoints, type Match, type Guess } from '@/lib/supabase';
 
 type Member = { id: string; user_id: string; name: string; color: string };
-const COLORS = ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c', '#38bdf8', '#4ade80'];
+const COLORS = ['#39FF14', '#7B5EFF', '#FFD700', '#FF1744', '#00B0FF', '#FF9900', '#CCFF00', '#CC00FF'];
 
 function Confetti() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,7 +21,7 @@ function Confetti() {
       y: Math.random() * -canvas.height,
       w: Math.random() * 10 + 5,
       h: Math.random() * 6 + 3,
-      color: ['#d4a72c', '#60a5fa', '#34d399', '#f87171', '#a78bfa', '#fb923c'][Math.floor(Math.random() * 6)],
+      color: ['#39FF14', '#7B5EFF', '#FFD700', '#FF1744', '#00B0FF', '#FF9900'][Math.floor(Math.random() * 6)],
       speed: Math.random() * 3 + 1,
       angle: Math.random() * 360,
       spin: Math.random() * 4 - 2,
@@ -164,19 +164,19 @@ export default function EncerramentoPage() {
         {/* Cabeçalho */}
         <div style={{ textAlign: 'center', marginTop: 30, marginBottom: 30 }}>
           <div style={{ fontSize: 56, marginBottom: 8 }}>🏆</div>
-          <h1 className="brand" style={{ fontSize: 32, marginBottom: 4 }}>Bolão Encerrado!</h1>
-          <p className="subtitle">Copa do Mundo 2026 finalizada.</p>
+          <h1 className="brand">BOLÃO<br /><span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>ENCERRADO</span></h1>
+          <p style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.1em', marginTop: 6 }}>Copa do Mundo 2026 · Fim de jogo</p>
         </div>
 
         {/* Campeão */}
         {winner && (
-          <div className="card" style={{ marginBottom: 20, background: 'rgba(212,167,44,0.12)', border: '2px solid var(--gold)', textAlign: 'center' }}>
+          <div className="card" style={{ marginBottom: 20, background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.3)', textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>👑</div>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 4 }}>Campeão do Bolão</p>
-            <h2 style={{ fontSize: 28, color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", marginBottom: 4 }}>
+            <p style={{ fontSize: 13, color: 'var(--sub)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4 }}>👑 Campeão do Bolão</p>
+            <h2 style={{ fontSize: 36, color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", textShadow: 'var(--shadow-gold)', marginBottom: 4 }}>
               {winner.name}
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--muted)' }}>
+            <p style={{ fontSize: 14, color: 'var(--sub)' }}>
               {winner.grand_total} pts · {winner.exact_hits} exato{winner.exact_hits !== 1 ? 's' : ''}
             </p>
             {prize1 > 0 && (
@@ -216,7 +216,7 @@ export default function EncerramentoPage() {
                   <div style={{ fontWeight: 600, fontSize: 14 }}>
                     {r.name} {isMe && <span style={{ fontSize: 11, color: 'var(--gold)' }}>← você</span>}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  <div style={{ fontSize: 11, color: 'var(--sub)' }}>
                     {r.exact_hits} exato{r.exact_hits !== 1 ? 's' : ''}
                     {(r as any).special_pts > 0 && <span style={{ color: 'var(--gold)' }}> · +{(r as any).special_pts} especial</span>}
                   </div>
@@ -245,7 +245,7 @@ export default function EncerramentoPage() {
               { label: '⚽ Artilheiro', value: specialResult.top_scorer },
             ].filter(r => r.value).map(r => (
               <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-                <span style={{ color: 'var(--muted)' }}>{r.label}</span>
+                <span style={{ color: 'var(--sub)' }}>{r.label}</span>
                 <span style={{ fontWeight: 700 }}>{r.value}</span>
               </div>
             ))}
@@ -258,7 +258,7 @@ export default function EncerramentoPage() {
             <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>💰 Distribuição do Prêmio</h3>
             <div style={{ textAlign: 'center', marginBottom: 14 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: '#2ea84c' }}>R$ {totalArrecadado.toFixed(2)}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>total arrecadado</div>
+              <div style={{ fontSize: 12, color: 'var(--sub)' }}>total arrecadado</div>
             </div>
             {[
               { pos: 1, label: '🥇', prize: prize1 },

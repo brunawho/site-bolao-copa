@@ -104,7 +104,7 @@ export default function Convite() {
       <main className="app">
         <div style={{ textAlign: 'center', marginTop: 100 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>⚽</div>
-          <p style={{ color: 'var(--muted)' }}>
+          <p style={{ color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.1em', fontSize: 12 }}>
             {mode === 'loading' ? 'Verificando convite...' : 'Entrando no grupo...'}
           </p>
         </div>
@@ -117,8 +117,8 @@ export default function Convite() {
       <main className="app">
         <div style={{ textAlign: 'center', marginTop: 100 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>🎉</div>
-          <h2 style={{ color: 'var(--gold)', marginBottom: 8 }}>Bem-vindo!</h2>
-          <p style={{ color: 'var(--muted)' }}>Entrando em "{groupName}"...</p>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--neon)', textShadow: 'var(--shadow-neon)', marginBottom: 8 }}>BEM-VINDO!</h2>
+          <p style={{ color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>Entrando em "{groupName}"...</p>
         </div>
       </main>
     );
@@ -129,7 +129,7 @@ export default function Convite() {
       <main className="app">
         <div style={{ textAlign: 'center', marginTop: 100 }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>❌</div>
-          <p style={{ color: 'var(--danger)' }}>Código de convite inválido.</p>
+          <p style={{ color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>Código de convite inválido.</p>
           <button className="btn" style={{ marginTop: 20 }} onClick={() => router.push('/login')}>
             Ir para o login
           </button>
@@ -142,12 +142,12 @@ export default function Convite() {
   return (
     <main className="app">
       <div style={{ textAlign: 'center', marginTop: 40, marginBottom: 32 }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
-        <h1 className="brand" style={{ fontSize: 28, marginBottom: 8 }}>Convite</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 15 }}>
-          Você foi convidado para o grupo
+        <div style={{ fontSize: 48, marginBottom: 12 }}>⚽</div>
+        <h1 className="brand">CON<span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>VITE</span></h1>
+        <p style={{ color: 'var(--sub)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.1em', marginTop: 8, marginBottom: 4 }}>
+          Você foi convidado para
         </p>
-        <p style={{ color: 'var(--gold)', fontWeight: 700, fontSize: 18, marginTop: 4 }}>
+        <p style={{ fontFamily: "'Bebas Neue', sans-serif", color: 'var(--neon)', fontSize: 24, letterSpacing: '.06em', textShadow: 'var(--shadow-neon)' }}>
           {groupName}
         </p>
       </div>
@@ -156,16 +156,16 @@ export default function Convite() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         <button onClick={() => { setAuthMode('login'); setErr(''); }} style={{
           flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-          borderColor: authMode === 'login' ? 'var(--gold)' : 'var(--line)',
-          background: authMode === 'login' ? 'var(--gold)' : 'var(--card)',
-          color: authMode === 'login' ? '#1a1a1a' : 'var(--text)',
+          borderColor: authMode === 'login' ? 'var(--neon)' : 'var(--line2)',
+          background: authMode === 'login' ? 'var(--neon)' : 'var(--bg3)',
+          color: authMode === 'login' ? '#020A02' : 'var(--sub)',
           fontWeight: authMode === 'login' ? 700 : 400, fontSize: 14, cursor: 'pointer'
         }}>Já tenho conta</button>
         <button onClick={() => { setAuthMode('signup'); setErr(''); }} style={{
           flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-          borderColor: authMode === 'signup' ? 'var(--gold)' : 'var(--line)',
-          background: authMode === 'signup' ? 'var(--gold)' : 'var(--card)',
-          color: authMode === 'signup' ? '#1a1a1a' : 'var(--text)',
+          borderColor: authMode === 'signup' ? 'var(--neon)' : 'var(--line2)',
+          background: authMode === 'signup' ? 'var(--neon)' : 'var(--bg3)',
+          color: authMode === 'signup' ? '#020A02' : 'var(--sub)',
           fontWeight: authMode === 'signup' ? 700 : 400, fontSize: 14, cursor: 'pointer'
         }}>Criar conta</button>
       </div>
