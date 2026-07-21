@@ -160,8 +160,7 @@ export default function MeusPontos() {
 
   return (
     <main className="app">
-      <p className="subtitle" style={{ marginBottom: 2, marginTop: 16 }}>Bolão Copa 2026</p>
-      <h1 className="brand" style={{ marginBottom: 16 }}>MEUS<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}> PTS</span></h1>
+      <h1 className="brand" style={{ marginTop: 16, marginBottom: 16 }}>MEUS<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}> PTS</span></h1>
       <p className="subtitle" style={{ marginBottom: 16 }}>Seu desempenho nos jogos finalizados.</p>
 
       {/* Menu de campeonatos */}

@@ -496,8 +496,7 @@ export default function RankingGrupo() {
 
   return (
     <main className="app">
-      <p className="subtitle" style={{ marginBottom: 2, marginTop: 16 }}>Bolão Copa 2026</p>
-      <h1 className="brand" style={{ marginBottom: 16 }}>RAN<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>KING</span></h1>
+      <h1 className="brand" style={{ marginTop: 16, marginBottom: 16 }}>RAN<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>KING</span></h1>
 
       {loading ? (
         <div className="empty">Carregando...</div>
