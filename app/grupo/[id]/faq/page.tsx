@@ -13,8 +13,8 @@ function Accordion({ icon, title, content, badge }: Section) {
   return (
     <div style={{ marginBottom: 8 }}>
       <button onClick={() => setOpen(o => !o)} style={{
-        width: '100%', background: open ? 'var(--card)' : 'var(--bg-soft)',
-        border: `1px solid ${open ? 'var(--gold)' : 'var(--line)'}`,
+        width: '100%', background: open ? 'var(--bg3)' : 'var(--bg2)',
+        border: `1px solid ${open ? 'var(--gold)' : 'var(--line2)'}`,
         borderRadius: open ? '14px 14px 0 0' : 14,
         padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -22,18 +22,18 @@ function Accordion({ icon, title, content, badge }: Section) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, marginRight: 8 }}>
           <span style={{ fontWeight: 700, fontSize: 14 }}>{icon} {title}</span>
           {badge && (
-            <span style={{ fontSize: 10, background: 'rgba(212,167,44,0.2)', color: 'var(--gold)', padding: '2px 8px', borderRadius: 20, fontWeight: 700, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 10, background: 'rgba(57,255,20,0.1)', color: 'var(--neon)', padding: '2px 8px', borderRadius: 2, fontWeight: 700, whiteSpace: 'nowrap' }}>
               {badge}
             </span>
           )}
         </div>
-        <span style={{ color: 'var(--muted)', fontSize: 14 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ color: 'var(--sub)', fontSize: 14 }}>{open ? '▲' : '▼'}</span>
       </button>
       {open && (
         <div style={{
-          border: '1px solid var(--gold)', borderTop: 'none',
+          border: '1px solid var(--line2)', borderTop: 'none',
           borderRadius: '0 0 14px 14px', padding: '14px 16px',
-          background: 'var(--card)', fontSize: 13, lineHeight: 1.7, color: 'var(--muted)'
+          background: 'var(--bg3)', fontSize: 13, lineHeight: 1.7, color: 'var(--sub)'
         }}>
           {content}
         </div>
@@ -77,7 +77,7 @@ export default function FAQGrupo() {
                 <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
                 <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
                   <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{rule}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{ex}</div>
+                  <div style={{ fontSize: 11, color: 'var(--sub)' }}>{ex}</div>
                 </td>
               </tr>
             ))}
@@ -102,7 +102,7 @@ export default function FAQGrupo() {
                   <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
                   <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
                     <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{rule}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{ex}</div>
+                    <div style={{ fontSize: 11, color: 'var(--sub)' }}>{ex}</div>
                   </td>
                 </tr>
               ))}
@@ -131,7 +131,7 @@ export default function FAQGrupo() {
                   <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
                   <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
                     <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{desc}</div>
+                    <div style={{ fontSize: 11, color: 'var(--sub)' }}>{desc}</div>
                   </td>
                 </tr>
               ))}
@@ -258,7 +258,7 @@ export default function FAQGrupo() {
                   <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
                   <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
                     <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{desc}</div>
+                    <div style={{ fontSize: 11, color: 'var(--sub)' }}>{desc}</div>
                   </td>
                 </tr>
               ))}
@@ -276,7 +276,7 @@ export default function FAQGrupo() {
                   <td style={{ padding: '8px 6px 8px 0', fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)', width: 32, verticalAlign: 'top' }}>{pts}</td>
                   <td style={{ padding: '8px 0', verticalAlign: 'top' }}>
                     <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{desc}</div>
+                    <div style={{ fontSize: 11, color: 'var(--sub)' }}>{desc}</div>
                   </td>
                 </tr>
               ))}

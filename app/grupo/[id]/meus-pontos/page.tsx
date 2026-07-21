@@ -105,7 +105,7 @@ export default function MeusPontos() {
         const guess = guessByMatch[m.id] || null;
         const { points, label, color, icon } = guess
           ? getResult(guess, m)
-          : { points: 0, label: 'Sem palpite', color: 'var(--muted)', icon: '—' };
+          : { points: 0, label: 'Sem palpite', color: 'var(--sub)', icon: '—' };
         return { match: m, guess, points, label, color, icon };
       });
 
@@ -160,7 +160,8 @@ export default function MeusPontos() {
 
   return (
     <main className="app">
-      <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>Meus Pontos</h1>
+      <p className="subtitle" style={{ marginBottom: 2, marginTop: 16 }}>Bolão Copa 2026</p>
+      <h1 className="brand" style={{ marginBottom: 16 }}>MEUS<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}> PTS</span></h1>
       <p className="subtitle" style={{ marginBottom: 16 }}>Seu desempenho nos jogos finalizados.</p>
 
       {/* Menu de campeonatos */}
@@ -172,9 +173,9 @@ export default function MeusPontos() {
               setExpandedDays({});
             }} style={{
               padding: '8px 14px', borderRadius: 12, border: '1px solid',
-              borderColor: selectedComp === comp ? 'var(--gold)' : 'var(--line)',
-              background: selectedComp === comp ? 'var(--gold)' : 'var(--card)',
-              color: selectedComp === comp ? '#1a1a1a' : 'var(--text)',
+              borderColor: selectedComp === comp ? 'var(--gold)' : 'var(--line2)',
+              background: selectedComp === comp ? 'var(--gold)' : 'var(--bg3)',
+              color: selectedComp === comp ? 'var(--gold)' : 'var(--sub)',
               fontWeight: selectedComp === comp ? 700 : 400,
               fontSize: 13, cursor: 'pointer'
             }}>
@@ -195,15 +196,15 @@ export default function MeusPontos() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center' }}>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>{viewTotal ?? totalPts}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>pts total</div>
+                <div style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>pts total</div>
               </div>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: '#2ea84c' }}>{exactHits}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>exatos</div>
+                <div style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>exatos</div>
               </div>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: 'var(--gold)' }}>{winnerHits}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>vencedor</div>
+                <div style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>vencedor</div>
               </div>
             </div>
           </div>
@@ -217,7 +218,7 @@ export default function MeusPontos() {
             return (
               <div key={day} style={{ marginBottom: 8 }}>
                 <button onClick={() => toggleDay(day)} style={{
-                  width: '100%', background: expanded ? 'var(--card)' : 'var(--bg-soft)',
+                  width: '100%', background: expanded ? 'var(--bg3)' : 'var(--bg2)',
                   border: '1px solid var(--line)',
                   borderRadius: expanded ? '14px 14px 0 0' : 14,
                   padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
@@ -230,7 +231,7 @@ export default function MeusPontos() {
                     <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: 'var(--gold)' }}>
                       +{dayPts} pts
                     </span>
-                    <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
+                    <span style={{ color: 'var(--sub)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
                   </div>
                 </button>
 
@@ -242,13 +243,13 @@ export default function MeusPontos() {
                         <div key={m.id} style={{
                           padding: 16,
                           borderTop: i > 0 ? '1px solid var(--line)' : 'none',
-                          background: 'var(--card)'
+                          background: 'var(--bg3)'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                            <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                            <span style={{ fontSize: 11, color: 'var(--sub)' }}>
                               {m.phase.split('·').slice(1).join('·').trim() || m.phase}
                             </span>
-                            <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                            <span style={{ fontSize: 11, color: 'var(--sub)' }}>
                               {new Date(m.match_date).toLocaleTimeString('pt-BR', {
                                 timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
                               })}
@@ -260,20 +261,20 @@ export default function MeusPontos() {
                             <div style={{ textAlign: 'center' }}>
                               <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', marginBottom: 4 }}>
                                 <div style={{
-                                  width: 40, height: 40, background: 'var(--bg-soft)',
+                                  width: 40, height: 40, background: 'var(--bg2)',
                                   borderRadius: 10, display: 'flex', alignItems: 'center',
                                   justifyContent: 'center', fontSize: 18, fontWeight: 700,
                                   border: '1px solid var(--line)'
                                 }}>{m.score_a}</div>
-                                <span style={{ fontSize: 12, color: 'var(--muted)' }}>x</span>
+                                <span style={{ fontSize: 12, color: 'var(--sub)' }}>x</span>
                                 <div style={{
-                                  width: 40, height: 40, background: 'var(--bg-soft)',
+                                  width: 40, height: 40, background: 'var(--bg2)',
                                   borderRadius: 10, display: 'flex', alignItems: 'center',
                                   justifyContent: 'center', fontSize: 18, fontWeight: 700,
                                   border: '1px solid var(--line)'
                                 }}>{m.score_b}</div>
                               </div>
-                              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>resultado</div>
+                              <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>resultado</div>
                             </div>
                             <div style={{ textAlign: 'left', fontWeight: 600, fontSize: 14 }}>{m.team_b}</div>
                           </div>
@@ -281,24 +282,24 @@ export default function MeusPontos() {
                           <div style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                             padding: '10px 12px', borderRadius: 12,
-                            background: g ? `${color}18` : 'var(--bg-soft)',
-                            border: `1px solid ${g ? color : 'var(--line)'}`
+                            background: g ? `${color}18` : 'var(--bg2)',
+                            border: `1px solid ${g ? color : 'var(--line2)'}`
                           }}>
                             <div>
                               <span style={{ fontSize: 13, color: color, fontWeight: 700 }}>{icon} {label}</span>
                               {g && (
-                                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                                <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 2 }}>
                                   Seu palpite: {g.guess_a} x {g.guess_b}
                                   {m.is_knockout && g.guess_penalty_winner && (
                                     <> · pên: {g.guess_penalty_winner === 'A' ? m.team_a : m.team_b}</>
                                   )}
                                 </div>
                               )}
-                              {!g && <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Você não palpitou</div>}
+                              {!g && <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 2 }}>Você não palpitou</div>}
                             </div>
                             <div style={{
                               fontFamily: "'Bebas Neue', sans-serif",
-                              fontSize: 28, color: points > 0 ? color : 'var(--muted)',
+                              fontSize: 28, color: points > 0 ? color : 'var(--sub)',
                               minWidth: 48, textAlign: 'right'
                             }}>+{points}</div>
                           </div>

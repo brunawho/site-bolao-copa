@@ -67,7 +67,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  'SCHEDULED': 'var(--muted)',
+  'SCHEDULED': 'var(--sub)',
   'IN_PLAY':   '#f87171',
   'PAUSED':    'var(--gold)',
   'FINISHED':  '#2ea84c',
@@ -362,9 +362,9 @@ export default function GaleraGrupo() {
           style={{ width: 'auto', padding: '8px 16px', fontSize: 13, marginBottom: 16, marginTop: 20 }}
           onClick={() => setSelected(null)}>← Voltar</button>
 
-        <h1 className="brand" style={{ fontSize: 28, marginBottom: 4 }}>{selected.name}</h1>
+        <h1 className="brand" style={{ marginBottom: 8 }}>{selected.name}</h1>
         {!isMe && (
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
+          <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 16 }}>
             🔒 Palpites ocultos até o jogo começar
           </p>
         )}
@@ -383,9 +383,9 @@ export default function GaleraGrupo() {
               setExpandedDays(f.key === 'today' ? { [todayBrazil()]: true } : {});
             }} style={{
               flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
-              borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
-              background: filter === f.key ? 'var(--gold)' : 'var(--card)',
-              color: filter === f.key ? '#1a1a1a' : 'var(--text)',
+              borderColor: filter === f.key ? 'var(--gold)' : 'var(--line2)',
+              background: filter === f.key ? 'var(--gold)' : 'var(--bg3)',
+              color: filter === f.key ? '#020A02' : 'var(--sub)',
               fontWeight: filter === f.key ? 700 : 400,
               fontSize: 11, cursor: 'pointer', lineHeight: 1.4
             }}>
@@ -403,8 +403,8 @@ export default function GaleraGrupo() {
           return (
             <div key={day} style={{ marginBottom: 8 }}>
               <button onClick={() => toggleDay(day)} style={{
-                width: '100%', background: expanded ? 'var(--card)' : 'var(--bg-soft)',
-                border: `1px solid ${isToday ? 'var(--gold)' : 'var(--line)'}`,
+                width: '100%', background: expanded ? 'var(--bg3)' : 'var(--bg2)',
+                border: `1px solid ${isToday ? 'var(--gold)' : 'var(--line2)'}`,
                 borderRadius: expanded ? '14px 14px 0 0' : 14,
                 padding: '12px 16px', cursor: 'pointer', color: 'var(--text)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -412,7 +412,7 @@ export default function GaleraGrupo() {
                 <span style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   {isToday ? '⚡ Hoje' : fmtDay(day)}
                 </span>
-                <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
+                <span style={{ color: 'var(--sub)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
               </button>
 
               {expanded && (
@@ -425,9 +425,9 @@ export default function GaleraGrupo() {
                       <div key={m.id} style={{
                         padding: 16,
                         borderTop: i > 0 ? '1px solid var(--line)' : 'none',
-                        background: 'var(--card)'
+                        background: 'var(--bg3)'
                       }}>
-                        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: 'var(--sub)', marginBottom: 10 }}>
                           {m.phase.split('·').slice(1).join('·').trim() || m.phase}
                         </div>
 
@@ -438,25 +438,25 @@ export default function GaleraGrupo() {
                               <div style={{
                                 display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center'
                               }}>
-                                <div className="score-input" style={{ background: 'var(--bg-soft)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>?</div>
-                                <span style={{ color: 'var(--muted)', fontSize: 12 }}>x</span>
-                                <div className="score-input" style={{ background: 'var(--bg-soft)', color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>?</div>
+                                <div className="score-input" style={{ background: 'var(--bg2)', color: 'var(--sub)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>?</div>
+                                <span style={{ color: 'var(--sub)', fontSize: 12 }}>x</span>
+                                <div className="score-input" style={{ background: 'var(--bg2)', color: 'var(--sub)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>?</div>
                               </div>
                             ) : g ? (
                               <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
                                 <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{g.guess_a}</div>
-                                <span style={{ color: 'var(--muted)', fontSize: 12 }}>x</span>
+                                <span style={{ color: 'var(--sub)', fontSize: 12 }}>x</span>
                                 <div className="score-input" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{g.guess_b}</div>
                               </div>
                             ) : (
-                              <span style={{ fontSize: 12, color: 'var(--muted)' }}>—</span>
+                              <span style={{ fontSize: 12, color: 'var(--sub)' }}>—</span>
                             )}
                           </div>
                           <div className="team team-b">{toPT(m.team_b)}</div>
                         </div>
 
                         {!oculto && !g && (
-                          <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted)', marginTop: 8 }}>
+                          <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--sub)', marginTop: 8 }}>
                             Sem palpite
                           </p>
                         )}
@@ -493,7 +493,7 @@ export default function GaleraGrupo() {
                         { label: '⚽ Artilheiro', value: memberBet.top_scorer },
                       ].filter(f => f.value).map(f => (
                         <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
-                          <span style={{ color: 'var(--muted)' }}>{f.label}</span>
+                          <span style={{ color: 'var(--sub)' }}>{f.label}</span>
                           <span style={{ fontWeight: 700 }}>{f.value}</span>
                         </div>
                       ))}
@@ -512,7 +512,7 @@ export default function GaleraGrupo() {
                           };
                           return (
                             <div key={cp.phase} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
-                              <span style={{ color: 'var(--muted)' }}>{phaseLabel[cp.phase] || cp.phase}</span>
+                              <span style={{ color: 'var(--sub)' }}>{phaseLabel[cp.phase] || cp.phase}</span>
                               <span style={{ fontWeight: 700 }}>{toPT(cp.champion)}</span>
                             </div>
                           );
@@ -522,7 +522,7 @@ export default function GaleraGrupo() {
                   )}
 
                   {!memberBet && memberCP.length === 0 && (
-                    <p style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center' }}>Sem apostas especiais</p>
+                    <p style={{ fontSize: 13, color: 'var(--sub)', textAlign: 'center' }}>Sem apostas especiais</p>
                   )}
                 </div>
               );
@@ -538,17 +538,17 @@ export default function GaleraGrupo() {
   // ====== TELA PRINCIPAL DA GALERA ======
   return (
     <main className="app">
-      <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>A Galera</h1>
+      <h1 className="brand" style={{ marginTop: 16, marginBottom: 8 }}>A GA<span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>LERA</span></h1>
       <p className="subtitle" style={{ marginBottom: 16 }}>Toque em alguém pra ver os palpites.</p>
 
       {/* Card de convite + caixinha */}
       {inviteCode && (
         <div className="card" style={{ marginBottom: 20, background: 'rgba(212,167,44,0.08)' }}>
-          <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+          <p style={{ fontSize: 12, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
             Convidar mais gente
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 11, color: 'var(--muted)' }}>Código:</span>
+            <span style={{ fontSize: 11, color: 'var(--sub)' }}>Código:</span>
             <span style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, color: 'var(--gold)', letterSpacing: 2 }}>
               {inviteCode}
             </span>
@@ -571,19 +571,19 @@ export default function GaleraGrupo() {
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)' }}>
                 R$ {(Object.values(memberPayments).filter(Boolean).length * payment.entry_value).toFixed(0)}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
+              <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>arrecadado</div>
             </div>
             <div>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#2ea84c' }}>
                 {Object.values(memberPayments).filter(Boolean).length}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
+              <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pagaram</div>
             </div>
             <div>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--danger)' }}>
                 {members.length - Object.values(memberPayments).filter(Boolean).length}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
+              <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pendentes</div>
             </div>
           </div>
 
@@ -592,8 +592,8 @@ export default function GaleraGrupo() {
             {(['pagamentos', 'premio'] as const).map(tab => (
               <button key={tab} onClick={() => setConfigTab(tab)} style={{
                 flex: 1, padding: '8px', borderRadius: 10, border: '1px solid',
-                borderColor: configTab === tab ? 'var(--gold)' : 'var(--line)',
-                background: configTab === tab ? 'var(--gold)' : 'var(--bg-soft)',
+                borderColor: configTab === tab ? 'var(--gold)' : 'var(--line2)',
+                background: configTab === tab ? 'var(--gold)' : 'var(--bg2)',
                 color: configTab === tab ? '#1a1a1a' : 'var(--text)',
                 fontWeight: configTab === tab ? 700 : 400, fontSize: 12, cursor: 'pointer'
               }}>
@@ -606,7 +606,7 @@ export default function GaleraGrupo() {
             <>
               {isCreator && (
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
+                  <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>Valor da entrada (R$)</label>
                   <input className="input" type="number" min="0"
                     value={payment.entry_value}
                     onChange={e => setPayment(p => ({ ...p, entry_value: Number(e.target.value) }))} />
@@ -616,21 +616,21 @@ export default function GaleraGrupo() {
                 </div>
               )}
               {!isCreator && payment.entry_value > 0 && (
-                <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 10, fontSize: 13 }}>
+                <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg2)', borderRadius: 10, fontSize: 13 }}>
                   Valor da entrada: <strong style={{ color: 'var(--gold)' }}>R$ {payment.entry_value.toFixed(2)}</strong>
                 </div>
               )}
               <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
+                <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 10 }}>Status de pagamento:</p>
                 {members.map(m => (
                   <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
                     {isCreator ? (
                       <button onClick={() => togglePaid(m.user_id, memberPayments[m.user_id] || false)} style={{
                         padding: '6px 12px', borderRadius: 8, border: '1px solid',
-                        borderColor: memberPayments[m.user_id] ? '#2ea84c' : 'var(--line)',
-                        background: memberPayments[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
-                        color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--muted)',
+                        borderColor: memberPayments[m.user_id] ? '#2ea84c' : 'var(--line2)',
+                        background: memberPayments[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg2)',
+                        color: memberPayments[m.user_id] ? '#2ea84c' : 'var(--sub)',
                         fontSize: 12, cursor: 'pointer', fontWeight: 600
                       }}>
                         {memberPayments[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
@@ -668,7 +668,7 @@ export default function GaleraGrupo() {
                         <span style={{ fontSize: 13, fontWeight: 700 }}>🥇 1º lugar</span>
                         <div style={{ textAlign: 'right' }}>
                           <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_1st}%</span>
-                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_1st / 100).toFixed(2)}</span>}
+                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--sub)', marginLeft: 6 }}>R$ {(total * payment.prize_1st / 100).toFixed(2)}</span>}
                         </div>
                       </div>
                       <input type="range" className="prize-slider" min="0" max="100" step="1"
@@ -688,7 +688,7 @@ export default function GaleraGrupo() {
                         <span style={{ fontSize: 13, fontWeight: 700 }}>🥈 2º lugar</span>
                         <div style={{ textAlign: 'right' }}>
                           <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{payment.prize_2nd}%</span>
-                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * payment.prize_2nd / 100).toFixed(2)}</span>}
+                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--sub)', marginLeft: 6 }}>R$ {(total * payment.prize_2nd / 100).toFixed(2)}</span>}
                         </div>
                       </div>
                       <input type="range" className="prize-slider" min="0" max={max2} step="1"
@@ -698,18 +698,18 @@ export default function GaleraGrupo() {
                           const v2 = Number(e.target.value);
                           setPayment(p => ({ ...p, prize_2nd: v2, prize_3rd: Math.max(0, max2 - v2) }));
                         }} />
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Disponível: {max2}%</div>
+                      <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 4 }}>Disponível: {max2}%</div>
                     </div>
 
-                    <div style={{ marginBottom: 16, padding: '12px', background: 'var(--bg-soft)', borderRadius: 12 }}>
+                    <div style={{ marginBottom: 16, padding: '12px', background: 'var(--bg2)', borderRadius: 12 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: 13, fontWeight: 700 }}>🥉 3º lugar</span>
                         <div style={{ textAlign: 'right' }}>
                           <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--gold)' }}>{prize3}%</span>
-                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>R$ {(total * prize3 / 100).toFixed(2)}</span>}
+                          {total > 0 && <span style={{ fontSize: 11, color: 'var(--sub)', marginLeft: 6 }}>R$ {(total * prize3 / 100).toFixed(2)}</span>}
                         </div>
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Calculado automaticamente</div>
+                      <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 4 }}>Calculado automaticamente</div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
@@ -750,7 +750,7 @@ export default function GaleraGrupo() {
 
               {ranking.length > 0 && (
                 <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                  <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Projeção atual:</p>
+                  <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 8 }}>Projeção atual:</p>
                   {[
                     { pos: 0, pct: payment.prize_1st },
                     { pos: 1, pct: payment.prize_2nd },
@@ -783,8 +783,8 @@ export default function GaleraGrupo() {
                 {groupCompsWithValue.map(comp => (
                   <button key={comp.id} onClick={() => setSelectedCompPay(comp.id)} style={{
                     padding: '6px 12px', borderRadius: 20, border: '1px solid',
-                    borderColor: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--line)',
-                    background: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--bg-soft)',
+                    borderColor: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--line2)',
+                    background: selectedCompPay === comp.id ? 'var(--gold)' : 'var(--bg2)',
                     color: selectedCompPay === comp.id ? '#1a1a1a' : 'var(--text)',
                     fontWeight: selectedCompPay === comp.id ? 700 : 400, fontSize: 12, cursor: 'pointer'
                   }}>{comp.name}</button>
@@ -804,33 +804,33 @@ export default function GaleraGrupo() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', marginBottom: 16 }}>
                       <div>
                         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: 'var(--gold)' }}>R$ {total.toFixed(0)}</div>
-                        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>arrecadado</div>
+                        <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>arrecadado</div>
                       </div>
                       <div>
                         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: '#2ea84c' }}>{paidCount}</div>
-                        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pagaram</div>
+                        <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pagaram</div>
                       </div>
                       <div>
                         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: 'var(--danger)' }}>{members.length - paidCount}</div>
-                        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>pendentes</div>
+                        <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase' }}>pendentes</div>
                       </div>
                     </div>
 
                     {/* Valor de entrada — só criador edita */}
                     {isCreator && (
                       <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>Entrada R$</span>
+                        <span style={{ fontSize: 12, color: 'var(--sub)', whiteSpace: 'nowrap' }}>Entrada R$</span>
                         <input type="number" min="0"
                           value={entryVal}
                           onChange={e => setCompEntryValues(prev => ({ ...prev, [selectedCompPay]: Number(e.target.value) }))}
                           style={{
                             width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--line)',
-                            background: 'var(--bg-soft)', color: 'var(--text)', fontSize: 14, textAlign: 'center'
+                            background: 'var(--bg2)', color: 'var(--text)', fontSize: 14, textAlign: 'center'
                           }} />
                         <button onClick={() => saveCompEntryValue(selectedCompPay, entryVal)} disabled={savingCompValue}
                           style={{
                             padding: '6px 14px', borderRadius: 8, border: 'none',
-                            background: 'var(--gold)', color: '#1a1a1a',
+                            background: 'var(--gold)', color: '#020A02',
                             fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap'
                           }}>
                           {savingCompValue ? '...' : 'Salvar'}
@@ -839,23 +839,23 @@ export default function GaleraGrupo() {
                     )}
 
                     {!isCreator && entryVal > 0 && (
-                      <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 10, fontSize: 13 }}>
+                      <div style={{ marginBottom: 12, padding: '10px 12px', background: 'var(--bg2)', borderRadius: 10, fontSize: 13 }}>
                         Valor da entrada: <strong style={{ color: 'var(--gold)' }}>R$ {entryVal.toFixed(2)}</strong>
                       </div>
                     )}
 
                     {/* Status de pagamento */}
                     <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
-                      <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>Status de pagamento:</p>
+                      <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 10 }}>Status de pagamento:</p>
                       {members.map(m => (
                         <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
                           {isCreator ? (
                             <button onClick={() => toggleCompPayment(selectedCompPay, m.user_id, pays[m.user_id] || false)} style={{
                               padding: '6px 12px', borderRadius: 8, border: '1px solid',
-                              borderColor: pays[m.user_id] ? '#2ea84c' : 'var(--line)',
-                              background: pays[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
-                              color: pays[m.user_id] ? '#2ea84c' : 'var(--muted)',
+                              borderColor: pays[m.user_id] ? '#2ea84c' : 'var(--line2)',
+                              background: pays[m.user_id] ? 'rgba(46,168,76,0.15)' : 'var(--bg2)',
+                              color: pays[m.user_id] ? '#2ea84c' : 'var(--sub)',
                               fontSize: 12, cursor: 'pointer', fontWeight: 600
                             }}>
                               {pays[m.user_id] ? '✅ Pago' : '⏳ Pendente'}
@@ -887,7 +887,7 @@ export default function GaleraGrupo() {
           </button>
           {showCompetitions && (
             <div className="card" style={{ marginTop: 8 }}>
-              <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
+              <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 12 }}>
                 Ative os campeonatos que seu grupo vai participar:
               </p>
               {competitions.map(comp => {
@@ -899,13 +899,13 @@ export default function GaleraGrupo() {
                   }}>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{comp.name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{comp.code}</div>
+                      <div style={{ fontSize: 11, color: 'var(--sub)' }}>{comp.code}</div>
                     </div>
                     <button onClick={() => toggleCompetition(comp.id, isActive)} style={{
                       padding: '6px 14px', borderRadius: 10, border: '1px solid',
-                      borderColor: isActive ? '#2ea84c' : 'var(--line)',
-                      background: isActive ? 'rgba(46,168,76,0.15)' : 'var(--bg-soft)',
-                      color: isActive ? '#2ea84c' : 'var(--muted)',
+                      borderColor: isActive ? '#2ea84c' : 'var(--line2)',
+                      background: isActive ? 'rgba(46,168,76,0.15)' : 'var(--bg2)',
+                      color: isActive ? '#2ea84c' : 'var(--sub)',
                       fontWeight: 700, fontSize: 12, cursor: 'pointer'
                     }}>
                       {isActive ? '✅ Ativo' : '+ Ativar'}
@@ -923,15 +923,15 @@ export default function GaleraGrupo() {
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <button onClick={() => setGaleraMode('pessoa')} style={{
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-            borderColor: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--line)',
-            background: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--card)',
+            borderColor: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--line2)',
+            background: galeraMode === 'pessoa' ? 'var(--gold)' : 'var(--bg3)',
             color: galeraMode === 'pessoa' ? '#1a1a1a' : 'var(--text)',
             fontWeight: galeraMode === 'pessoa' ? 700 : 400, fontSize: 13, cursor: 'pointer'
           }}>👥 Por pessoa</button>
           <button onClick={() => setGaleraMode('jogo')} style={{
             flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-            borderColor: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--line)',
-            background: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--card)',
+            borderColor: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--line2)',
+            background: galeraMode === 'jogo' ? 'var(--gold)' : 'var(--bg3)',
             color: galeraMode === 'jogo' ? '#1a1a1a' : 'var(--text)',
             fontWeight: galeraMode === 'jogo' ? 700 : 400, fontSize: 13, cursor: 'pointer'
           }}>⚽ Por jogo</button>
@@ -963,7 +963,7 @@ export default function GaleraGrupo() {
                   <div onClick={() => setExpandedMatch(isExpanded ? null : m.id)}
                     style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: isExpanded ? '1px solid var(--line)' : 'none' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                      <span style={{ fontSize: 11, color: 'var(--sub)' }}>
                         {m.phase.split('·').slice(1).join('·').trim() || m.phase}
                       </span>
                       <span style={{ fontSize: 11, color: isFinished ? '#2ea84c' : 'var(--gold)', fontWeight: 700 }}>
@@ -978,12 +978,12 @@ export default function GaleraGrupo() {
                             {m.score_a} x {m.score_b}
                           </span>
                         ) : (
-                          <span style={{ fontSize: 13, color: 'var(--muted)' }}>vs</span>
+                          <span style={{ fontSize: 13, color: 'var(--sub)' }}>vs</span>
                         )}
                       </div>
                       <span style={{ textAlign: 'left', fontWeight: 700, fontSize: 14 }}>{toPT(m.team_b)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8, fontSize: 11, color: 'var(--muted)', gap: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8, fontSize: 11, color: 'var(--sub)', gap: 6 }}>
                       <span>{Object.keys(guessesForMatch).length}/{members.length} palpites</span>
                       <span>{isExpanded ? '▲' : '▼'}</span>
                     </div>
@@ -1008,13 +1008,13 @@ export default function GaleraGrupo() {
                           <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18 }}>
                             {memberGuess.guess_a} x {memberGuess.guess_b}
                             {m.is_knockout && memberGuess.guess_a === memberGuess.guess_b && memberGuess.guess_penalty_winner && (
-                              <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 6 }}>
+                              <span style={{ fontSize: 11, color: 'var(--sub)', marginLeft: 6 }}>
                                 (pên: {memberGuess.guess_penalty_winner === 'A' ? toPT(m.team_a) : toPT(m.team_b)})
                               </span>
                             )}
                           </span>
                         ) : (
-                          <span style={{ fontSize: 12, color: 'var(--muted)' }}>— sem palpite</span>
+                          <span style={{ fontSize: 12, color: 'var(--sub)' }}>— sem palpite</span>
                         )}
                       </div>
                     );

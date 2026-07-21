@@ -189,13 +189,13 @@ export default function Grupos() {
 
   return (
     <main className="app">
-      {toast && <div className="toast" style={{ background: 'var(--gold)', color: '#1a1a1a' }}>{toast}</div>}
+      {toast && <div className="toast" style={{ background: 'var(--gold)', color: '#020A02' }}>{toast}</div>}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 className="brand" style={{ fontSize: 28 }}>Meus<br /><span>Bolões</span></h1>
+        <h1 className="brand">MEUS<br /><span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>BOLÕES</span></h1>
         <button onClick={logout} style={{
           background: 'transparent', border: '1px solid var(--line)',
-          color: 'var(--muted)', padding: '6px 12px', borderRadius: 8,
+          color: 'var(--sub)', padding: '6px 12px', borderRadius: 8,
           fontSize: 12, cursor: 'pointer'
         }}>Sair</button>
       </div>
@@ -215,11 +215,11 @@ export default function Grupos() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{g.name}</h3>
-                <p style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  Código: <strong style={{ color: 'var(--gold)', fontFamily: 'monospace', letterSpacing: 2 }}>{g.invite_code}</strong>
+                <p style={{ fontSize: 12, color: 'var(--sub)' }}>
+                  Código: <strong style={{ color: 'var(--neon)', fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 4 }}>{g.invite_code}</strong>
                 </p>
               </div>
-              <span style={{ color: 'var(--muted)', fontSize: 20 }}>›</span>
+              <span style={{ color: 'var(--sub)', fontSize: 20 }}>›</span>
             </div>
           </Link>
         ))
@@ -235,15 +235,15 @@ export default function Grupos() {
 
       {/* MODAL ESPELHAR */}
       {showMirror && (
-        <div className="card" style={{ marginBottom: 16, border: '1px solid var(--gold)' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: 'var(--gold)' }}>
+        <div className="card" style={{ marginBottom: 16, border: '1px solid var(--line2)' }}>
+          <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: '.04em', marginBottom: 14, color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>
             📋 Espelhar palpites
           </h3>
-          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+          <p style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 12 }}>
             Copia todos os palpites de um grupo para outro. Palpites já existentes não são sobrescritos.
           </p>
 
-          <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+          <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>
             De qual grupo?
           </label>
           <select className="input" value={mirrorFrom}
@@ -255,7 +255,7 @@ export default function Grupos() {
             ))}
           </select>
 
-          <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+          <label style={{ fontSize: 12, color: 'var(--sub)', display: 'block', marginBottom: 6 }}>
             Para qual grupo?
           </label>
           <select className="input" value={mirrorTo}
@@ -282,13 +282,13 @@ export default function Grupos() {
       {/* Formulário criar/entrar */}
       {mode !== 'none' ? (
         <div className="card" style={{ marginTop: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: 'var(--gold)' }}>
+          <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: '.04em', marginBottom: 14, color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>
             {mode === 'create' ? '🆕 Criar novo grupo' : '🔑 Entrar com código'}
           </h3>
 
           {mode === 'create' ? (
             <>
-              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+              <p style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 10 }}>
                 Dê um nome pro seu bolão:
               </p>
               <input className="input" placeholder="Ex: Bolão do Trabalho"
@@ -298,7 +298,7 @@ export default function Grupos() {
             </>
           ) : (
             <>
-              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+              <p style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 10 }}>
                 Digite o código de 6 letras do grupo:
               </p>
               <input className="input" placeholder="ABC123" maxLength={6}

@@ -110,7 +110,7 @@ export default function PerfilPage() {
   if (loading) return (
     <main className="app">
       {[1,2,3].map(i => (
-        <div key={i} style={{ height: 80, borderRadius: 14, background: 'var(--card)', marginBottom: 12, animation: 'pulse 1.5s infinite' }} />
+        <div key={i} style={{ height: 80, borderRadius: 14, background: 'var(--bg3)', marginBottom: 12, animation: 'pulse 1.5s infinite' }} />
       ))}
       <style>{`@keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }`}</style>
     </main>
@@ -118,37 +118,37 @@ export default function PerfilPage() {
 
   return (
     <main className="app">
-      {toast && <div className="toast" style={{ background: 'var(--gold)', color: '#1a1a1a' }}>{toast}</div>}
+      {toast && <div className="toast" style={{ background: 'var(--gold)', color: '#020A02' }}>{toast}</div>}
 
-      <h1 className="brand" style={{ fontSize: 28, marginBottom: 4, marginTop: 20 }}>Meu Perfil</h1>
+      <h1 className="brand" style={{ marginTop: 16, marginBottom: 16 }}>MEU<span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}> PERFIL</span></h1>
       <p className="subtitle" style={{ marginBottom: 20 }}>Suas informações e estatísticas.</p>
 
       {/* Avatar grande */}
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{
           width: 80, height: 80, borderRadius: '50%',
-          background: 'rgba(212,167,44,0.2)', border: '3px solid var(--gold)',
+          background: 'rgba(57,255,20,0.08)', border: '2px solid var(--neon)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 32, fontWeight: 700, color: 'var(--gold)', marginBottom: 8
+          fontSize: 32, fontWeight: 900, color: 'var(--neon)', textShadow: 'var(--shadow-neon)', marginBottom: 8
         }}>
           {name.charAt(0).toUpperCase()}
         </div>
-        <p style={{ fontSize: 12, color: 'var(--muted)' }}>{email}</p>
-        <p style={{ fontSize: 12, color: 'var(--muted)' }}>{stats.groups} grupo{stats.groups !== 1 ? 's' : ''}</p>
+        <p style={{ fontSize: 12, color: 'var(--sub)' }}>{email}</p>
+        <p style={{ fontSize: 12, color: 'var(--sub)' }}>{stats.groups} grupo{stats.groups !== 1 ? 's' : ''}</p>
       </div>
 
       {/* Editar nome */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editingName ? 12 : 0 }}>
           <div>
-            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 2 }}>Nome de usuário</p>
+            <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 2 }}>Nome de usuário</p>
             {!editingName && <p style={{ fontSize: 16, fontWeight: 700 }}>{name}</p>}
           </div>
           {!editingName && (
             <button onClick={() => setEditingName(true)} style={{
-              background: 'var(--bg-soft)', border: '1px solid var(--line)',
+              background: 'var(--bg2)', border: '1px solid var(--line)',
               borderRadius: 8, padding: '6px 12px', fontSize: 12,
-              color: 'var(--muted)', cursor: 'pointer'
+              color: 'var(--sub)', cursor: 'pointer'
             }}>✏️ Editar</button>
           )}
         </div>
@@ -177,13 +177,13 @@ export default function PerfilPage() {
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>📊 Estatísticas gerais</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-            <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-soft)', borderRadius: 12 }}>
+            <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg2)', borderRadius: 12 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: 'var(--gold)' }}>{stats.points}</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase' }}>pontos totais</div>
+              <div style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase' }}>pontos totais</div>
             </div>
-            <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-soft)', borderRadius: 12 }}>
+            <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg2)', borderRadius: 12 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: 'var(--gold)' }}>{stats.total}</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase' }}>palpites feitos</div>
+              <div style={{ fontSize: 11, color: 'var(--sub)', textTransform: 'uppercase' }}>palpites feitos</div>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ export default function PerfilPage() {
                 <span>{s.label}</span>
                 <span style={{ color: s.color, fontWeight: 700 }}>{s.value} ({pct(s.value)}%)</span>
               </div>
-              <div style={{ height: 6, borderRadius: 3, background: 'var(--line)' }}>
+              <div style={{ height: 6, borderRadius: 3, background: 'var(--line2)' }}>
                 <div style={{ height: '100%', borderRadius: 3, background: s.color, width: `${pct(s.value)}%`, transition: 'width 0.6s ease' }} />
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function PerfilPage() {
           </div>
         ) : (
           <div style={{ marginBottom: 8 }}>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+            <p style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 10 }}>
               Enviaremos um link para {email}
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
