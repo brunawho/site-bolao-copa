@@ -617,7 +617,6 @@ export default function PalpitesGrupo() {
                 color: filter === f ? 'var(--text)' : 'var(--sub)',
                 fontWeight: filter === f ? 800 : 400, fontSize: 11, cursor: 'pointer',
                 textTransform: 'uppercase', letterSpacing: '.04em',
-                border: filter === f ? '1px solid var(--line2)' : '1px solid transparent',
               }}>
                 {labels[i]} ({counts[i]})
               </button>
