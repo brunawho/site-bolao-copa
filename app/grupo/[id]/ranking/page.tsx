@@ -866,8 +866,18 @@ export default function RankingGrupo() {
       {/* Modal Drilldown */}
       {drilldown && (() => {
         const member = drilldown;
-        const allScoredMatches = matches.filter(m => m.score_a !== null);
-        const scoredMatches = allScoredMatches.map(m => {
+
+        // Filtra jogos pelo campeonato selecionado
+        const isWC    = selectedCompRank === 'wc';
+        const isGeral = selectedCompRank === 'geral' || !selectedCompRank;
+        const baseMatches = matches.filter(m => {
+          if (!m.score_a === null) return false;
+          if (isGeral) return m.score_a !== null;
+          if (isWC) return m.score_a !== null && m.phase.includes('Copa do Mundo');
+          return m.score_a !== null && (m as any).competition_id === selectedCompRank;
+        });
+
+        const scoredMatches = baseMatches.map(m => {
           const g = drilldownGuesses[m.id];
           if (!g) return null;
           const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
@@ -893,7 +903,11 @@ export default function RankingGrupo() {
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 16 }}>{member.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--sub)' }}>
-                      {scoredMatches.length} acerto{scoredMatches.length !== 1 ? 's' : ''} · {member.grand_total} pts total
+                      {scoredMatches.length} acerto{scoredMatches.length !== 1 ? 's' : ''} · {
+                        isGeral ? `${member.grand_total} pts total` :
+                        isWC ? 'Copa do Mundo' :
+                        competitions.find(c => c.id === selectedCompRank)?.name || 'Campeonato'
+                      }
                     </div>
                   </div>
                 </div>
