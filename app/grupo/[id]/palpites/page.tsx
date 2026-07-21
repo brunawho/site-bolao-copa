@@ -506,6 +506,17 @@ export default function PalpitesGrupo() {
   // Modal day matches
   const confirmDayMatches = confirmMatches ?? [];
 
+  // Recarrega palpites ao voltar para a tela (ex: após salvar)
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === 'visible' && memberId) {
+        load(memberId);
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [memberId]);
+
   useEffect(() => {
     const handleUnload = () => {
       if (typeof window !== 'undefined') sessionStorage.setItem(`scroll-palpites-${groupId}`, String(window.scrollY));

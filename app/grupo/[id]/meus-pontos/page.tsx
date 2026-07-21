@@ -174,8 +174,8 @@ export default function MeusPontos() {
               padding: '8px 14px', borderRadius: 12, border: '1px solid',
               borderColor: selectedComp === comp ? 'var(--gold)' : 'var(--line2)',
               background: selectedComp === comp ? 'var(--gold)' : 'var(--bg3)',
-              color: selectedComp === comp ? 'var(--gold)' : 'var(--sub)',
-              fontWeight: selectedComp === comp ? 700 : 400,
+              color: selectedComp === comp ? 'var(--text)' : 'var(--sub)',
+              fontWeight: selectedComp === comp ? 800 : 400,
               fontSize: 13, cursor: 'pointer'
             }}>
               {comp}
