@@ -328,7 +328,7 @@ export default function PalpitesGrupo() {
     const codes = (gcData || []).map((gc: any) => gc.competitions?.code).filter(Boolean);
     setGroupCompCodes(codes);
     const bsa = (gcData || []).find((gc: any) => gc.competitions?.code === 'BSA');
-    if (bsa) setBsaCompId(bsa.competitions.id);
+    if (bsa) setBsaCompId((bsa.competitions as any).id);
 
     // Carrega poderes usados pelo membro
     const { data: powers } = await supabase
