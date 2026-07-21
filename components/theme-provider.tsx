@@ -1,39 +1,45 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeCtx = createContext<{ theme: string; toggle: () => void }>({ theme: 'dark', toggle: () => {} });
+const ThemeCtx = createContext<{ theme: string; setTheme: (t: string) => void }>({ theme: 'dark', setTheme: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState('dark');
+  const [theme, setThemeState] = useState('dark');
 
   useEffect(() => {
     const saved = localStorage.getItem('bw-theme') || 'dark';
-    setTheme(saved);
+    setThemeState(saved);
     document.documentElement.setAttribute('data-theme', saved);
   }, []);
 
-  function toggle() {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    localStorage.setItem('bw-theme', next);
-    document.documentElement.setAttribute('data-theme', next);
+  function setTheme(t: string) {
+    setThemeState(t);
+    localStorage.setItem('bw-theme', t);
+    document.documentElement.setAttribute('data-theme', t);
   }
 
-  return <ThemeCtx.Provider value={{ theme, toggle }}>{children}</ThemeCtx.Provider>;
+  return <ThemeCtx.Provider value={{ theme, setTheme }}>{children}</ThemeCtx.Provider>;
 }
 
 export function useTheme() { return useContext(ThemeCtx); }
 
 export function ThemeToggle() {
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const themes = [
+    { key: 'dark',  label: '🌙' },
+    { key: 'light', label: '☀️' },
+    { key: 'tarde', label: '🌆' },
+  ];
   return (
-    <div className="theme-toggle-wrap">
-      <button className={`theme-toggle-btn${theme === 'dark' ? ' on' : ''}`} onClick={() => theme !== 'dark' && toggle()}>
-        🌙 Noite
-      </button>
-      <button className={`theme-toggle-btn${theme === 'light' ? ' on' : ''}`} onClick={() => theme !== 'light' && toggle()}>
-        🌆 Tarde
-      </button>
+    <div style={{ display: 'flex', gap: 3, background: 'var(--bg3)', border: '1px solid var(--line2)', borderRadius: 100, padding: 3 }}>
+      {themes.map(t => (
+        <button key={t.key} onClick={() => setTheme(t.key)} style={{
+          padding: '4px 10px', borderRadius: 100, border: 'none',
+          background: theme === t.key ? 'var(--neon)' : 'transparent',
+          color: theme === t.key ? (t.key === 'light' ? '#1A1209' : '#020A02') : 'var(--sub)',
+          fontSize: 13, cursor: 'pointer', transition: 'all .2s', fontWeight: theme === t.key ? 800 : 400,
+        }}>{t.label}</button>
+      ))}
     </div>
   );
 }

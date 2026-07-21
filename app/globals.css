@@ -27,14 +27,36 @@
   --radius: 4px;
 }
 
-/* ── LIGHT: Tarde de jogo ── */
+/* ── LIGHT: Tarde ensolarada ── */
 [data-theme="light"] {
+  --bg:    #F5F0E8;
+  --bg2:   #EDE8DC;
+  --bg3:   #E4DED0;
+  --card:  #FDFAF4;
+  --line:  rgba(0,0,0,0.06);
+  --line2: rgba(0,0,0,0.12);
+  --text:  #1A1209;
+  --sub:   #6B5E45;
+  --dim:   #C4B89A;
+  --neon:  #7C00FF;
+  --neon2: #FF4D00;
+  --gold:  #D97B00;
+  --gold2: #FF6B00;
+  --red:   #D4000F;
+  --blue:  #0060CC;
+  --shadow-neon: 0 0 16px rgba(124,0,255,0.25), 0 0 40px rgba(124,0,255,0.08);
+  --shadow-gold: 0 0 16px rgba(217,123,0,0.3), 0 0 40px rgba(217,123,0,0.1);
+}
+
+
+/* ── TARDE: Estádio ao entardecer — roxo profundo ── */
+[data-theme="tarde"] {
   --bg:    #1A0A2E;
   --bg2:   #120820;
   --bg3:   #0E061A;
   --card:  #1E0E38;
-  --line:  rgba(200,100,255,0.12);
-  --line2: rgba(200,100,255,0.25);
+  --line:  rgba(200,100,255,0.08);
+  --line2: rgba(200,100,255,0.2);
   --text:  #FFE8FF;
   --sub:   #9060B0;
   --dim:   #3A1A5A;
@@ -46,6 +68,30 @@
   --blue:  #00CFFF;
   --shadow-neon: 0 0 20px rgba(200,0,255,0.35), 0 0 60px rgba(200,0,255,0.12);
   --shadow-gold: 0 0 20px rgba(255,215,0,0.4), 0 0 60px rgba(255,140,0,0.15);
+}
+
+[data-theme="tarde"] body::before {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(200,0,255,0.03) 0px,
+    rgba(200,0,255,0.03) 20px,
+    transparent 20px,
+    transparent 40px
+  );
+}
+
+[data-theme="tarde"] .nav {
+  background: rgba(26,10,46,0.96);
+  border-top: 1px solid rgba(200,100,255,0.15);
+}
+
+[data-theme="tarde"] .nav a.active .nav-icon {
+  filter: drop-shadow(0 0 6px rgba(200,0,255,0.6));
+}
+
+[data-theme="tarde"] .theme-toggle-btn.on {
+  background: var(--neon);
+  color: #fff;
 }
 
 /* ── RESET ── */
@@ -81,8 +127,8 @@ body::before {
 [data-theme="light"] body::before {
   background: repeating-linear-gradient(
     180deg,
-    rgba(200,0,255,0.03) 0px,
-    rgba(200,0,255,0.03) 20px,
+    rgba(124,0,255,0.03) 0px,
+    rgba(124,0,255,0.03) 20px,
     transparent 20px,
     transparent 40px
   );
@@ -264,7 +310,8 @@ h1, h2, h3 {
 }
 
 [data-theme="light"] .nav {
-  background: rgba(26,10,46,0.96);
+  background: rgba(245,240,232,0.96);
+  border-top: 1px solid rgba(0,0,0,0.1);
 }
 
 .nav a {
@@ -285,7 +332,7 @@ h1, h2, h3 {
 }
 
 [data-theme="light"] .nav a.active .nav-icon {
-  filter: drop-shadow(0 0 6px rgba(200,0,255,0.6));
+  filter: drop-shadow(0 0 5px rgba(124,0,255,0.45));
 }
 
 .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
@@ -485,4 +532,4 @@ h1, h2, h3 {
   color: #020A02;
 }
 
-[data-theme="light"] .theme-toggle-btn.on { color: #fff; }
+[data-theme="light"] .theme-toggle-btn.on { background: var(--neon); color: #fff; }
