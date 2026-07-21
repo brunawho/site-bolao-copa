@@ -1,12 +1,15 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeCtx = createContext<{ theme: string; setTheme: (t: string) => void }>({ theme: 'dark', setTheme: () => {} });
+const ThemeCtx = createContext<{ theme: string; setTheme: (t: string) => void }>({
+  theme: 'dark', setTheme: () => {}
+});
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState('dark');
 
   useEffect(() => {
+    // Lê tema salvo e aplica
     const saved = localStorage.getItem('bw-theme') || 'dark';
     setThemeState(saved);
     document.documentElement.setAttribute('data-theme', saved);
@@ -36,10 +39,29 @@ export function ThemeToggle() {
         <button key={t.key} onClick={() => setTheme(t.key)} style={{
           padding: '4px 10px', borderRadius: 100, border: 'none',
           background: theme === t.key ? 'var(--neon)' : 'transparent',
-          color: theme === t.key ? (t.key === 'light' ? '#1A1209' : '#020A02') : 'var(--sub)',
-          fontSize: 13, cursor: 'pointer', transition: 'all .2s', fontWeight: theme === t.key ? 800 : 400,
+          color: theme === t.key ? 'var(--bg)' : 'var(--sub)',
+          fontSize: 13, cursor: 'pointer', transition: 'all .2s',
+          fontWeight: theme === t.key ? 800 : 400,
         }}>{t.label}</button>
       ))}
     </div>
+  );
+}
+
+// Script inline para evitar flash de tema errado no SSR
+export function ThemeScript() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            try {
+              var t = localStorage.getItem('bw-theme') || 'dark';
+              document.documentElement.setAttribute('data-theme', t);
+            } catch(e) {}
+          })();
+        `
+      }}
+    />
   );
 }
