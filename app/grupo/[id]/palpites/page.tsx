@@ -1,3 +1,4 @@
+// v3.1 — poder 2x neon + 3 temas
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -745,12 +746,13 @@ export default function PalpitesGrupo() {
                             <button onClick={() => togglePower(m)} disabled={savingPower || hasPowerElsewhere} style={{
                               width: '100%', marginBottom: 10, padding: '8px',
                               borderRadius: 'var(--radius)', border: '1px solid',
-                              borderColor: isMyPower ? 'var(--gold)' : 'var(--line2)',
-                              background: isMyPower ? 'rgba(255,215,0,0.1)' : 'var(--bg2)',
-                              color: isMyPower ? 'var(--gold)' : hasPowerElsewhere ? 'var(--dim)' : 'var(--sub)',
+                              borderColor: isMyPower ? 'var(--gold)' : hasPowerElsewhere ? 'var(--line2)' : 'var(--neon)',
+                              background: isMyPower ? 'rgba(255,215,0,0.1)' : hasPowerElsewhere ? 'var(--bg2)' : 'rgba(57,255,20,0.07)',
+                              color: isMyPower ? 'var(--gold)' : hasPowerElsewhere ? 'var(--dim)' : 'var(--neon)',
                               fontWeight: 800, fontSize: 10, cursor: hasPowerElsewhere ? 'not-allowed' : 'pointer',
                               textTransform: 'uppercase', letterSpacing: '.06em',
-                              opacity: hasPowerElsewhere ? 0.5 : 1,
+                              opacity: hasPowerElsewhere ? 0.4 : 1,
+                              boxShadow: isMyPower ? 'var(--shadow-gold)' : !hasPowerElsewhere ? '0 0 10px rgba(57,255,20,0.15)' : 'none',
                             }}>
                               {isMyPower ? '⚡ PODER ATIVO · 2× PONTOS NESTE JOGO' : hasPowerElsewhere ? '⚡ PODER JÁ USADO NESTA RODADA' : '⚡ USAR PODER · 2× PONTOS NESTE JOGO'}
                             </button>
