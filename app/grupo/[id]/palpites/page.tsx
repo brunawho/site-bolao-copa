@@ -67,6 +67,11 @@ function extractComp(phase: string): string {
 }
 
 
+function extractRoundFromPhase(phase: string): number | null {
+  const m = phase.match(/Rodada (\d+)/);
+  return m ? parseInt(m[1]) : null;
+}
+
 function extractSubPhase(phase: string): string {
   if (phase.includes('LAST_32')) return '🥊 16 Avos';
   if (phase.includes('LAST_16') || phase.includes('ROUND_OF_16')) return '⚽ Oitavas';
@@ -268,6 +273,8 @@ export default function PalpitesGrupo() {
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
   const [groupCompCodes, setGroupCompCodes] = useState<string[]>([]);
+  const [roundPowers, setRoundPowers]       = useState<Record<string, string>>({});   // key: "compId-round" → match_id
+  const [bsaCompId, setBsaCompId]           = useState<string | null>(null);
   // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
@@ -316,10 +323,23 @@ export default function PalpitesGrupo() {
     // Busca campeonatos ativos no grupo
     const { data: gcData } = await supabase
       .from('group_competitions')
-      .select('competitions(code)')
+      .select('competitions(id, code)')
       .eq('group_id', groupId);
     const codes = (gcData || []).map((gc: any) => gc.competitions?.code).filter(Boolean);
     setGroupCompCodes(codes);
+    const bsa = (gcData || []).find((gc: any) => gc.competitions?.code === 'BSA');
+    if (bsa) setBsaCompId(bsa.competitions.id);
+
+    // Carrega poderes usados pelo membro
+    const { data: powers } = await supabase
+      .from('round_powers')
+      .select('match_id, round, competition_id, season')
+      .eq('group_member_id', mid);
+    const powerMap: Record<string, string> = {};
+    (powers || []).forEach((p: any) => {
+      powerMap[`${p.competition_id}-${p.season}-${p.round}`] = p.match_id;
+    });
+    setRoundPowers(powerMap);
     const map: Record<string, Guess> = {};
     (gs || []).forEach(g => { map[g.match_id] = g; });
     setMyGuesses(map);

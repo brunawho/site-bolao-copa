@@ -166,6 +166,7 @@ export default function RankingGrupo() {
   const [wcViewRanking, setWcViewRanking] = useState<{user_id: string; name: string; total_points: number; exact_hits: number}[]>([]);
   const [compSpecialPts, setCompSpecialPts] = useState<Record<string, Record<string, number>>>({});
   const [compPaidUsers, setCompPaidUsers]   = useState<Record<string, string[]>>({});
+  const [roundPowersMap, setRoundPowersMap] = useState<Record<string, string>>({});  // userId → Set de match_ids com poder
   const [liveMatches, setLiveMatches]   = useState<Match[]>([]);
   const [liveGuesses, setLiveGuesses]   = useState<Record<string, Record<string, Guess>>>({});
   const [drilldown, setDrilldown]       = useState<any | null>(null);
@@ -251,6 +252,21 @@ export default function RankingGrupo() {
         .eq('group_id', groupId)
         .order('total_points', { ascending: false });
       setWcViewRanking(wcVR || []);
+
+      // Round powers do Brasileirão
+      const { data: rpData } = await supabase
+        .from('round_powers')
+        .select('group_member_id, match_id')
+        .in('group_member_id', memberIds);
+      const rpMap: Record<string, Set<string>> = {};
+      (rpData || []).forEach((rp: any) => {
+        if (!rpMap[rp.group_member_id]) rpMap[rp.group_member_id] = new Set();
+        rpMap[rp.group_member_id].add(rp.match_id);
+      });
+      // Serializa para JSON
+      const rpSerial: Record<string, string> = {};
+      Object.entries(rpMap).forEach(([k, v]) => { rpSerial[k] = JSON.stringify([...v]); });
+      setRoundPowersMap(rpSerial);
 
       // Pagamentos por campeonato
       const { data: cpData } = await supabase
@@ -609,7 +625,13 @@ export default function RankingGrupo() {
                         compMatches.forEach(m => {
                           const g = member.guessByMatch[m.id];
                           if (!g) return;
-                          const p = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
+                          let p = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
+                          // Aplica poder 2x se ativo para esse jogo
+                          const memberPowers = roundPowersMap[member.id];
+                          if (memberPowers) {
+                            const powerSet: string[] = JSON.parse(memberPowers);
+                            if (powerSet.includes(m.id)) p = p * 2;
+                          }
                           pts += p;
                           if (g.guess_a === m.score_a && g.guess_b === m.score_b) exact++;
                         });
