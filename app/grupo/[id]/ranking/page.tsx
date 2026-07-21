@@ -638,36 +638,58 @@ export default function RankingGrupo() {
                 <div>
                   {/* PÓDIO TOP 3 */}
                   {compRankData.length >= 3 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12, alignItems: 'end' }}>
-                      {[
-                        { idx: 1, height: 90,  crown: '🥈', data: compRankData[1] },
-                        { idx: 0, height: 120, crown: '👑', data: compRankData[0] },
-                        { idx: 2, height: 80,  crown: '🥉', data: compRankData[2] },
-                      ].map(({ idx, height, crown, data }) => (
-                        <div key={idx} style={{
-                          background: idx === 0 ? 'rgba(255,215,0,0.06)' : 'var(--card)',
-                          border: `1px solid ${idx === 0 ? 'rgba(255,215,0,0.25)' : 'var(--line2)'}`,
-                          borderRadius: 'var(--radius)', padding: '12px 8px', textAlign: 'center',
-                          height, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4
+                    <div style={{ marginBottom: 16 }}>
+                      {/* 1° lugar — destaque */}
+                      <div style={{
+                        background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)',
+                        borderRadius: 'var(--radius)', padding: '20px 16px', textAlign: 'center',
+                        marginBottom: 8, position: 'relative', overflow: 'hidden'
+                      }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--gold), transparent)' }} />
+                        <div style={{ fontSize: 28, marginBottom: 6 }}>👑</div>
+                        <div style={{
+                          width: 52, height: 52, borderRadius: '50%',
+                          background: `${compRankData[0].color}20`, border: `2px solid ${compRankData[0].color}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 20, fontWeight: 900, color: compRankData[0].color,
+                          margin: '0 auto 8px', boxShadow: 'var(--shadow-gold)'
                         }}>
-                          <div style={{ fontSize: idx === 0 ? 20 : 16 }}>{crown}</div>
-                          <div style={{
-                            width: idx === 0 ? 36 : 28, height: idx === 0 ? 36 : 28,
-                            borderRadius: '50%', background: `${data.color}20`,
-                            border: `2px solid ${data.color}`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: idx === 0 ? 14 : 11, fontWeight: 900, color: data.color
-                          }}>
-                            {data.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {data.name.split(' ')[0]}
-                          </div>
-                          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: idx === 0 ? 22 : 18, color: idx === 0 ? 'var(--gold)' : 'var(--text)', textShadow: idx === 0 ? 'var(--shadow-gold)' : 'none' }}>
-                            {data.total_points}
-                          </div>
+                          {compRankData[0].name.charAt(0).toUpperCase()}
                         </div>
-                      ))}
+                        <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 2 }}>{compRankData[0].name}</div>
+                        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 40, color: 'var(--gold)', textShadow: 'var(--shadow-gold)', lineHeight: 1 }}>
+                          {compRankData[0].total_points}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.08em' }}>pontos · {compRankData[0].exact_hits} exatos</div>
+                      </div>
+                      {/* 2° e 3° lugar lado a lado */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        {[
+                          { crown: '🥈', data: compRankData[1] },
+                          { crown: '🥉', data: compRankData[2] },
+                        ].map(({ crown, data }, i) => (
+                          <div key={i} style={{
+                            background: 'var(--card)', border: '1px solid var(--line2)',
+                            borderRadius: 'var(--radius)', padding: '14px 10px', textAlign: 'center'
+                          }}>
+                            <div style={{ fontSize: 20, marginBottom: 6 }}>{crown}</div>
+                            <div style={{
+                              width: 38, height: 38, borderRadius: '50%',
+                              background: `${data.color}20`, border: `2px solid ${data.color}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 14, fontWeight: 900, color: data.color, margin: '0 auto 6px'
+                            }}>
+                              {data.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {data.name.split(' ')[0]}
+                            </div>
+                            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--sub)', lineHeight: 1 }}>
+                              {data.total_points}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 <div className="card" style={{ padding: 0 }}>
