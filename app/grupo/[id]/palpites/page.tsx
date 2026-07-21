@@ -26,27 +26,6 @@ function fmtDay(dateYMD: string) {
   });
 }
 
-
-const STATUS_LABEL: Record<string, string> = {
-  'SCHEDULED': 'Agendado',
-  'IN_PLAY':   'Em andamento',
-  'PAUSED':    'Pausado',
-  'FINISHED':  'Finalizado',
-  'POSTPONED': 'Adiado',
-  'SUSPENDED': 'Suspenso',
-  'CANCELLED': 'Cancelado',
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  'SCHEDULED': 'var(--muted)',
-  'IN_PLAY':   '#f87171',
-  'PAUSED':    'var(--gold)',
-  'FINISHED':  '#2ea84c',
-  'POSTPONED': '#fb923c',
-  'SUSPENDED': '#fb923c',
-  'CANCELLED': 'var(--danger)',
-};
-
 function jogoComecou(matchDate: string) {
   return new Date(matchDate) <= new Date();
 }
@@ -55,17 +34,13 @@ function palpitesRevelados(matchDate: string) {
   return new Date(matchDate).getTime() + 15 * 60 * 1000 <= Date.now();
 }
 
-// Extrai o nome do campeonato da fase
 function extractComp(phase: string): string {
   if (phase.includes('Copa do Mundo')) return '🏆 Copa do Mundo';
   if (phase.includes('Brasileirão'))   return 'Brasileirão';
   if (phase.includes('Champions'))     return 'Champions League';
   if (phase.includes('Libertadores'))  return 'Libertadores';
-  if (phase.includes('Sudamericana')) return 'Sudamericana';
-  if (phase.includes('Teste'))         return 'Teste';
   return phase.split(' ·')[0].split(' -')[0].trim();
 }
-
 
 function extractRoundFromPhase(phase: string): number | null {
   const m = phase.match(/Rodada (\d+)/);
@@ -82,24 +57,16 @@ function extractSubPhase(phase: string): string {
   return '📅 Fase de Grupos';
 }
 
-// Componente de escudo/bandeira
 function Crest({ name, crests, size = 24 }: { name: string; crests: Record<string, string>; size?: number }) {
   const url = crests[name];
   if (!url) return null;
   return (
-    <img
-      src={url}
-      alt={name}
-      width={size}
-      height={size}
+    <img src={url} alt={name} width={size} height={size}
       style={{ objectFit: 'contain', flexShrink: 0 }}
-      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-    />
+      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
   );
 }
 
-
-// Componente de Chaveamento Visual da Copa
 function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record<string, any> }) {
   const stages = [
     { key: 'LAST_32',        label: '16 Avos',    rounds: 16 },
@@ -117,57 +84,29 @@ function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record
   function MatchCard({ m }: { m: any }) {
     const guess  = myGuesses[m.id];
     const isDone = m.score_a !== null;
-    const isUpcoming = !isDone;
-
     return (
-      <div style={{
-        background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: 10, padding: '8px 10px', minWidth: 160,
-        fontSize: 12
-      }}>
-        {/* Time A */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 4, padding: '8px 10px', minWidth: 160, fontSize: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={{ fontWeight: 600, fontSize: 11, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {toPT(m.team_a) || '?'}
           </span>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 4 }}>
-            {isDone && (
-              <span style={{
-                fontWeight: 700, fontSize: 14,
-                color: m.score_a > m.score_b ? 'var(--gold)' : 'var(--muted)'
-              }}>{m.score_a}</span>
-            )}
-            {guess && (
-              <span style={{ fontSize: 10, color: 'var(--muted)', background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: 4 }}>
-                {guess.guess_a}
-              </span>
-            )}
+            {isDone && <span style={{ fontWeight: 700, fontSize: 14, color: m.score_a > m.score_b ? 'var(--gold)' : 'var(--sub)' }}>{m.score_a}</span>}
+            {guess && <span style={{ fontSize: 10, color: 'var(--sub)', background: 'var(--bg2)', padding: '1px 4px', borderRadius: 2 }}>{guess.guess_a}</span>}
           </div>
         </div>
-        {/* Divisor */}
         <div style={{ borderTop: '1px solid var(--line)', margin: '4px 0' }} />
-        {/* Time B */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontWeight: 600, fontSize: 11, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {toPT(m.team_b) || '?'}
           </span>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 4 }}>
-            {isDone && (
-              <span style={{
-                fontWeight: 700, fontSize: 14,
-                color: m.score_b > m.score_a ? 'var(--gold)' : 'var(--muted)'
-              }}>{m.score_b}</span>
-            )}
-            {guess && (
-              <span style={{ fontSize: 10, color: 'var(--muted)', background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: 4 }}>
-                {guess.guess_b}
-              </span>
-            )}
+            {isDone && <span style={{ fontWeight: 700, fontSize: 14, color: m.score_b > m.score_a ? 'var(--gold)' : 'var(--sub)' }}>{m.score_b}</span>}
+            {guess && <span style={{ fontSize: 10, color: 'var(--sub)', background: 'var(--bg2)', padding: '1px 4px', borderRadius: 2 }}>{guess.guess_b}</span>}
           </div>
         </div>
-        {/* Data */}
-        {isUpcoming && (
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4, textAlign: 'center' }}>
+        {m.score_a === null && (
+          <div style={{ fontSize: 10, color: 'var(--sub)', marginTop: 4, textAlign: 'center' }}>
             {new Date(m.match_date).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' })}
           </div>
         )}
@@ -175,41 +114,23 @@ function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record
     );
   }
 
-  const knockoutMatches = matches.filter(m =>
-    stages.some(s => m.phase.toUpperCase().includes(s.key))
-  );
-
+  const knockoutMatches = matches.filter(m => stages.some(s => m.phase.toUpperCase().includes(s.key)));
   if (knockoutMatches.length === 0) {
-    return (
-      <div className="empty" style={{ marginTop: 20 }}>
-        ⏳ O chaveamento será exibido quando o mata-mata começar.
-      </div>
-    );
+    return <div className="empty" style={{ marginTop: 20 }}>⏳ O chaveamento será exibido quando o mata-mata começar.</div>;
   }
 
   return (
     <div style={{ marginBottom: 20 }}>
-      {/* Legenda */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, fontSize: 11, color: 'var(--muted)' }}>
-        <span>Placar real: <strong style={{ color: 'var(--gold)' }}>grande</strong></span>
-        <span>Seu palpite: <span style={{ background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: 4 }}>pequeno</span></span>
-      </div>
-
       {stages.map(stage => {
         const stageMatches = getStageMatches(stage.key);
         if (!stageMatches.length) return null;
         return (
           <div key={stage.key} style={{ marginBottom: 24 }}>
-            <p style={{
-              fontSize: 12, fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.1em', color: 'var(--gold)', marginBottom: 10
-            }}>
-              {stage.label} ({stageMatches.length} jogos)
+            <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: '.06em', color: 'var(--gold)', marginBottom: 10 }}>
+              {stage.label} <span style={{ color: 'var(--sub)', fontSize: 12 }}>({stageMatches.length} jogos)</span>
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {stageMatches.map(m => (
-                <MatchCard key={m.id} m={m} />
-              ))}
+              {stageMatches.map(m => <MatchCard key={m.id} m={m} />)}
             </div>
           </div>
         );
@@ -217,7 +138,6 @@ function Chaveamento({ matches, myGuesses }: { matches: any[], myGuesses: Record
     </div>
   );
 }
-
 
 const TEAM_TRANSLATIONS: Record<string, string> = {
   'Algeria': 'Argélia', 'Argentina': 'Argentina', 'Australia': 'Austrália',
@@ -238,20 +158,7 @@ const TEAM_TRANSLATIONS: Record<string, string> = {
   'United States': 'Estados Unidos', 'Uruguay': 'Uruguai', 'Uzbekistan': 'Uzbequistão',
 };
 
-function toPT(name: string): string {
-  return TEAM_TRANSLATIONS[name] || name;
-}
-
-function timeUntil(matchDate: string): string | null {
-  const diff = new Date(matchDate).getTime() - Date.now();
-  if (diff <= 0) return null;
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  if (h > 24) return null;
-  if (h > 0) return `Fecha em ${h}h ${m}min`;
-  if (m > 0) return `Fecha em ${m}min`;
-  return 'Fechando agora';
-}
+function toPT(name: string): string { return TEAM_TRANSLATIONS[name] || name; }
 
 export default function PalpitesGrupo() {
   const params  = useParams();
@@ -268,18 +175,16 @@ export default function PalpitesGrupo() {
   const [confirmMatches, setConfirmMatches] = useState<Match[]>([]);
   const [modalPens, setModalPens]           = useState<Record<string, 'A' | 'B' | ''>>({});
   const [crests, setCrests]       = useState<Record<string, string>>({});
-
-  // Seleção de campeonato e dia
-  const [selectedComp, setSelectedComp] = useState<string | null>(null);
+  const [selectedComp, setSelectedComp]   = useState<string | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
-  const [groupCompCodes, setGroupCompCodes] = useState<string[]>([]);
-  const [roundPowers, setRoundPowers]       = useState<Record<string, string>>({});   // key: "compId-round" → match_id
-  const [bsaCompId, setBsaCompId]           = useState<string | null>(null);
-  // Auto-seleciona 16 Avos se não tiver jogos da Fase de Grupos hoje
-  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [expandedDays, setExpandedDays]   = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<'upcoming' | 'today' | 'past'>('today');
   const [view, setView]     = useState<'palpites' | 'chaveamento'>('palpites');
   const [savedRecently, setSavedRecently] = useState<Set<string>>(new Set());
+  // Poder 2x Brasileirão
+  const [roundPowers, setRoundPowers] = useState<Record<string, string>>({});  // key: "compId-season-round" → match_id
+  const [bsaCompId, setBsaCompId]     = useState<string | null>(null);
+  const [savingPower, setSavingPower] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -291,25 +196,10 @@ export default function PalpitesGrupo() {
       if (!member) return;
       setMemberId(member.id);
       load(member.id);
-      // Busca bandeiras e escudos dos times
       fetch('/api/wc-data').then(r => r.json()).then(d => {
         const crestMap: Record<string, string> = {};
-        // Mapa completo do endpoint
-        if (d.crests) {
-          Object.entries(d.crests).forEach(([name, url]) => {
-            if (url) crestMap[name as string] = url as string;
-          });
-        }
-        // Times individuais com flag
-        (d.teams ?? []).forEach((t: any) => {
-          if (t.flag) crestMap[t.name] = t.flag;
-        });
-        // Fallback: busca também pelo nome sem acento
-        const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        Object.keys(crestMap).forEach(key => {
-          const norm = normalize(key);
-          if (!crestMap[norm]) crestMap[norm] = crestMap[key];
-        });
+        if (d.crests) Object.entries(d.crests).forEach(([name, url]) => { if (url) crestMap[name as string] = url as string; });
+        (d.teams ?? []).forEach((t: any) => { if (t.flag) crestMap[t.name] = t.flag; });
         setCrests(crestMap);
       }).catch(() => {});
     })();
@@ -320,67 +210,111 @@ export default function PalpitesGrupo() {
     const { data: gs } = await supabase.from('guesses').select('*').eq('group_member_id', mid);
     setMatches(ms || []);
 
-    // Busca campeonatos ativos no grupo
     const { data: gcData } = await supabase
       .from('group_competitions')
       .select('competitions(id, code)')
       .eq('group_id', groupId);
-    const codes = (gcData || []).map((gc: any) => gc.competitions?.code).filter(Boolean);
-    setGroupCompCodes(codes);
-    const bsa = (gcData || []).find((gc: any) => gc.competitions?.code === 'BSA');
-    if (bsa) setBsaCompId((bsa.competitions as any).id);
 
-    // Carrega poderes usados pelo membro
-    const { data: powers } = await supabase
-      .from('round_powers')
-      .select('match_id, round, competition_id, season')
-      .eq('group_member_id', mid);
-    const powerMap: Record<string, string> = {};
-    (powers || []).forEach((p: any) => {
-      powerMap[`${p.competition_id}-${p.season}-${p.round}`] = p.match_id;
-    });
-    setRoundPowers(powerMap);
+    const bsa = (gcData || []).find((gc: any) => gc.competitions?.code === 'BSA');
+    const bsaId = bsa ? (bsa.competitions as any).id as string : null;
+    setBsaCompId(bsaId);
+
+    if (bsaId) {
+      const { data: powers } = await supabase
+        .from('round_powers')
+        .select('match_id, round, competition_id, season')
+        .eq('group_member_id', mid);
+      const powerMap: Record<string, string> = {};
+      (powers || []).forEach((p: any) => {
+        powerMap[`${p.competition_id}-${p.season}-${p.round}`] = p.match_id;
+      });
+      setRoundPowers(powerMap);
+    }
+
     const map: Record<string, Guess> = {};
     (gs || []).forEach(g => { map[g.match_id] = g; });
     setMyGuesses(map);
 
-    // Auto-seleciona categoria com jogos hoje
     const today2 = new Date().toLocaleDateString('pt-BR', {
       timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
     }).split('/').reverse().join('-');
 
-    const localMap: Record<string, string[]> = {};
+    const localCompMap: Record<string, string[]> = {};
     (ms || []).forEach((m: any) => {
-      let comp = '📅 Fase de Grupos';
-      if (m.phase.includes('LAST_32')) comp = '🥊 16 Avos';
-      else if (m.phase.includes('LAST_16') || m.phase.includes('ROUND_OF_16')) comp = '⚽ Oitavas de Final';
-      else if (m.phase.includes('QUARTER')) comp = '⚽ Quartas de Final';
-      else if (m.phase.includes('SEMI')) comp = '⚽ Semifinais';
-      else if (m.phase.includes('THIRD') || m.phase.includes('3RD')) comp = '⚽ 3º Lugar';
-      else if (m.phase.includes('FINAL') && !m.phase.includes('SEMI') && !m.phase.includes('QUARTER')) comp = '⚽ Final';
-      if (!localMap[comp]) localMap[comp] = [];
-      localMap[comp].push(m.match_date);
+      const comp = m.phase.includes('Copa do Mundo') ? '🏆 Copa do Mundo' : m.phase.split(' ·')[0].trim();
+      if (!localCompMap[comp]) localCompMap[comp] = [];
+      localCompMap[comp].push(m.match_date);
     });
 
-    const cats = ['📅 Fase de Grupos', '🥊 16 Avos', '⚽ Oitavas de Final', '⚽ Quartas de Final', '⚽ Semifinais', '⚽ 3º Lugar', '⚽ Final'];
-    const catToday = cats.find(c => (localMap[c] || []).some(d =>
-      new Date(d).toLocaleDateString('pt-BR', {
-        timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
-      }).split('/').reverse().join('-') === today2
-    ));
+    const compWithToday = Object.keys(localCompMap).find(c =>
+      (localCompMap[c] || []).some(d =>
+        new Date(d).toLocaleDateString('pt-BR', {
+          timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).split('/').reverse().join('-') === today2
+      )
+    );
 
-    if (catToday) {
-      setSelectedComp(catToday);
+    if (compWithToday) {
+      setSelectedComp(compWithToday);
+      if (compWithToday === '🏆 Copa do Mundo') {
+        const wcM = (ms || []).filter((m: any) => m.phase.includes('Copa do Mundo'));
+        const phaseToday = wcM.find((m: any) =>
+          new Date(m.match_date).toLocaleDateString('pt-BR', {
+            timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+          }).split('/').reverse().join('-') === today2
+        );
+        if (phaseToday) setSelectedPhase(extractSubPhase(phaseToday.phase));
+      }
       setFilter('today');
       setExpandedDays({ [today2]: true });
+      setTimeout(() => {
+        document.getElementById('day-today')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
     } else {
       setExpandedDays({ [todayBrazil()]: true });
     }
   }
 
-  function toggleDay(day: string) {
-    setExpandedDays(d => ({ ...d, [day]: !d[day] }));
+  async function togglePower(m: Match) {
+    if (!memberId || !bsaCompId) return;
+    const round = extractRoundFromPhase(m.phase);
+    if (!round) return;
+
+    // Verifica se o primeiro jogo da rodada já começou
+    const roundMatches = matches.filter(mx =>
+      mx.competition_id === bsaCompId && extractRoundFromPhase(mx.phase) === round
+    );
+    const firstKickoff = roundMatches.reduce((min, mx) =>
+      new Date(mx.match_date) < new Date(min.match_date) ? mx : min
+    , roundMatches[0]);
+    if (firstKickoff && jogoComecou(firstKickoff.match_date)) return;
+
+    const season = new Date(m.match_date).getFullYear();
+    const powerKey = `${bsaCompId}-${season}-${round}`;
+    const currentPower = roundPowers[powerKey];
+
+    setSavingPower(true);
+    if (currentPower === m.id) {
+      await supabase.from('round_powers').delete()
+        .eq('group_member_id', memberId)
+        .eq('competition_id', bsaCompId)
+        .eq('season', season)
+        .eq('round', round);
+      setRoundPowers(prev => { const n = { ...prev }; delete n[powerKey]; return n; });
+    } else {
+      await supabase.from('round_powers').upsert({
+        group_member_id: memberId,
+        competition_id: bsaCompId,
+        match_id: m.id,
+        season,
+        round,
+      }, { onConflict: 'group_member_id,competition_id,season,round' });
+      setRoundPowers(prev => ({ ...prev, [powerKey]: m.id }));
+    }
+    setSavingPower(false);
   }
+
+  function toggleDay(day: string) { setExpandedDays(d => ({ ...d, [day]: !d[day] })); }
 
   function setScore(mid: string, side: 'a' | 'b', val: string) {
     const v = val.replace(/\D/g, '').slice(0, 2);
@@ -395,9 +329,7 @@ export default function PalpitesGrupo() {
     return dayMatches.filter(m => {
       const d = draft[m.id];
       const saved = myGuesses[m.id];
-      const started = jogoComecou(m.match_date);
-      if (started) return false; // jogo já começou, não conta
-      // Novo palpite ou edição
+      if (jogoComecou(m.match_date)) return false;
       const effectiveD = d || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' } : undefined);
       return effectiveD !== undefined && effectiveD.a !== '' && effectiveD.b !== '';
     }).length;
@@ -407,9 +339,8 @@ export default function PalpitesGrupo() {
     if (!memberId) return;
     const toInsert = dayMatches
       .filter(m => {
+        if (jogoComecou(m.match_date)) return false;
         const d = draft[m.id];
-        const started = jogoComecou(m.match_date);
-        if (started) return false;
         const saved = myGuesses[m.id];
         const effectiveD = d || (saved ? { a: String(saved.guess_a), b: String(saved.guess_b) } : undefined);
         return effectiveD !== undefined && effectiveD.a !== '' && effectiveD.b !== '';
@@ -417,32 +348,29 @@ export default function PalpitesGrupo() {
       .map(m => {
         const savedGuess = myGuesses[m.id];
         const draftVal = draft[m.id];
-        // Usa draft se foi modificado (a ou b diferentes do salvo), senão usa saved
         const v = (draftVal && (draftVal.a !== '' || draftVal.b !== ''))
           ? draftVal
           : savedGuess
             ? { a: String(savedGuess.guess_a), b: String(savedGuess.guess_b), pen: savedGuess.guess_penalty_winner || '' }
             : { a: '', b: '', pen: '' };
+        const penVal = modalPens[m.id] || v.pen || null;
         return {
           group_member_id: memberId,
           match_id: m.id,
           guess_a: Number(v.a),
           guess_b: Number(v.b),
-          guess_penalty_winner: (m.is_knockout && v.pen) ? v.pen : null,
+          guess_penalty_winner: (m.is_knockout && penVal) ? penVal : null,
         };
       });
 
     setSaving(true);
-    let saved = 0;
-    let lastError = '';
+    let saved = 0, lastError = '';
     for (const guess of toInsert) {
       const existingGuess = myGuesses[guess.match_id];
       let error;
       if (existingGuess) {
-        // Atualiza palpite existente
         ({ error } = await supabase.from('guesses').update({
-          guess_a: guess.guess_a,
-          guess_b: guess.guess_b,
+          guess_a: guess.guess_a, guess_b: guess.guess_b,
           guess_penalty_winner: guess.guess_penalty_winner,
         }).eq('id', existingGuess.id));
       } else {
@@ -451,32 +379,26 @@ export default function PalpitesGrupo() {
       if (error) {
         if (error.message.includes('duplicate') || error.message.includes('unique')) continue;
         lastError = error.message;
-      } else {
-        saved++;
-      }
+      } else saved++;
     }
     setSaving(false); setConfirmDay(null); setConfirmMatches([]); setModalPens({});
     if (lastError && saved === 0) { alert('Erro: ' + lastError); return; }
     if (saved > 0) {
       const resumo = toInsert.slice(0, 3).map(g => {
-        const m = dayMatches.find(m => m.id === g.match_id);
+        const m = dayMatches.find(mx => mx.id === g.match_id);
         return m ? `${g.guess_a}x${g.guess_b}` : '';
       }).filter(Boolean).join(' · ');
       showToast(`⚽ ${saved} palpite${saved > 1 ? 's' : ''} salvo${saved > 1 ? 's' : ''}${resumo ? ` · ${resumo}` : ''}`);
     }
-
-    // Marca jogos salvos para highlight
     const savedIds = new Set(toInsert.map(g => g.match_id));
     setSavedRecently(new Set(savedIds));
     setTimeout(() => setSavedRecently(new Set()), 2500);
-
     setDraft({});
     load(memberId);
   }
 
   function showToast(msg: string) {
     setToast(msg);
-    // Vibração haptica no mobile
     if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
     setTimeout(() => setToast(''), 3500);
   }
@@ -485,13 +407,9 @@ export default function PalpitesGrupo() {
     const d = draft[mid];
     if (!d || d.a === '' || d.b === '') return null;
     if (m.score_a === null) return null;
-    return calcPoints(
-      Number(d.a), Number(d.b), (d.pen || null) as 'A'|'B'|null,
-      m.score_a, m.score_b!, m.penalty_winner, m.is_knockout
-    );
+    return calcPoints(Number(d.a), Number(d.b), (d.pen || null) as 'A' | 'B' | null, m.score_a, m.score_b!, m.penalty_winner, m.is_knockout);
   }
 
-  // Agrupa por campeonato
   const compMap: Record<string, Match[]> = {};
   matches.forEach(m => {
     const comp = extractComp(m.phase);
@@ -500,7 +418,6 @@ export default function PalpitesGrupo() {
   });
   const comps = [...Object.keys(compMap).sort(), '⭐ Especiais'];
 
-  // Sub-fases da Copa do Mundo
   const wcPhases = selectedComp === '🏆 Copa do Mundo' ? (() => {
     const phases = new Set<string>();
     (compMap['🏆 Copa do Mundo'] || []).forEach(m => phases.add(extractSubPhase(m.phase)));
@@ -508,7 +425,6 @@ export default function PalpitesGrupo() {
     return order.filter(p => phases.has(p));
   })() : [];
 
-  // Filtra jogos do campeonato selecionado
   const allCompMatches = (() => {
     if (!selectedComp) return [];
     const base = compMap[selectedComp] ?? [];
@@ -517,13 +433,13 @@ export default function PalpitesGrupo() {
     }
     return base;
   })();
+
   const todayStr = todayBrazil();
-  const upcomingMatches = allCompMatches.filter(m => toBrazilDay(m.match_date) > todayStr);
-  const todayMatches    = allCompMatches.filter(m => toBrazilDay(m.match_date) === todayStr);
   const pastMatches     = allCompMatches.filter(m => toBrazilDay(m.match_date) < todayStr);
+  const todayMatches    = allCompMatches.filter(m => toBrazilDay(m.match_date) === todayStr);
+  const upcomingMatches = allCompMatches.filter(m => toBrazilDay(m.match_date) > todayStr);
   const filteredMatches = filter === 'past' ? pastMatches : filter === 'today' ? todayMatches : upcomingMatches;
 
-  // Agrupa por dia
   const byDay: Record<string, Match[]> = {};
   filteredMatches.forEach(m => {
     const day = toBrazilDay(m.match_date);
@@ -531,28 +447,28 @@ export default function PalpitesGrupo() {
     byDay[day].push(m);
   });
   const days = Object.keys(byDay).sort();
-
-  // Modal day matches
   const confirmDayMatches = confirmMatches ?? [];
 
-  // Recarrega palpites ao voltar para a tela (ex: após salvar)
   useEffect(() => {
     function handleVisibility() {
-      if (document.visibilityState === 'visible' && memberId) {
-        load(memberId);
-      }
+      if (document.visibilityState === 'visible' && memberId) load(memberId);
     }
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [memberId]);
 
-  useEffect(() => {
-    const handleUnload = () => {
-      if (typeof window !== 'undefined') sessionStorage.setItem(`scroll-palpites-${groupId}`, String(window.scrollY));
-    };
-    window.addEventListener('pagehide', handleUnload);
-    return () => window.removeEventListener('pagehide', handleUnload);
-  }, [groupId]);
+  if (!memberId && matches.length === 0) return (
+    <main className="app">
+      <div style={{ marginTop: 16, marginBottom: 16 }}>
+        <div style={{ width: 140, height: 44, background: 'var(--bg3)', borderRadius: 'var(--radius)', marginBottom: 14, animation: 'shimmer 1.5s infinite' }} />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          {[1,2,3].map(i => <div key={i} style={{ flex: 1, height: 34, background: 'var(--bg3)', borderRadius: 'var(--radius)', animation: 'shimmer 1.5s infinite' }} />)}
+        </div>
+        {[1,2,3].map(i => <div key={i} style={{ background: 'var(--bg3)', borderRadius: 'var(--radius)', height: 110, marginBottom: 10, animation: 'shimmer 1.5s infinite' }} />)}
+      </div>
+      <style>{`@keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }`}</style>
+    </main>
+  );
 
   return (
     <main className="app">
@@ -567,63 +483,60 @@ export default function PalpitesGrupo() {
         @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }
       `}</style>
 
-      {/* MODAL */}
+      {/* MODAL CONFIRMAR */}
       {confirmDay && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 200, padding: 20
-        }} onClick={() => !saving && setConfirmDay(null)}>
-          <div style={{
-            background: 'var(--card)', border: '2px solid var(--gold)',
-            borderRadius: 18, padding: 24, maxWidth: 400, width: '100%'
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>⚠️</div>
-            <h2 style={{ fontSize: 22, textAlign: 'center', marginBottom: 12, color: 'var(--gold)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 20 }}
+          onClick={() => !saving && setConfirmDay(null)}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line2)', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: 'var(--gold)', textAlign: 'center', marginBottom: 12 }}>
               Confirmar palpites?
-            </h2>
-            <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 8, textAlign: 'center' }}>
-              {(() => {
-                const novosCount = confirmDayMatches.filter(m => {
-                  const draftVal = draft[m.id];
-                  const savedG = myGuesses[m.id];
-                  const started = jogoComecou(m.match_date);
-                  if (started) return false;
-                  const hasNew = draftVal && draftVal.a !== '' && draftVal.b !== '';
-                  const hasSaved = !!savedG;
-                  return hasNew || hasSaved;
-                }).length;
-                const editCount = confirmDayMatches.filter(m => {
-                  const draftVal = draft[m.id];
-                  return myGuesses[m.id] && draftVal && draftVal.a !== '' && draftVal.b !== '' && !jogoComecou(m.match_date);
-                }).length;
-                const newCount = novosCount - editCount;
-                if (editCount > 0 && newCount > 0) return <>Você vai salvar <strong style={{ color: 'var(--gold)' }}>{newCount} novo(s)</strong> e editar <strong style={{ color: 'var(--gold)' }}>{editCount} palpite(s)</strong>.</>;
-                if (editCount > 0) return <>Você vai editar <strong style={{ color: 'var(--gold)' }}>{editCount} palpite(s)</strong>.</>;
-                return <>Você vai salvar <strong style={{ color: 'var(--gold)' }}>{newCount} palpite(s)</strong>.</>;
-              })()}
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--sub)', lineHeight: 1.6, textAlign: 'center', marginBottom: 16 }}>
+              Após salvar, não dá pra editar.
             </p>
-            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, textAlign: 'center', marginBottom: 20 }}>
-              Depois de salvar, <strong style={{ color: 'var(--danger)' }}>não dá pra editar</strong>.
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
+
+            {/* Pênaltis obrigatórios */}
+            {confirmDayMatches.filter(m => {
+              const dv = draft[m.id]; const sv = myGuesses[m.id];
+              const aVal = dv?.a !== undefined && dv.a !== '' ? dv.a : sv ? String(sv.guess_a) : '';
+              const bVal = dv?.b !== undefined && dv.b !== '' ? dv.b : sv ? String(sv.guess_b) : '';
+              return m.is_knockout && aVal !== '' && bVal !== '' && aVal === bVal && !jogoComecou(m.match_date) && !modalPens[m.id];
+            }).map(m => (
+              <div key={m.id} style={{ marginTop: 12, padding: '10px 12px', background: 'var(--bg2)', borderRadius: 8 }}>
+                <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 8, textAlign: 'center' }}>
+                  🥊 <strong style={{ color: 'var(--text)' }}>{toPT(m.team_a)} x {toPT(m.team_b)}</strong> — quem avança?
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(['A', 'B'] as const).map(side => (
+                    <button key={side} onClick={() => setModalPens(p => ({ ...p, [m.id]: p[m.id] === side ? '' : side }))}
+                      style={{
+                        flex: 1, padding: '8px', borderRadius: 8, border: '1px solid',
+                        borderColor: modalPens[m.id] === side ? 'var(--neon)' : 'var(--line2)',
+                        background: modalPens[m.id] === side ? 'var(--neon)' : 'var(--bg3)',
+                        color: modalPens[m.id] === side ? '#020A02' : 'var(--sub)',
+                        fontWeight: 700, fontSize: 13, cursor: 'pointer'
+                      }}>
+                      {side === 'A' ? toPT(m.team_a) : toPT(m.team_b)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button className="btn btn-ghost" disabled={saving}
                 onClick={() => { setConfirmDay(null); setConfirmMatches([]); setModalPens({}); }} style={{ flex: 1 }}>Cancelar</button>
-              <button className="btn" disabled={saving}
-                onClick={() => {
-                  const pendingPen = confirmDayMatches.find(m => {
-                    const dv = draft[m.id];
-                    const sv = myGuesses[m.id];
-                    const aVal = dv?.a !== undefined && dv.a !== '' ? dv.a : sv ? String(sv.guess_a) : '';
-                    const bVal = dv?.b !== undefined && dv.b !== '' ? dv.b : sv ? String(sv.guess_b) : '';
-                    return m.is_knockout && aVal !== '' && bVal !== '' && aVal === bVal && !jogoComecou(m.match_date) && !modalPens[m.id];
-                  });
-                  if (pendingPen) {
-                    alert(`Escolha quem avança em ${toPT(pendingPen.team_a)} x ${toPT(pendingPen.team_b)}!`);
-                    return;
-                  }
-                  confirmarSalvar(confirmDayMatches);
-                }} style={{ flex: 1 }}>
+              <button className="btn" disabled={saving} onClick={() => {
+                const pendingPen = confirmDayMatches.find(m => {
+                  const dv = draft[m.id]; const sv = myGuesses[m.id];
+                  const aVal = dv?.a !== undefined && dv.a !== '' ? dv.a : sv ? String(sv.guess_a) : '';
+                  const bVal = dv?.b !== undefined && dv.b !== '' ? dv.b : sv ? String(sv.guess_b) : '';
+                  return m.is_knockout && aVal !== '' && bVal !== '' && aVal === bVal && !jogoComecou(m.match_date) && !modalPens[m.id];
+                });
+                if (pendingPen) { alert(`Escolha quem avança em ${toPT(pendingPen.team_a)} x ${toPT(pendingPen.team_b)}!`); return; }
+                confirmarSalvar(confirmDayMatches);
+              }} style={{ flex: 1 }}>
                 {saving ? 'Salvando...' : 'Confirmar'}
               </button>
             </div>
@@ -631,147 +544,117 @@ export default function PalpitesGrupo() {
         </div>
       )}
 
-      <h1 className="brand" style={{ fontSize: 28, marginBottom: 8, marginTop: 20 }}>Palpites</h1>
+      <h1 className="brand" style={{ marginTop: 16, marginBottom: 16 }}>PAL<span style={{ color: 'var(--neon)', textShadow: 'var(--shadow-neon)' }}>PITES</span></h1>
 
-      <div style={{
-        background: 'rgba(227,93,93,0.10)', border: '1px solid var(--danger)',
-        borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 13, lineHeight: 1.5
-      }}>
-        ⚡ Palpites podem ser <strong style={{ color: 'var(--gold)' }}>editados até o início do jogo</strong>. Após o apito, ficam bloqueados.
+      {/* CAMPEONATOS */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 12, paddingBottom: 4 }}>
+        {comps.map(comp => {
+          const total      = (compMap[comp] ?? []).length;
+          const palpitados = (compMap[comp] ?? []).filter(m => myGuesses[m.id]).length;
+          const isSelected = selectedComp === comp;
+          return (
+            <button key={comp} onClick={() => {
+              if (comp === '⭐ Especiais') { router.push(`/grupo/${groupId}/apostas`); return; }
+              setSelectedComp(isSelected ? null : comp);
+              setSelectedPhase(null); setFilter('today'); setView('palpites');
+              setExpandedDays({ [todayBrazil()]: true });
+            }} style={{
+              padding: '7px 14px', borderRadius: 100, border: '1px solid',
+              borderColor: isSelected ? 'var(--neon)' : 'var(--line2)',
+              background: isSelected ? 'var(--neon)' : 'var(--bg3)',
+              color: isSelected ? '#020A02' : 'var(--sub)',
+              fontWeight: isSelected ? 800 : 600, fontSize: 11, cursor: 'pointer',
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}>
+              {comp} <span style={{ opacity: 0.7 }}>({palpitados}/{total})</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* MENU DE CAMPEONATOS */}
-      <div style={{ marginBottom: 20 }}>
-        <p style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
-          Selecione o campeonato
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {comps.map(comp => {
-            const compMatches = compMap[comp] ?? [];
-            const total      = compMatches.length;
-            const palpitados = compMatches.filter(m => myGuesses[m.id]).length;
-            const isSelected = selectedComp === comp;
-            return (
-              <button key={comp} onClick={() => {
-                if (comp === '⭐ Especiais') {
-                  router.push(`/grupo/${groupId}/apostas`);
-                  return;
-                }
-                setSelectedComp(isSelected ? null : comp);
-                setSelectedPhase(null);
-                setFilter('today');
-                setView('palpites');
-                setExpandedDays({ [todayBrazil()]: true });
-              }} style={{
-                padding: '10px 16px', borderRadius: 12, border: '1px solid',
-                borderColor: isSelected ? 'var(--gold)' : 'var(--line)',
-                background: isSelected ? 'var(--gold)' : 'var(--card)',
-                color: isSelected ? '#1a1a1a' : 'var(--text)',
-                fontWeight: isSelected ? 700 : 500,
-                fontSize: 13, cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2
-              }}>
-                <span>{comp}</span>
-                <span style={{ fontSize: 10, opacity: 0.7 }}>{palpitados}/{total} ✓</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* FILTRO PASSADOS / HOJE / PRÓXIMOS */}
-      {/* Botão apostas especiais para campeonatos não-Copa */}
+      {/* APOSTAS ESPECIAIS — campeonatos não-Copa */}
       {selectedComp && selectedComp !== '🏆 Copa do Mundo' && selectedComp !== '⭐ Especiais' && (
-        <button
-          onClick={() => router.push(`/grupo/${groupId}/apostas-comp`)}
-          style={{
-            width: '100%', marginBottom: 12, padding: '10px', borderRadius: 12,
-            border: '1px solid var(--gold)', background: 'rgba(212,167,44,0.1)',
-            color: 'var(--gold)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
-          }}>
-          ⭐ Apostas especiais do {selectedComp}
-        </button>
+        <button onClick={() => router.push(`/grupo/${groupId}/apostas-comp`)} style={{
+          width: '100%', marginBottom: 10, padding: '9px', borderRadius: 'var(--radius)',
+          border: '1px solid rgba(255,215,0,0.3)', background: 'rgba(255,215,0,0.06)',
+          color: 'var(--gold)', fontWeight: 800, fontSize: 11, cursor: 'pointer',
+          textTransform: 'uppercase', letterSpacing: '.06em'
+        }}>⭐ Apostas especiais do {selectedComp}</button>
       )}
 
-      {/* Sub-fases da Copa do Mundo */}
+      {/* SUB-FASES COPA */}
       {selectedComp === '🏆 Copa do Mundo' && wcPhases.length > 1 && (
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 8 }}>
           <button onClick={() => setSelectedPhase(null)} style={{
-            padding: '6px 12px', borderRadius: 20, border: '1px solid',
-            borderColor: !selectedPhase ? 'var(--gold)' : 'var(--line)',
-            background: !selectedPhase ? 'var(--gold)' : 'var(--card)',
-            color: !selectedPhase ? '#1a1a1a' : 'var(--text)',
-            fontWeight: !selectedPhase ? 700 : 400, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+            padding: '6px 12px', borderRadius: 100, border: '1px solid',
+            borderColor: !selectedPhase ? 'var(--neon)' : 'var(--line2)',
+            background: !selectedPhase ? 'var(--neon)' : 'var(--bg3)',
+            color: !selectedPhase ? '#020A02' : 'var(--sub)',
+            fontWeight: !selectedPhase ? 800 : 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
           }}>Todas</button>
           {wcPhases.map(phase => (
             <button key={phase} onClick={() => setSelectedPhase(phase)} style={{
-              padding: '6px 12px', borderRadius: 20, border: '1px solid',
+              padding: '6px 12px', borderRadius: 100, border: '1px solid',
               borderColor: selectedPhase === phase ? 'var(--neon)' : 'var(--line2)',
               background: selectedPhase === phase ? 'var(--neon)' : 'var(--bg3)',
               color: selectedPhase === phase ? '#020A02' : 'var(--sub)',
-              fontWeight: selectedPhase === phase ? 700 : 400, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+              fontWeight: selectedPhase === phase ? 800 : 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
             }}>{phase}</button>
           ))}
         </div>
       )}
 
+      {/* FILTROS */}
       {selectedComp && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-          {([
-            { key: 'past',     label: '✅ Passados', count: pastMatches.length },
-            { key: 'today',    label: '⚡ Hoje',     count: todayMatches.length },
-            { key: 'upcoming', label: '⏳ Próximos', count: upcomingMatches.length },
-          ] as const).map(f => (
-            <button key={f.key} onClick={() => {
-              setFilter(f.key);
-              setExpandedDays(f.key === 'today' ? { [todayBrazil()]: true } : {});
-            }} style={{
-              flex: 1, padding: '8px 4px', borderRadius: 12, border: '1px solid',
-              borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
-              background: filter === f.key ? 'var(--gold)' : 'var(--card)',
-              color: filter === f.key ? '#1a1a1a' : 'var(--text)',
-              fontWeight: filter === f.key ? 700 : 400,
-              fontSize: 11, cursor: 'pointer', lineHeight: 1.4
+        <div style={{ display: 'flex', background: 'var(--bg3)', border: '1px solid var(--line2)', borderRadius: 'var(--radius)', padding: 3, gap: 3, marginBottom: 14 }}>
+          {(['past', 'today', 'upcoming'] as const).map((f, i) => {
+            const labels = ['Passados', 'Hoje', 'Próximos'];
+            const counts = [pastMatches.length, todayMatches.length, upcomingMatches.length];
+            return (
+              <button key={f} onClick={() => { setFilter(f); setExpandedDays(f === 'today' ? { [todayBrazil()]: true } : {}); }} style={{
+                flex: 1, padding: '8px', borderRadius: 'calc(var(--radius) - 2px)', border: 'none',
+                background: filter === f ? 'var(--bg2)' : 'transparent',
+                color: filter === f ? 'var(--text)' : 'var(--sub)',
+                fontWeight: filter === f ? 800 : 400, fontSize: 11, cursor: 'pointer',
+                textTransform: 'uppercase', letterSpacing: '.04em',
+                border: filter === f ? '1px solid var(--line2)' : '1px solid transparent',
+              }}>
+                {labels[i]} ({counts[i]})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* TOGGLE PALPITES/CHAVEAMENTO */}
+      {selectedComp === '🏆 Copa do Mundo' && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+          {(['palpites', 'chaveamento'] as const).map(v => (
+            <button key={v} onClick={() => setView(v)} style={{
+              flex: 1, padding: '9px', borderRadius: 'var(--radius)', border: '1px solid',
+              borderColor: view === v ? 'var(--neon)' : 'var(--line2)',
+              background: view === v ? 'var(--neon)' : 'var(--bg3)',
+              color: view === v ? '#020A02' : 'var(--sub)',
+              fontWeight: view === v ? 800 : 600, fontSize: 12, cursor: 'pointer',
+              textTransform: 'uppercase', letterSpacing: '.04em'
             }}>
-              {f.label}<br />
-              <span style={{ fontSize: 10, opacity: 0.8 }}>({f.count})</span>
+              {v === 'palpites' ? '⚽ Palpites' : '🗺️ Chaveamento'}
             </button>
           ))}
         </div>
       )}
 
-      {/* TOGGLE PALPITES / CHAVEAMENTO (só na Copa do Mundo) */}
-      {selectedComp === '🏆 Copa do Mundo' && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <button onClick={() => setView('palpites')} style={{
-            flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-            borderColor: view === 'palpites' ? 'var(--gold)' : 'var(--line)',
-            background: view === 'palpites' ? 'var(--gold)' : 'var(--card)',
-            color: view === 'palpites' ? '#1a1a1a' : 'var(--text)',
-            fontWeight: view === 'palpites' ? 700 : 400, fontSize: 13, cursor: 'pointer'
-          }}>⚽ Palpites</button>
-          <button onClick={() => setView('chaveamento')} style={{
-            flex: 1, padding: '10px', borderRadius: 12, border: '1px solid',
-            borderColor: view === 'chaveamento' ? 'var(--gold)' : 'var(--line)',
-            background: view === 'chaveamento' ? 'var(--gold)' : 'var(--card)',
-            color: view === 'chaveamento' ? '#1a1a1a' : 'var(--text)',
-            fontWeight: view === 'chaveamento' ? 700 : 400, fontSize: 13, cursor: 'pointer'
-          }}>🗺️ Chaveamento</button>
-        </div>
-      )}
-
-      {/* CHAVEAMENTO VISUAL */}
+      {/* CHAVEAMENTO */}
       {view === 'chaveamento' && selectedComp === '🏆 Copa do Mundo' && (
         <Chaveamento matches={compMap['🏆 Copa do Mundo'] || []} myGuesses={myGuesses} />
       )}
 
-      {/* JOGOS POR DIA */}
+      {/* JOGOS */}
       {!selectedComp ? (
         <div className="empty" style={{ marginTop: 40 }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🏟️</div>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: 'var(--neon)', marginBottom: 6 }}>ESCOLHA SEU CAMPO</div>
-          <div style={{ fontSize: 12, color: 'var(--sub)' }}>Selecione um campeonato acima para palpitar</div>
+          <div style={{ fontSize: 12, color: 'var(--sub)' }}>Selecione um campeonato acima</div>
         </div>
       ) : view === 'chaveamento' ? null : days.length === 0 ? (
         <div className="empty">
@@ -789,146 +672,168 @@ export default function PalpitesGrupo() {
 
           return (
             <div key={day} style={{ marginBottom: 8 }}>
-              <button onClick={() => toggleDay(day)} style={{
-                width: '100%', background: expanded ? 'var(--card)' : 'var(--bg-soft)',
-                border: `1px solid ${today ? 'var(--gold)' : 'var(--line)'}`,
-                borderRadius: expanded ? '14px 14px 0 0' : 14,
-                padding: '14px 16px', cursor: 'pointer', color: 'var(--text)',
+              <button id={today ? 'day-today' : undefined} onClick={() => toggleDay(day)} style={{
+                width: '100%', background: 'var(--bg3)', border: `1px solid ${today ? 'var(--neon)' : 'var(--line2)'}`,
+                borderRadius: expanded ? '4px 4px 0 0' : 'var(--radius)',
+                padding: '13px 16px', cursor: 'pointer', color: 'var(--text)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {today && <span style={{
-                    background: 'var(--gold)', color: '#1a1a1a',
-                    fontSize: 10, fontWeight: 700, padding: '2px 8px',
-                    borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.08em'
-                  }}>Hoje</span>}
-                  <span style={{
-                    fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
-                    letterSpacing: '0.08em', color: today ? 'var(--gold)' : 'var(--text)'
-                  }}>
+                  {today && <span style={{ background: 'var(--neon)', color: '#020A02', fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 2, textTransform: 'uppercase', letterSpacing: '.08em' }}>Hoje</span>}
+                  <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: '.04em', color: today ? 'var(--neon)' : 'var(--text)', textTransform: 'uppercase' }}>
                     {fmtDay(day)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{palpitados}/{dayMatches.length} ✓</span>
-                  <span style={{ color: 'var(--muted)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--sub)', fontWeight: 700 }}>{palpitados}/{dayMatches.length}</span>
+                  <span style={{ color: 'var(--sub)', fontSize: 14 }}>{expanded ? '▲' : '▼'}</span>
                 </div>
               </button>
 
               {expanded && (
-                <div style={{
-                  border: `1px solid ${today ? 'var(--gold)' : 'var(--line)'}`,
-                  borderTop: 'none', borderRadius: '0 0 14px 14px', overflow: 'hidden'
-                }}>
+                <div style={{ border: `1px solid ${today ? 'var(--neon)' : 'var(--line2)'}`, borderTop: 'none', borderRadius: '0 0 var(--radius) var(--radius)', overflow: 'hidden' }}>
                   {dayMatches.map((m, i) => {
                     const saved   = myGuesses[m.id] as Guess | undefined;
                     const started = jogoComecou(m.match_date);
-                    const blocked = started; // bloqueia apenas após início do jogo
-                    // Prioriza draft se foi modificado, senão usa valores salvos
+                    const blocked = started;
                     const draftVal = draft[m.id];
                     const d = (draftVal && (draftVal.a !== '' || draftVal.b !== ''))
                       ? draftVal
                       : saved
                         ? { a: String(saved.guess_a), b: String(saved.guess_b), pen: saved.guess_penalty_winner || '' }
                         : { a: '', b: '', pen: '' };
-                    const pts     = previewPts(m.id, m);
-                    // Se tem draft preenchido, usa o draft para calcular isDraw
-                    // Senão usa o saved
+                    const pts = previewPts(m.id, m);
                     const isDraw = (draftVal && draftVal.a !== '' && draftVal.b !== '')
                       ? draftVal.a === draftVal.b
-                      : saved
-                        ? saved.guess_a === saved.guess_b
-                        : false;
+                      : saved ? saved.guess_a === saved.guess_b : false;
+
+                    // Poder Brasileirão
+                    const isBsa = m.phase.includes('Brasileir');
+                    const bsaRound = isBsa ? extractRoundFromPhase(m.phase) : null;
+                    const bsaSeason = isBsa ? new Date(m.match_date).getFullYear() : null;
+                    const powerKey = (bsaCompId && bsaRound && bsaSeason) ? `${bsaCompId}-${bsaSeason}-${bsaRound}` : null;
+                    const isMyPower = powerKey ? roundPowers[powerKey] === m.id : false;
+                    const hasPowerElsewhere = powerKey ? (!!roundPowers[powerKey] && roundPowers[powerKey] !== m.id) : false;
+
+                    // Verifica se o primeiro jogo da rodada já começou (para bloquear poder)
+                    const roundBlocked = (() => {
+                      if (!isBsa || !bsaCompId || !bsaRound) return false;
+                      const roundMs = matches.filter(mx => mx.competition_id === bsaCompId && extractRoundFromPhase(mx.phase) === bsaRound);
+                      const first = roundMs.reduce((min, mx) => new Date(mx.match_date) < new Date(min.match_date) ? mx : min, roundMs[0]);
+                      return first ? jogoComecou(first.match_date) : false;
+                    })();
 
                     return (
                       <div key={m.id} style={{
-                        padding: 16,
-                        borderTop: i > 0 ? '1px solid var(--line)' : 'none',
-                        background: saved && blocked ? 'rgba(46,168,76,0.04)' : saved && !blocked ? 'rgba(212,167,44,0.04)' : blocked ? 'rgba(227,93,93,0.04)' : 'var(--card)',
+                        background: 'var(--card)', borderTop: i > 0 ? `1px solid var(--line)` : 'none',
+                        position: 'relative', overflow: 'hidden'
                       }}>
-                        <div className="match-meta" style={{ marginBottom: 8 }}>
-                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                            {m.phase.split('·').slice(1).join('·').trim() || m.phase}
-                          </span>
-                          <span style={{ fontSize: 12 }}>
-                            {new Date(m.match_date).toLocaleTimeString('pt-BR', {
-                              timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
+                        {/* Stripe topo */}
+                        <div style={{ height: 2, background: blocked ? 'linear-gradient(90deg,var(--red),transparent)' : isMyPower ? 'linear-gradient(90deg,var(--gold),transparent)' : 'linear-gradient(90deg,var(--neon),transparent)', opacity: blocked ? 0.6 : 0.4 }} />
 
-                        <div className="match">
-                          <div className="team team-a" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
-                            {toPT(m.team_a)}
-                            <Crest name={m.team_a} crests={crests} />
+                        <div style={{ padding: '12px 14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.1em', background: 'var(--bg2)', padding: '2px 8px', borderRadius: 2 }}>
+                              {m.phase.split('·').slice(1).join('·').trim() || m.phase}
+                            </span>
+                            <span style={{ fontSize: 11, color: 'var(--sub)', fontWeight: 700 }}>
+                              {new Date(m.match_date).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </div>
-                          <div className="score-row">
-                            <input className="score-input" inputMode="numeric"
-                              value={draft[m.id]?.a !== undefined ? draft[m.id].a : saved ? String(saved.guess_a) : d.a}
-                              onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
-                              disabled={blocked}
-                              style={{ opacity: blocked ? 0.5 : 1 }} />
-                            <span className="vs">x</span>
-                            <input className="score-input" inputMode="numeric"
-                              value={draft[m.id]?.b !== undefined ? draft[m.id].b : saved ? String(saved.guess_b) : d.b}
-                              onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
-                              disabled={blocked}
-                              style={{ opacity: blocked ? 0.5 : 1 }} />
-                          </div>
-                          <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
-                            <Crest name={m.team_b} crests={crests} />
-                            {toPT(m.team_b)}
-                          </div>
-                        </div>
 
-                        {m.is_knockout && isDraw && !blocked && (
-                          <div style={{ marginTop: 12, textAlign: 'center' }}>
-                            <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                              Quem avança?
-                            </p>
-                            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                              {(['A', 'B'] as const).map(side => {
-                                const penVal = draft[m.id]?.pen || (saved as Guess | undefined)?.guess_penalty_winner || '';
-                                const isSelected = penVal === side;
-                                return (
-                                  <button key={side} onClick={() => !blocked && setPen(m.id, isSelected ? '' : side)}
-                                    style={{
-                                      padding: '8px 16px', borderRadius: 10, border: '1px solid',
-                                      borderColor: isSelected ? 'var(--gold)' : 'var(--line)',
-                                      background: isSelected ? 'var(--gold)' : 'var(--bg-soft)',
-                                      color: isSelected ? '#1a1a1a' : 'var(--text)',
-                                      fontWeight: 700, fontSize: 13, cursor: blocked ? 'default' : 'pointer'
-                                    }}>
-                                    {side === 'A' ? toPT(m.team_a) : toPT(m.team_b)}
-                                  </button>
-                                );
-                              })}
+                          {/* BOTÃO PODER — Brasileirão */}
+                          {isBsa && !blocked && !roundBlocked && (
+                            <button onClick={() => togglePower(m)} disabled={savingPower || hasPowerElsewhere} style={{
+                              width: '100%', marginBottom: 10, padding: '8px',
+                              borderRadius: 'var(--radius)', border: '1px solid',
+                              borderColor: isMyPower ? 'var(--gold)' : 'var(--line2)',
+                              background: isMyPower ? 'rgba(255,215,0,0.1)' : 'var(--bg2)',
+                              color: isMyPower ? 'var(--gold)' : hasPowerElsewhere ? 'var(--dim)' : 'var(--sub)',
+                              fontWeight: 800, fontSize: 10, cursor: hasPowerElsewhere ? 'not-allowed' : 'pointer',
+                              textTransform: 'uppercase', letterSpacing: '.06em',
+                              opacity: hasPowerElsewhere ? 0.5 : 1,
+                            }}>
+                              {isMyPower ? '⚡ PODER ATIVO · 2× PONTOS NESTE JOGO' : hasPowerElsewhere ? '⚡ PODER JÁ USADO NESTA RODADA' : '⚡ USAR PODER · 2× PONTOS NESTE JOGO'}
+                            </button>
+                          )}
+                          {isBsa && !blocked && roundBlocked && !isMyPower && (
+                            <div style={{ fontSize: 10, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, textAlign: 'center' }}>
+                              ⚡ Poder bloqueado — rodada já iniciou
+                            </div>
+                          )}
+
+                          <div className="match">
+                            <div className="team team-a" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                              {toPT(m.team_a)}
+                              <Crest name={m.team_a} crests={crests} />
+                            </div>
+                            <div className="score-row">
+                              <input className="score-input" inputMode="numeric"
+                                value={draft[m.id]?.a !== undefined ? draft[m.id].a : saved ? String(saved.guess_a) : d.a}
+                                onChange={e => !blocked && setScore(m.id, 'a', e.target.value)}
+                                disabled={blocked} style={{ opacity: blocked ? 0.4 : 1 }} />
+                              <span className="vs">:</span>
+                              <input className="score-input" inputMode="numeric"
+                                value={draft[m.id]?.b !== undefined ? draft[m.id].b : saved ? String(saved.guess_b) : d.b}
+                                onChange={e => !blocked && setScore(m.id, 'b', e.target.value)}
+                                disabled={blocked} style={{ opacity: blocked ? 0.4 : 1 }} />
+                            </div>
+                            <div className="team team-b" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
+                              <Crest name={m.team_b} crests={crests} />
+                              {toPT(m.team_b)}
                             </div>
                           </div>
-                        )}
 
-                        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          {saved && !blocked && <span style={{ fontSize: 11, color: 'var(--gold)' }}>✏️ Editar até o início</span>}
-                          {saved && blocked  && <span className="locked-badge">🔒 Palpite enviado</span>}
-                          {!saved && blocked && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ Jogo já iniciou</span>}
-                          {!saved && !blocked && <span />}
-                          {pts !== null && <span style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700 }}>+{pts} pts</span>}
+                          {m.is_knockout && isDraw && !blocked && (
+                            <div style={{ marginTop: 10, textAlign: 'center' }}>
+                              <p style={{ fontSize: 10, fontWeight: 800, color: 'var(--sub)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.08em' }}>
+                                Quem avança?
+                              </p>
+                              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                                {(['A', 'B'] as const).map(side => {
+                                  const penVal = draft[m.id]?.pen || (saved as Guess | undefined)?.guess_penalty_winner || '';
+                                  const isSelected = penVal === side;
+                                  return (
+                                    <button key={side} onClick={() => !blocked && setPen(m.id, isSelected ? '' : side)} style={{
+                                      padding: '8px 16px', borderRadius: 'var(--radius)', border: '1px solid',
+                                      borderColor: isSelected ? 'var(--neon)' : 'var(--line2)',
+                                      background: isSelected ? 'var(--neon)' : 'var(--bg2)',
+                                      color: isSelected ? '#020A02' : 'var(--sub)',
+                                      fontWeight: 800, fontSize: 12, cursor: blocked ? 'default' : 'pointer',
+                                      textTransform: 'uppercase', letterSpacing: '.04em'
+                                    }}>
+                                      {side === 'A' ? toPT(m.team_a) : toPT(m.team_b)}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {saved && !blocked && <span style={{ fontSize: 10, color: 'var(--neon)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>✏️ Editar até o início</span>}
+                            {saved && blocked  && <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>🔒 Bloqueado</span>}
+                            {!saved && blocked && <span style={{ fontSize: 10, color: 'var(--red)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>⏰ Jogo iniciado</span>}
+                            {!saved && !blocked && <span />}
+                            {pts !== null && (
+                              <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>
+                                +{isMyPower ? pts * 2 : pts} pts{isMyPower ? ' ⚡' : ''}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
 
                   {novos > 0 && (
-                    <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderTop: '1px solid var(--line)' }}>
+                    <div style={{ padding: '12px 14px', background: 'var(--bg2)', borderTop: `1px solid var(--line2)` }}>
                       <button className="btn" onClick={() => {
                         setConfirmDay(day);
                         setConfirmMatches(dayMatches);
-                        // Inicializa pens com valores do draft ou saved
                         const pens: Record<string, 'A' | 'B' | ''> = {};
                         dayMatches.forEach(m => {
-                          if (m.is_knockout) {
-                            pens[m.id] = (draft[m.id]?.pen || myGuesses[m.id]?.guess_penalty_winner || '') as 'A' | 'B' | '';
-                          }
+                          if (m.is_knockout) pens[m.id] = (draft[m.id]?.pen || myGuesses[m.id]?.guess_penalty_winner || '') as 'A' | 'B' | '';
                         });
                         setModalPens(pens);
                       }} disabled={saving}>
