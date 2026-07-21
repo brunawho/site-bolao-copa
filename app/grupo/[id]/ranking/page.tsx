@@ -720,8 +720,20 @@ export default function RankingGrupo() {
                     const posLabel = i < 3 ? medals[i] : `${i+1}º`;
                     return (
                       <div key={r.user_id} className="rank-row" style={{
-                        background: i === 0 ? 'rgba(212,167,44,0.12)' : isMe ? 'rgba(212,167,44,0.06)' : undefined,
-                        borderLeft: i === 0 ? '3px solid var(--gold)' : undefined,
+                        background: i === 0 ? 'rgba(212,167,44,0.08)' : isMe ? 'rgba(57,255,20,0.04)' : undefined,
+                        borderLeft: i === 0 ? '3px solid var(--gold)' : isMe ? '3px solid var(--neon)' : undefined,
+                        cursor: 'pointer',
+                      }} onClick={async () => {
+                        const member = memberStats.find(m => m.user_id === r.user_id);
+                        if (!member) return;
+                        setDrilldown(member);
+                        setDrilldownLoading(true);
+                        setDrilldownGuesses({});
+                        const { data: dg } = await supabase.from('guesses').select('*').eq('group_member_id', member.id);
+                        const map: Record<string, Guess> = {};
+                        (dg || []).forEach((g: any) => { map[g.match_id] = g; });
+                        setDrilldownGuesses(map);
+                        setDrilldownLoading(false);
                       }}>
                         <span className="rank-pos">{posLabel}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -731,12 +743,30 @@ export default function RankingGrupo() {
                           <div>
                             <div className="rank-name">
                               {r.name}
-                              {isMe && <span style={{ fontSize: 11, color: 'var(--gold)', marginLeft: 6 }}>← você</span>}
+                              {isMe && <span style={{ fontSize: 11, color: 'var(--neon)', marginLeft: 6 }}>← você</span>}
                             </div>
                             <div className="rank-meta">{r.exact_hits} exato{r.exact_hits !== 1 ? 's' : ''}</div>
                           </div>
                         </div>
-                        <span className="rank-points">{r.total_points}</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <span className="rank-points" style={{ color: i === 0 ? 'var(--gold)' : isMe ? 'var(--neon)' : undefined }}>{r.total_points}</span>
+                          {isMe && (
+                            <div style={{ marginTop: 4 }}>
+                              <button onClick={e => {
+                                e.stopPropagation();
+                                const posLabel2 = i < 3 ? ['🥇','🥈','🥉'][i] : `${i+1}°`;
+                                const txt = `${posLabel2} ${r.name} · ${r.total_points} pts no Bet Well! ⚽`;
+                                if (navigator.share) navigator.share({ title: 'Bet Well', text: txt });
+                                else navigator.clipboard?.writeText(txt);
+                              }} style={{
+                                background: 'transparent', border: '1px solid var(--line2)',
+                                color: 'var(--sub)', fontSize: 9, padding: '2px 6px',
+                                borderRadius: 'var(--radius)', cursor: 'pointer',
+                                fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.04em'
+                              }}>↗ compartilhar</button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -836,7 +866,8 @@ export default function RankingGrupo() {
       {/* Modal Drilldown */}
       {drilldown && (() => {
         const member = drilldown;
-        const scoredMatches = matches.map(m => {
+        const allScoredMatches = matches.filter(m => m.score_a !== null);
+        const scoredMatches = allScoredMatches.map(m => {
           const g = drilldownGuesses[m.id];
           if (!g) return null;
           const pts = calcPoints(g.guess_a, g.guess_b, g.guess_penalty_winner, m.score_a!, m.score_b!, m.penalty_winner, m.is_knockout, m.phase);
