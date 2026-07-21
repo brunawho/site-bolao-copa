@@ -172,7 +172,7 @@ export default function EncerramentoPage() {
         {winner && (
           <div className="card" style={{ marginBottom: 20, background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.3)', textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>👑</div>
-            <p style={{ fontSize: 13, color: 'var(--sub)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4 }}>👑 Campeão do Bolão</p>
+            <p style={{ fontSize: 13, color: 'var(--sub)', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 4 }}>👑 Campeão do Bolão</p>
             <h2 style={{ fontSize: 36, color: 'var(--gold)', fontFamily: "'Bebas Neue', sans-serif", textShadow: 'var(--shadow-gold)', marginBottom: 4 }}>
               {winner.name}
             </h2>
