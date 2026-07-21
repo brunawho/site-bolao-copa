@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase, calcPoints, type Match, type Guess } from '@/lib/supabase';
-import { ThemeToggle } from '@/components/theme-provider';
 
 type Member = { id: string; user_id: string; name: string };
 type SpecialResult = { top_scorer: string|null; champion: string|null; runner_up: string|null; third_place: string|null };
@@ -497,13 +496,8 @@ export default function RankingGrupo() {
 
   return (
     <main className="app">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, marginTop: 16 }}>
-        <div>
-          <p className="subtitle" style={{ marginBottom: 2 }}>Bolão Copa 2026</p>
-          <h1 className="brand">RAN<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>KING</span></h1>
-        </div>
-        <ThemeToggle />
-      </div>
+      <p className="subtitle" style={{ marginBottom: 2, marginTop: 16 }}>Bolão Copa 2026</p>
+      <h1 className="brand" style={{ marginBottom: 16 }}>RAN<span style={{ color: 'var(--gold)', textShadow: 'var(--shadow-gold)' }}>KING</span></h1>
 
       {loading ? (
         <div className="empty">Carregando...</div>

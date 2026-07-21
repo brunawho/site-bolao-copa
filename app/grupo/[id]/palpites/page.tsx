@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ThemeToggle } from '@/components/theme-provider';
 import { supabase, type Match, type Guess, calcPoints } from '@/lib/supabase';
 
 type Draft = Record<string, { a: string; b: string; pen: 'A' | 'B' | '' }>;

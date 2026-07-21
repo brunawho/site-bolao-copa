@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { ThemeToggle } from '@/components/theme-provider';
 
 export default function GrupoLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
@@ -70,18 +71,24 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
     <>
       <div style={{
         position: 'sticky', top: 0, zIndex: 30,
-        background: 'rgba(10,15,31,0.95)', backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid var(--line)',
-        padding: '12px 20px', display: 'flex',
-        justifyContent: 'space-between', alignItems: 'center'
+        background: 'rgba(5,10,5,0.96)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid var(--line2)',
+        padding: '10px 16px', display: 'flex',
+        justifyContent: 'space-between', alignItems: 'center',
+        gap: 10,
       }}>
-        <Link href="/grupos" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 13 }}>
+        <Link href="/grupos" style={{ color: 'var(--sub)', textDecoration: 'none', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', whiteSpace: 'nowrap' }}>
           ← Grupos
         </Link>
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>{groupName}</span>
-        <Link href={`/grupo/${groupId}/perfil`} style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 20 }}>
-          👤
-        </Link>
+        <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: '.08em', color: 'var(--neon)', textShadow: 'var(--shadow-neon)', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {groupName}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <ThemeToggle />
+          <Link href={`/grupo/${groupId}/perfil`} style={{ color: 'var(--sub)', textDecoration: 'none', fontSize: 18 }}>
+            👤
+          </Link>
+        </div>
       </div>
 
       {children}
@@ -105,9 +112,11 @@ export default function GrupoLayout({ children }: { children: React.ReactNode })
                 minWidth: 0,
                 padding: '2px 2px',
                 textAlign: 'center',
-                color: isActive ? 'var(--gold)' : 'var(--muted)',
+                color: isActive ? 'var(--neon)' : 'var(--sub)',
                 textDecoration: 'none',
-                fontWeight: isActive ? 700 : 400,
+                fontWeight: isActive ? 800 : 400,
+                textTransform: 'uppercase',
+                letterSpacing: '.05em',
               }}>
               <span style={{ fontSize: iconSize, position: 'relative', display: 'inline-block', lineHeight: 1 }}>
                 {it.icon}
